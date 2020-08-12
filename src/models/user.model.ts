@@ -20,7 +20,7 @@ export interface IUser extends Document {
     firstName: string;
     lastName: string;
     password: string;
-    type: string;
+    role: string;
     address?: {
         street: string,
         city: string,
@@ -46,7 +46,7 @@ const UserSchema: Schema = new Schema({
         type: String,
         // get: (): undefined => undefined,
     },
-    type: {type: String, defaultValue: 'user'},
+    role: {type: String, defaultValue: 'user'},
     address: addressSchema,
 }, {
     timestamps: true,
@@ -74,12 +74,6 @@ UserSchema.pre<IUser>("save", function save(next) {
 });
 
 UserSchema.methods.comparePassword =  function (candidatePassword: string, callback: any) {
-    let isMatch: boolean = false;
-    const hashedPassword: string = bcrypt.hashSync(candidatePassword, this.salt);
-    if (hashedPassword == this.password) {
-        isMatch = true;
-    }
-    // callback(null, isMatch);
     bcrypt.compare(candidatePassword, this.password, (err: Error, isMatch: boolean) => {
         callback(err, isMatch);
     });

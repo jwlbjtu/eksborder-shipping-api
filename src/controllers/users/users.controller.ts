@@ -22,7 +22,7 @@ class UsersController implements ICRUDControllerBase {
     public initRoutes() {
         this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.readOneGet);
         this.router.get(this.path, this.authJwt.authenticateJWT, this.readGet);
-        this.router.post(this.path, this.createPost);
+        this.router.post(this.path, this.authJwt.authenticateJWT, this.createPost);
         this.router.post(this.path+"/login", this.login);
         this.router.put(this.path, this.authJwt.authenticateJWT, this.updatePut);
         this.router.delete(this.path + '/:id', this.authJwt.authenticateJWT, this.delDelete);
