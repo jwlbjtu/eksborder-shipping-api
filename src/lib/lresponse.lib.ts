@@ -1,10 +1,11 @@
-import {NextFunction, Request, Response} from 'express'
+import {Response} from 'express'
 
 interface IFormatDataOne {
     data: any,
     count: number,
     status: number
 };
+
 interface IFormatDataErr {
     error: any,
     status: number
@@ -25,8 +26,8 @@ class LRes {
         }
     };
 
-    public resErr = (res: Response, status:number , data: any) => {
-        if ( typeof data === "string" || typeof data === "object") {
+    public resErr = (res: Response, status: number, data: any) => {
+        if (typeof data === "string" || typeof data === "object") {
             data = {
                 message: data
             }

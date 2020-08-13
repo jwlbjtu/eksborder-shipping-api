@@ -5,9 +5,11 @@ import User, {IUser, IUserLogin} from "../../models/user.model";
 import LRes from "../../lib/lresponse.lib";
 
 import passport from "passport";
-import "../auth/passportHandler";
+// import "../auth/passportHandler";
 import '../../lib/env';
 import AuthController from "../auth/auth.controller"
+
+import CarrierFactory from "../../lib/carrier.factory";
 
 
 class UsersController implements ICRUDControllerBase {
@@ -20,6 +22,7 @@ class UsersController implements ICRUDControllerBase {
     }
 
     public initRoutes() {
+        this.router.get(this.path + "/logout", this.logout);
         this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.readOneGet);
         this.router.get(this.path, this.authJwt.authenticateJWT, this.readGet);
         this.router.post(this.path, this.authJwt.authenticateJWT, this.createPost);
@@ -112,7 +115,7 @@ class UsersController implements ICRUDControllerBase {
     public login: any = async (req: Request, res: Response, next: NextFunction) => {
         try {
             if(req.body.user.hasOwnProperty('password')) {
-                await passport.authenticate('local', {session: false}, (err: Error, user: IUserLogin, info: any) => {
+                await passport.authenticate('local', {session: true}, (err: Error, user: IUserLogin, info: any) => {
                     if (err) {
                         LRes.resErr(res, 404, err);
                     }
@@ -128,6 +131,14 @@ class UsersController implements ICRUDControllerBase {
         } catch (err) {
             LRes.resErr(res, 500, err);
         }
+    };
+
+    public logout: any  = async (req: Request, res: Response) => {
+        req.logout();
+        delete req.user;
+        // @ts-ignore
+        delete req.session;
+        LRes.resOk(res,'Logout')
     };
 }
 

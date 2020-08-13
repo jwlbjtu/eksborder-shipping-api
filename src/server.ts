@@ -8,6 +8,7 @@ import HomeController from './controllers/home/home.controller';
 import './lib/env';
 import errorHandler from './middleware/errorHandler';
 import UsersController from "./controllers/users/users.controller";
+import ShippingController from "./controllers/shipping/shipping.controller";
 
 
 let envPort: number = 5000;
@@ -20,6 +21,7 @@ const app = new App({
     controllers: [
         new HomeController(),
         new UsersController(),
+        new ShippingController()
     ],
     middleWares: [
         bodyParser.json(),

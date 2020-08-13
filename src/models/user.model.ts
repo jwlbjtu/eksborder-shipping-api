@@ -21,6 +21,8 @@ export interface IUser extends Document {
     lastName: string;
     password: string;
     role: string;
+    pickupAccount: string,
+    facilityNumber: string,
     address?: {
         street: string,
         city: string,
@@ -48,6 +50,8 @@ const UserSchema: Schema = new Schema({
     },
     role: {type: String, defaultValue: 'user'},
     address: addressSchema,
+    pickupAccount: {type: String, required: true},
+    facilityNumber : {type: String, required: true}
 }, {
     timestamps: true,
     autoIndex: true,
@@ -63,11 +67,10 @@ UserSchema.pre<IUser>("save", function save(next) {
 
     bcrypt.genSalt(10, (err, salt) => {
         if (err) { return next(err); }
-        this.salt = salt;
+        user.salt = salt;
         bcrypt.hash(this.password, salt, (err: Error, hash) => {
             if (err) { return next(err); }
             user.password = hash;
-            user.save();
             next();
         });
     });
@@ -93,8 +96,8 @@ UserSchema.methods.generateJWT = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        parentUserRef: this.parentUserRef,
-        singingType: this.singingType
+        pickupAccount: this.pickupAccount,
+        facilityNumber: this.facilityNumber
     }, secret);
 };
 
@@ -104,6 +107,8 @@ UserSchema.methods.toAuthJSON = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
+        pickupAccount: this.pickupAccount,
+        facilityNumber: this.facilityNumber,
         token: this.generateJWT(),
     };
 };
