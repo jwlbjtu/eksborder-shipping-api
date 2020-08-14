@@ -2,11 +2,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from "jsonwebtoken";
 
-const addressSchema: Schema = new Schema({
-    city: String,
-    country: String,
-    street: String,
-});
 
 export interface IUserLogin extends Document {
     email: string;
@@ -19,15 +14,23 @@ export interface IUser extends Document {
     email: string;
     firstName: string;
     lastName: string;
+    userName: string
     password: string;
     role: string;
-    pickupAccount: string,
-    facilityNumber: string,
+    // pickupAccount: string,
+    // facilityNumber: string,
     address?: {
-        street: string,
+        address1: string,
+        address2?: string,
         city: string,
-        country: String,
+        state: string,
+        country: string,
+        postalCode: string,
     };
+    phone: string;
+    isActive: boolean;
+    companyName: string,
+    balance: number
 }
 
 const UserSchema: Schema = new Schema({
@@ -40,18 +43,30 @@ const UserSchema: Schema = new Schema({
         index: true,
         trim: true
     },
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    firstName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
+    lastName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
+    userName: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
     hash: String,
     salt: String,
     password: {
         type: String,
         // get: (): undefined => undefined,
     },
-    role: {type: String, defaultValue: 'user'},
-    address: addressSchema,
-    pickupAccount: {type: String, required: true},
-    facilityNumber : {type: String, required: true}
+    role: {type: String, default: 'user'},
+    address: {
+        address1: {type: String, required: true, trim: true},
+        address2: {type: String, trim: true},
+        city: {type: String, required: true, minlength:3, maxlength:120, trim: true},
+        state: {type: String, required: true, minlength:2, maxlength:3, trim: true},
+        country: {type: String, required: true, minlength:2, maxlength:3, default: "US", trim: true},
+        postalCode: {type: String, required: true, minlength:2, maxlength:10, trim: true},
+    },
+    phone: {type: String, minlength:5, maxlength:20, trim: true, unique: true},
+    isActive: {type: Boolean, default: true},
+    companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
+    balance: {type: Number, min: 0}
+    // pickupAccount: {type: String, required: true},
+    // facilityNumber : {type: String, required: true}
 }, {
     timestamps: true,
     autoIndex: true,
@@ -96,8 +111,8 @@ UserSchema.methods.generateJWT = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        pickupAccount: this.pickupAccount,
-        facilityNumber: this.facilityNumber
+        // pickupAccount: this.pickupAccount,
+        // facilityNumber: this.facilityNumber
     }, secret);
 };
 
@@ -107,8 +122,8 @@ UserSchema.methods.toAuthJSON = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        pickupAccount: this.pickupAccount,
-        facilityNumber: this.facilityNumber,
+        // pickupAccount: this.pickupAccount,
+        // facilityNumber: this.facilityNumber,
         token: this.generateJWT(),
     };
 };

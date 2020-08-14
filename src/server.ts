@@ -9,6 +9,8 @@ import './lib/env';
 import errorHandler from './middleware/errorHandler';
 import UsersController from "./controllers/users/users.controller";
 import ShippingController from "./controllers/shipping/shipping.controller";
+import CarrierController from "./controllers/carrier/carrier.controller";
+import PickupController from "./controllers/carrier/pickup.controller";
 
 
 let envPort: number = 5000;
@@ -21,7 +23,9 @@ const app = new App({
     controllers: [
         new HomeController(),
         new UsersController(),
-        new ShippingController()
+        new ShippingController(),
+        new CarrierController(),
+        new PickupController()
     ],
     middleWares: [
         bodyParser.json(),

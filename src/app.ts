@@ -62,11 +62,17 @@ class App {
 
     private connect() {
         // Connect to the database
-        let options: { useFindAndModify: boolean; useCreateIndex: boolean; useNewUrlParser: boolean, autoIndex?: boolean };
+        let options: {
+            useFindAndModify: boolean;
+            useCreateIndex: boolean;
+            useNewUrlParser: boolean,
+            useUnifiedTopology: boolean,
+            autoIndex?: boolean };
         options = {
             useNewUrlParser: true,
             useFindAndModify: false,
-            useCreateIndex: true
+            useCreateIndex: true,
+            useUnifiedTopology: true
         };
 
         if (process.env.NODE_ENV == 'development') {
