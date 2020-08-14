@@ -46,18 +46,66 @@ class DhlApi implements ICarrierAPI {
     };
 
     /**
-     * find product
+     * products product
      * @param data
      */
-    public find: any = async (data: object = {}) => {
-
+    public products: any = async (data: object = {}) => {
+        // "returnAddress": {
+        //         "name": "Dave Bloggs",
+        //         "companyName": "Joe Inc.",
+        //         "address1": "4552 OLD DIXIE HWY",
+        //         "address2": "Near Pixar road",
+        //         "city": "Norcross",
+        //         "state": "GA",
+        //         "country": "US",
+        //         "postalCode": "30092",
+        //         "email": "2@y.com",
+        //         "phone": "44423440348"
+        //     },
+        //"rate": {
+        //         "calculate": true,
+        //         "currency": "USD",
+        //         "rateDate": "{{dateStamp}}",
+        //     },
+        //     "estimatedDeliveryDate": {
+        //         "calculate": true,
+        //         "expectedShipDate": "{{dateStamp}}",
+        //     }
         const headers = await this.getHeaders(false);
-        // const headers = {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': 'Bearer ' + this.accesstoken
-        // };
 
         return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/products', data, headers)
+            .then((response: Response | any) => {
+                return response;
+            })
+            .catch((err: Error) => {
+                console.log(err);
+                return err;
+            });
+    };
+
+    public label: any = async (data: object = {}, format: 'ZPL' | 'PNG' = 'PNG') => {
+        // "returnAddress": {
+        //         "name": "Dave Bloggs",
+        //         "companyName": "Joe Inc.",
+        //         "address1": "4552 OLD DIXIE HWY",
+        //         "address2": "Near Pixar road",
+        //         "city": "Baltimore",
+        //         "state": "MD",
+        //         "country": "US",
+        //         "postalCode": "30024",
+        //         "email": "2@y.com",
+        //         "phone": "44423440348"
+        //     },
+
+        // "billingReference1": "test bill ref 1",  - comp name - from used data
+        // "packageId": "{{packageId}}", - auto gen uniq
+        const headers = await this.getHeaders(false);
+
+        const paramsStr: string = qs.stringify({
+            'format': format
+        });
+
+        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/label?'+paramsStr, data, headers)
             .then((response: Response | any) => {
                 return response;
             })

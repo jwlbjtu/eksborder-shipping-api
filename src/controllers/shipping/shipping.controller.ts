@@ -21,7 +21,8 @@ class ShippingController implements IControllerBase, ICarrierAPI {
 
     public initRoutes() {
         this.router.post(this.path + "/auth/:type", this.authJwt.authenticateJWT, this.auth);
-        this.router.post(this.path + "/find/:type", this.authJwt.authenticateJWT, this.find);
+        this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.products);
+        this.router.post(this.path + "/label/:type/:format", this.authJwt.authenticateJWT, this.label);
     }
 
     public auth: any = async (req: Request, res: Response, next: NextFunction) => {
@@ -44,7 +45,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         }
     };
 
-    public find: any = async (req: Request, res: Response) => {
+    public products: any = async (req: Request, res: Response) => {
 
         const body = req.body;
 
@@ -59,11 +60,11 @@ class ShippingController implements IControllerBase, ICarrierAPI {
 
         try {
             if (this.cf == null) {
-                await this.initCF(req)
+                await this.initCF(req);
             }
             // @ts-ignore
-            const cfFind = await this.cf.find(body);
-            if (cfFind.hasOwnProperty('messages')) {
+            const cfFind = await this.cf.products(body);
+            if (cfFind.hasOwnProperty('messages') || (cfFind.hasOwnProperty('status') && cfFind.status > 203)) {
                 throw new Error(cfFind);
             }
             LRes.resOk(res, cfFind);
@@ -71,6 +72,34 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         } catch (err) {
             LRes.resErr(res, 401, err);
         }
+    };
+
+    public label: any = async (req: Request, res: Response) => {
+        const body = req.body;
+        const _type: string | null = req.params.type || null;
+        const _format: string | null = req.params.format || null;
+
+        if (_type !== null && _format !== null ) {
+
+            try {
+                if (this.cf == null) {
+                    await this.initCF(req);
+                }
+                // @ts-ignore
+                const cfLabel = await this.cf.label(body, _format);
+                if (cfLabel.hasOwnProperty('messages') || (cfLabel.hasOwnProperty('status') && cfLabel.status > 203)) {
+                    throw new Error(cfLabel);
+                }
+                LRes.resOk(res, cfLabel);
+
+            } catch (err) {
+                LRes.resErr(res, 401, err);
+            }
+
+        } else {
+            LRes.resErr(res, 404, "not enough parameters");
+        }
+
     }
 }
 

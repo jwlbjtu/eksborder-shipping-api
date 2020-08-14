@@ -4,7 +4,8 @@ type TResType = Response | any;
 
 interface ICarrierAPI {
    auth(): TResType;
-   find(): TResType;
+   products(): TResType;
+   label(): TResType;
 
 }
 
