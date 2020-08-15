@@ -20,6 +20,7 @@ export interface ICarrier extends Document {
         phone: number
     },
     pickupRef: [],
+    facilityRef: [],
     isActive: boolean
 }
 
@@ -55,6 +56,15 @@ const CarrierSchema: Schema = new Schema({
 
 CarrierSchema.virtual('pickupRef', {
     ref: 'Pickup', // The model to use
+    localField: '_id', // Find people where `localField`
+    foreignField: 'carrierRef', // is equal to `foreignField`
+    // If `justOne` is true, 'members' will be a single doc as opposed to
+    // an array. `justOne` is false by default.
+    justOne: false
+});
+
+CarrierSchema.virtual('facilityRef', {
+    ref: 'Facility', // The model to use
     localField: '_id', // Find people where `localField`
     foreignField: 'carrierRef', // is equal to `foreignField`
     // If `justOne` is true, 'members' will be a single doc as opposed to

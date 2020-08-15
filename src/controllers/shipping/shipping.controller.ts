@@ -6,6 +6,7 @@ import AuthController from "../auth/auth.controller"
 import CarrierFactory from "../../lib/carrier.factory";
 import IControllerBase from "../../interfaces/IControllerBase.interface";
 import ICarrierAPI from "../../lib/carriers/ICarrierAPI.interface";
+import HelperLib from "../../lib/helper.lib";
 
 class ShippingController implements IControllerBase, ICarrierAPI {
     public path = "/shipping";
@@ -13,35 +14,40 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     private authJwt: AuthController = new AuthController();
     private cf: CarrierFactory | null = null;
 
-    private carriersType: Array<string> = ['dhl', 'fedex', 'ups', 'usps'];
+    private carriersType: Array<string> = [];
+    private account: Array<string> = [];
 
     constructor() {
         this.initRoutes();
     }
 
     public initRoutes() {
-        this.router.post(this.path + "/auth/:type", this.authJwt.authenticateJWT, this.auth);
-        this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.products);
-        this.router.post(this.path + "/label/:type/:format", this.authJwt.authenticateJWT, this.label);
+        this.router.post(this.path + "/auth/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.auth);
+        this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.products);
+        this.router.post(this.path + "/label/:type/:format", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
     }
 
     public auth: any = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const cfAuth = await this.initCF(req);
+            const cfAuth = await this.initCF(req, req,);
             LRes.resOk(res, cfAuth);
         } catch (err) {
             LRes.resErr(res, 401, err)
         }
     };
 
-    private initCF: CarrierFactory | any = async (req: Request) => {
+    private initCF: CarrierFactory | any = async (req: Request, res: Response) => {
         const _type: string = req.params.type;
-        if (_type !== undefined && _type.length > 0 && this.carriersType.includes(_type)) {
-            this.cf = new CarrierFactory(_type);
+        this.carriersType = await HelperLib.getCarrierType();
+        this.account = await HelperLib.getCurrentUserAccount(_type, req.user);
+        // @ts-ignore
+        if (_type !== undefined && _type.length > 0 && _type == this.account.accountName && this.carriersType.includes(this.account.carrierRef.accountCode)) {
             // @ts-ignore
-            return  await this.cf.auth();;
+            this.cf = new CarrierFactory(this.account.carrierRef.accountCode, {user: req.user, account: this.account});
+            // @ts-ignore
+            return  await this.cf.auth();
         } else {
-            throw Error("Bead type of carrier");
+            LRes.resErr(res, 401, "Bead type of carrier");
         }
     };
 
@@ -49,18 +55,9 @@ class ShippingController implements IControllerBase, ICarrierAPI {
 
         const body = req.body;
 
-        if (!body.hasOwnProperty("pickup")) {
-            // @ts-ignore
-            body.pickup = req.user.pickupAccount;
-        }
-        if (!body.hasOwnProperty("distributionCenter")) {
-            // @ts-ignore
-            body.distributionCenter = req.user.facilityNumber;
-        }
-
         try {
             if (this.cf == null) {
-                await this.initCF(req);
+                await this.initCF(req, res);
             }
             // @ts-ignore
             const cfFind = await this.cf.products(body);
@@ -83,7 +80,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
 
             try {
                 if (this.cf == null) {
-                    await this.initCF(req);
+                    await this.initCF(req, res);
                 }
                 // @ts-ignore
                 const cfLabel = await this.cf.label(body, _format);

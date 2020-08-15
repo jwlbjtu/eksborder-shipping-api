@@ -34,6 +34,7 @@ class UsersController implements ICRUDControllerBase {
     public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
         const _id: string = req.params.id;
         let result = await User.find({_id: _id})
+            .populate({path: "accountRef"})
             .limit(1)
             .then(async (dataList: IUser[]) => {
                 if (dataList.length == 1) {
@@ -54,6 +55,7 @@ class UsersController implements ICRUDControllerBase {
     public readGet: any = async (req: Request, res: Response) => {
         let result: any = null;
         await User.find()
+            .populate({path: "accountRef"})
             .then(async (dataList: IUser[]) => {
                 if (dataList.length > 0) {
                     result = dataList;

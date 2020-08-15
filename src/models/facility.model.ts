@@ -2,15 +2,15 @@ import mongoose, {Document, Schema, Types} from 'mongoose';
 import {IUser} from "./user.model";
 import ObjectId from "mongodb";
 
-export interface IPickup extends Document {
-    pickupAccount: string,
+export interface IFacility extends Document {
+    facilityNumber: string,
     description: string,
     carrierRef: object,
     isActive: boolean
 }
 
-const PickupSchema: Schema = new Schema({
-    pickupAccount: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
+const FacilitySchema: Schema = new Schema({
+    facilityNumber: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
     description: {type: String, trim: true},
     carrierRef: {
         type: Schema.Types.ObjectId,
@@ -28,15 +28,15 @@ const PickupSchema: Schema = new Schema({
 });
 
 
-PickupSchema.pre<IPickup>("save", function save(next) {
-    const pickup = this;
+FacilitySchema.pre<IFacility>("save", function save(next) {
+    const facility = this;
 
-    if (typeof pickup.carrierRef ==="string") {
+    if (typeof facility.carrierRef ==="string") {
         // @ts-ignore
-        pickup.carrierRef = ObjectId(pickup.carrierRef);
+        facility.carrierRef = ObjectId(facility.carrierRef);
     }
     next();
 });
 
 
-export default mongoose.model<IPickup>('Pickup', PickupSchema);
+export default mongoose.model<IFacility>('Facility', FacilitySchema);

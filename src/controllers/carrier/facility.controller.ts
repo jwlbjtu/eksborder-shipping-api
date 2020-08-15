@@ -1,13 +1,14 @@
 import * as express from "express";
 import {NextFunction, Request, Response} from "express";
-import Carrier, {ICarrier} from "../../models/carrier.model";
+import Facility, {IFacility} from "../../models/facility.model";
 
 import AuthController from "../auth/auth.controller"
 import ICRUDControllerBase from "../../interfaces/ICRUDControllerBase.interface";
 import LRes from "../../lib/lresponse.lib";
 
-class CarrierController implements ICRUDControllerBase {
-    public path = "/carrier";
+
+class FacilityController implements ICRUDControllerBase {
+    public path = "/facility";
     public router = express.Router();
     private authJwt: AuthController = new AuthController();
 
@@ -25,12 +26,10 @@ class CarrierController implements ICRUDControllerBase {
 
     public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
         const _code: string = req.params.code;
-        await Carrier.findOne({accountCode: _code})
-            .populate({path: 'pickupRef'})
-            .populate({path: 'facilityRef'})
-            .populate({path: 'userRef'})
-            .then(async (carrierOne: ICarrier | null) => {
-                LRes.resOk(res,carrierOne);
+        await Facility.findOne({facilityNumber: _code})
+            .populate({path: 'carrierRef'})
+            .then(async (facilityOne: IFacility | null) => {
+                LRes.resOk(res,facilityOne);
             })
             .catch((err: Error) => {
                 LRes.resErr(res, 404, err);
@@ -38,12 +37,10 @@ class CarrierController implements ICRUDControllerBase {
     };
 
     public readGet: any = async (req: Request, res: Response) => {
-        await Carrier.find()
-            .populate({path: 'pickupRef'})
-            .populate({path: 'facilityRef'})
-            .populate({path: 'userRef'})
-            .then(async (carrierLists: ICarrier[]) => {
-                LRes.resOk(res,carrierLists);
+        await Facility.find()
+            .populate({path: 'carrierRef'})
+            .then(async (facilityLists: IFacility[]) => {
+                LRes.resOk(res,facilityLists);
             })
             .catch((err: Error) => {
                 LRes.resErr(res, 404, err);
@@ -51,11 +48,11 @@ class CarrierController implements ICRUDControllerBase {
     };
 
     public createPost: any = async (req: Request, res: Response) => {
-        const carrier: ICarrier = req.body;
+        const facility: IFacility = req.body;
 
-        const createdCarrier: ICarrier= new Carrier(carrier);
-        await createdCarrier.save()
-            .then(async (result:ICarrier) => {
+        const createdFacility: IFacility= new Facility(facility);
+        await createdFacility.save()
+            .then(async (result:IFacility) => {
                 LRes.resOk(res, result.toJSON());
             }).catch((err: Error) => {
                 LRes.resErr(res, 500, err);
@@ -63,40 +60,40 @@ class CarrierController implements ICRUDControllerBase {
     };
 
     public updatePut: any = async (req: Request, res: Response) => {
-        const carrierOne: ICarrier = req.body;
-        if (carrierOne.hasOwnProperty('accountCode') && carrierOne.accountCode.length > 0) {
+        const facilityOne: IFacility = req.body;
+        if (facilityOne.hasOwnProperty('facilityNumber') && facilityOne.facilityNumber.length > 0) {
             const filter: Object = {
-                accountCode: carrierOne.accountCode,
+                facilityNumber: facilityOne.facilityNumber,
             };
 
-            await Carrier.findOneAndUpdate(filter, carrierOne, {new: true})
-                .then(async (result: ICarrier | null) => {
+            await Facility.findOneAndUpdate(filter, facilityOne, {new: true})
+                .then(async (result: IFacility | null) => {
                     LRes.resOk(res, result);
                 }).catch((err: Error) => {
                     LRes.resErr(res, 500, err);
                 });
         } else {
-            LRes.resErr(res, 404, "incorrect accountCode");
+            LRes.resErr(res, 404, "incorrect facilityNumber");
         }
     };
 
     public delDelete: any = async (req: Request, res: Response) => {
-        const carrierOne: ICarrier = req.body;
-        if (carrierOne.hasOwnProperty('accountCode') && carrierOne.accountCode.length > 0) {
+        const facilityOne: IFacility = req.body;
+        if (facilityOne.hasOwnProperty('facilityNumber') && facilityOne.facilityNumber.length > 0) {
             const filter: Object = {
-                accountCode: carrierOne.accountCode,
+                facilityNumber: facilityOne.facilityNumber,
             };
 
-            await Carrier.findOneAndDelete(filter)
-                .then(async (result: ICarrier | null) => {
+            await Facility.findOneAndDelete(filter)
+                .then(async (result: IFacility | null) => {
                     LRes.resOk(res, result);
                 }).catch((err: Error) => {
                     LRes.resErr(res, 500, err);
                 });
         } else {
-            LRes.resErr(res, 404, "incorrect accountCode");
+            LRes.resErr(res, 404, "incorrect facilityNumber");
         }
     };
 }
 
-export default CarrierController;
+export default FacilityController;

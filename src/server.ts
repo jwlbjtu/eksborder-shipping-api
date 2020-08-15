@@ -11,7 +11,8 @@ import UsersController from "./controllers/users/users.controller";
 import ShippingController from "./controllers/shipping/shipping.controller";
 import CarrierController from "./controllers/carrier/carrier.controller";
 import PickupController from "./controllers/carrier/pickup.controller";
-
+import FacilityController from "./controllers/carrier/facility.controller";
+import AccountController from "./controllers/users/account.controller";
 
 let envPort: number = 5000;
 if (process.env.PORT) {
@@ -25,7 +26,9 @@ const app = new App({
         new UsersController(),
         new ShippingController(),
         new CarrierController(),
-        new PickupController()
+        new PickupController(),
+        new FacilityController(),
+        new AccountController()
     ],
     middleWares: [
         bodyParser.json(),

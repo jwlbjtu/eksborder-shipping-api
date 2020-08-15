@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from "jsonwebtoken";
 
+export const UserRoleList: Array<String> = ["admin", "admin_super", "admin_account", "carrier", "customer"];
 
 export interface IUserLogin extends Document {
     email: string;
@@ -9,6 +10,7 @@ export interface IUserLogin extends Document {
 }
 
 export interface IUser extends Document {
+    id: string,
     token: any;
     salt: string;
     email: string;
@@ -16,7 +18,7 @@ export interface IUser extends Document {
     lastName: string;
     userName: string
     password: string;
-    role: string;
+    role: "admin" | "admin_super" | "admin_account" | "carrier" | "customer";
     // pickupAccount: string,
     // facilityNumber: string,
     address?: {
@@ -30,7 +32,8 @@ export interface IUser extends Document {
     phone: string;
     isActive: boolean;
     companyName: string,
-    balance: number
+    balance: number;
+    accountRef: {}
 }
 
 const UserSchema: Schema = new Schema({
@@ -52,7 +55,7 @@ const UserSchema: Schema = new Schema({
         type: String,
         // get: (): undefined => undefined,
     },
-    role: {type: String, default: 'user'},
+    role: {type: String, required: true, enum: UserRoleList, default: 'customer'},
     address: {
         address1: {type: String, required: true, trim: true},
         address2: {type: String, trim: true},
@@ -65,8 +68,6 @@ const UserSchema: Schema = new Schema({
     isActive: {type: Boolean, default: true},
     companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
     balance: {type: Number, min: 0}
-    // pickupAccount: {type: String, required: true},
-    // facilityNumber : {type: String, required: true}
 }, {
     timestamps: true,
     autoIndex: true,
@@ -111,8 +112,6 @@ UserSchema.methods.generateJWT = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        // pickupAccount: this.pickupAccount,
-        // facilityNumber: this.facilityNumber
     }, secret);
 };
 
@@ -122,8 +121,6 @@ UserSchema.methods.toAuthJSON = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        // pickupAccount: this.pickupAccount,
-        // facilityNumber: this.facilityNumber,
         token: this.generateJWT(),
     };
 };
@@ -133,6 +130,23 @@ UserSchema.virtual('fullName').get(function () {
     return `${this.firstName} ${this.lastName}`;
 });
 
+UserSchema.virtual('accountRef', {
+    ref: 'Account', // The model to use
+    localField: '_id', // Find people where `localField`
+    foreignField: 'userRef', // is equal to `foreignField`
+    // If `justOne` is true, 'members' will be a single doc as opposed to
+    // an array. `justOne` is false by default.
+    justOne: false
+});
+
+UserSchema.virtual('shippingRef', {
+    ref: 'Shipping', // The model to use
+    localField: '_id', // Find people where `localField`
+    foreignField: 'userRef', // is equal to `foreignField`
+    // If `justOne` is true, 'members' will be a single doc as opposed to
+    // an array. `justOne` is false by default.
+    justOne: false
+});
 
 // Export the model and return your IUser interface
 export default mongoose.model<IUser>('User', UserSchema);
