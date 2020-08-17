@@ -6,6 +6,7 @@ interface ICarrierAPI {
    auth(): TResType;
    products(): TResType;
    label(): TResType;
+   getLabel(): TResType
 
 }
 

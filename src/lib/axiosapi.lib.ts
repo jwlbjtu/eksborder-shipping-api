@@ -4,7 +4,7 @@ import axios from "axios";
  * class AxiosapiLib
  */
 class AxiosapiLib {
-    private httpBodyMethods = ['post', 'put', 'patch'];
+    private httpBodyMethods = ['get', 'post'];
 
     /**
      *
@@ -14,7 +14,7 @@ class AxiosapiLib {
      * @param headers
      */
     public doCall: any = async (method: string, url: string, data?: Object, headers?: Object) => {
-        let config: Object = await this.buildConfig('post', url, headers);
+        let config: Object = await this.buildConfig(method, url, headers);
 
         if (this.httpBodyMethods.includes(method.toLowerCase()) && typeof data !== 'undefined') {
             // @ts-ignore

@@ -87,13 +87,13 @@ class DhlApi implements ICarrierAPI {
         const headers = await this.getHeaders(false);
 
         return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/products', reformatBody, headers)
-            .then((response: Response | any) => {
-                this.saveLog('products', reformatBody, response);
+            .then(async (response: Response | any) => {
+                await this.saveLog('products', reformatBody, response);
                 return response;
             })
-            .catch((err: Error) => {
+            .catch(async (err: Error) => {
                 console.log(err);
-                this.saveLog('products', reformatBody, err, true);
+                await this.saveLog('products', reformatBody, err, true);
                 return err;
             });
     };
@@ -135,15 +135,68 @@ class DhlApi implements ICarrierAPI {
         });
 
         return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/label?'+paramsStr, reformatBody, headers)
-            .then((response: Response | any) => {
-                this.saveLog('label', reformatBody, response);
+            .then(async (response: Response | any) => {
+                await this.saveLog('label', reformatBody, response);
+                if (response.hasOwnProperty('labels')) {
+                    // @ts-ignore
+                    response.carrier = this._props.account.carrierRef.accountName;
+
+                    delete response.labels[0].packageId;
+                    delete response.labels[0].dhlPackageId;
+                    delete response.labels[0].link;
+                    delete response.labels[0].labelDetail;
+                }
+                if (response.hasOwnProperty('status')) {
+                    let err = {
+                        status: response.status,
+                        messages: response.data.title
+                    };
+                    return err;
+                }
                 return response;
             })
-            .catch((err: Error) => {
+            .catch(async (err: Error) => {
                 console.log(err);
-                this.saveLog('label', reformatBody, err, true);
+                await this.saveLog('label', reformatBody, err, true);
                 return err;
             });
+    };
+
+    public getLabel: any = async (packageId: string, dhlPackageId: string) => {
+        const headers = await this.getHeaders(false);
+
+        const paramsStr: string = qs.stringify({
+            'dhlPackageId': dhlPackageId
+        });
+        const _url :string = this.api_url + '/shipping/v4/label/'+packageId+'?'+paramsStr;
+
+        return await AxiosapiLib.doCall('get', _url, null, headers)
+            .then(async (response: Response | any) => {
+                await this.saveLog('getLabel', {url: _url}, response);
+                if (response.hasOwnProperty('labels')) {
+                    // @ts-ignore
+                    response.carrier = this._props.account.carrierRef.accountName;
+
+                    delete response.labels[0].packageId;
+                    delete response.labels[0].dhlPackageId;
+                    delete response.labels[0].link;
+                    delete response.labels[0].labelDetail;
+                }
+                if (response.hasOwnProperty('status')) {
+                    let err = {
+                        status: response.status,
+                        messages: response.data.title
+                    };
+                    return err;
+                }
+                return response;
+            })
+            .catch(async (err: Error) => {
+                console.log(err);
+                await this.saveLog('label', {url: _url}, err, true);
+                return err;
+            });
+
     };
 
     private getHeaders: any = async (isAuth: boolean = false) => {
@@ -185,7 +238,9 @@ class DhlApi implements ICarrierAPI {
                 // @ts-ignore
                 statusText: res.statusText,
                 // @ts-ignore
-                data: res.data
+                data: res.data,
+                // @ts-ignore
+                messages: res.data.title
             };
             // @ts-ignore
             shippingData.isError = true;

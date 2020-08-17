@@ -25,14 +25,15 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         this.router.post(this.path + "/auth/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.auth);
         this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.products);
         this.router.post(this.path + "/label/:type/:format", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
+        this.router.get(this.path + "/label/:type/:packageId/:dhlPackageId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
     }
 
     public auth: any = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const cfAuth = await this.initCF(req, req,);
-            LRes.resOk(res, cfAuth);
+            return LRes.resOk(res, cfAuth);
         } catch (err) {
-            LRes.resErr(res, 401, err)
+            return LRes.resErr(res, 401, err)
         }
     };
 
@@ -41,13 +42,13 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         this.carriersType = await HelperLib.getCarrierType();
         this.account = await HelperLib.getCurrentUserAccount(_type, req.user);
         // @ts-ignore
-        if (_type !== undefined && _type.length > 0 && _type == this.account.accountName && this.carriersType.includes(this.account.carrierRef.accountCode)) {
+        if (_type !== undefined && _type.length > 0 && this.account !== null && _type == this.account.accountName && this.carriersType.includes(this.account.carrierRef.accountCode)) {
             // @ts-ignore
             this.cf = new CarrierFactory(this.account.carrierRef.accountCode, {user: req.user, account: this.account});
             // @ts-ignore
             return  await this.cf.auth();
         } else {
-            LRes.resErr(res, 401, "Bead type of carrier");
+            return LRes.resErr(res, 401, "Bead type of carrier");
         }
     };
 
@@ -62,12 +63,12 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             // @ts-ignore
             const cfFind = await this.cf.products(body);
             if (cfFind.hasOwnProperty('messages') || (cfFind.hasOwnProperty('status') && cfFind.status > 203)) {
-                throw new Error(cfFind);
+                return LRes.resErr(res, cfFind.status, cfFind.messages);
             }
-            LRes.resOk(res, cfFind);
+            return LRes.resOk(res, cfFind);
 
         } catch (err) {
-            LRes.resErr(res, 401, err);
+            return LRes.resErr(res, 401, err);
         }
     };
 
@@ -85,16 +86,43 @@ class ShippingController implements IControllerBase, ICarrierAPI {
                 // @ts-ignore
                 const cfLabel = await this.cf.label(body, _format);
                 if (cfLabel.hasOwnProperty('messages') || (cfLabel.hasOwnProperty('status') && cfLabel.status > 203)) {
-                    throw new Error(cfLabel);
+                    return LRes.resErr(res, cfLabel.status, cfLabel.messages);
                 }
-                LRes.resOk(res, cfLabel);
+                return LRes.resOk(res, cfLabel);
 
             } catch (err) {
-                LRes.resErr(res, 401, err);
+                return LRes.resErr(res, 401, err);
             }
 
         } else {
-            LRes.resErr(res, 404, "not enough parameters");
+            return LRes.resErr(res, 404, "not enough parameters");
+        }
+
+    }
+
+    public getLabel: any = async (req: Request, res: Response) => {
+        const _packageId: string | null = req.params.packageId || null;
+        const _dhlPackageId: string | null = req.params.dhlPackageId || null;
+
+        if (_packageId !== null && _dhlPackageId !== null ) {
+
+            try {
+                if (this.cf == null) {
+                    await this.initCF(req, res);
+                }
+                // @ts-ignore
+                const cfLabel = await this.cf.getLabel(_packageId, _dhlPackageId);
+                if (cfLabel.hasOwnProperty('messages') || (cfLabel.hasOwnProperty('status') && cfLabel.status > 203)) {
+                    return LRes.resErr(res, cfLabel.status, cfLabel.messages);
+                }
+                return LRes.resOk(res, cfLabel);
+
+            } catch (err) {
+                return LRes.resErr(res, 401, err);
+            }
+
+        } else {
+            return LRes.resErr(res, 404, "not enough parameters");
         }
 
     }
