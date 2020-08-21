@@ -193,11 +193,82 @@ class DhlApi implements ICarrierAPI {
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('label', {url: _url}, err, true);
+                await this.saveLog('getLabel', {url: _url}, err, true);
                 return err;
             });
 
     };
+
+    public manifest: any = async (data: object = {}) => {
+        const reformatBody: object = data;
+
+        // @ts-ignore
+        reformatBody.pickup = this._props.account.pickupRef.pickupAccount;
+
+        if(!data.hasOwnProperty('manifests')) {
+            // @ts-ignore
+            reformatBody.manifests = [];
+        }
+
+        const headers = await this.getHeaders(false);
+
+        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/manifest', reformatBody, headers)
+            .then(async (response: Response | any) => {
+                await this.saveLog('manifest', reformatBody, response);
+                if (response.hasOwnProperty('requestId')) {
+                    // @ts-ignore
+                    response.carrier = this._props.account.carrierRef.accountName;
+
+                    delete response.link;
+                }
+                if (response.hasOwnProperty('title') || response.hasOwnProperty('status') ) {
+                    let r_split = response.type.split('.');
+                    let r_code = r_split[r_split.length -2];
+                    let err = {
+                        status: r_code,
+                        messages: response.data.title
+                    };
+                    return err;
+                }
+                return response;
+            })
+            .catch(async (err: Error) => {
+                console.log(err);
+                await this.saveLog('manifest', reformatBody, err, true);
+                return err;
+            });
+    };
+
+    public getManifest: any = async (requestId: string) => {
+        const headers = await this.getHeaders(false);
+
+        const _url :string = this.api_url + '/shipping/v4/manifest/'+requestId;
+
+        return await AxiosapiLib.doCall('get', _url, null, headers)
+            .then(async (response: Response | any) => {
+                await this.saveLog('getManifest', {url: _url}, response);
+                if (response.hasOwnProperty('manifests')) {
+                    // @ts-ignore
+                    response.carrier = this._props.account.carrierRef.accountName;
+
+                }
+                if (response.hasOwnProperty('status')) {
+                    let err = {
+                        status: response.status,
+                        messages: response.data.title
+                    };
+                    return err;
+                }
+                return response;
+            })
+            .catch(async (err: Error) => {
+                console.log(err);
+                await this.saveLog('getManifest', {url: _url}, err, true);
+                return err;
+            });
+
+    };
+
 
     private getHeaders: any = async (isAuth: boolean = false) => {
         let headers = {};

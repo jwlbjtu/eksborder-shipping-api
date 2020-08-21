@@ -26,6 +26,8 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.products);
         this.router.post(this.path + "/label/:type/:format", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
         this.router.get(this.path + "/label/:type/:packageId/:dhlPackageId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
+        this.router.post(this.path + "/manifest/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.manifest);
+        this.router.get(this.path + "/manifest/:type/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
     }
 
     public auth: any = async (req: Request, res: Response, next: NextFunction) => {
@@ -98,7 +100,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             return LRes.resErr(res, 404, "not enough parameters");
         }
 
-    }
+    };
 
     public getLabel: any = async (req: Request, res: Response) => {
         const _packageId: string | null = req.params.packageId || null;
@@ -125,7 +127,58 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             return LRes.resErr(res, 404, "not enough parameters");
         }
 
-    }
+    };
+
+    public manifest: any = async (req: Request, res: Response) => {
+        const body = req.body;
+        const _type: string | null = req.params.type || null;
+
+        if (_type !== null) {
+
+            try {
+                if (this.cf == null) {
+                    await this.initCF(req, res);
+                }
+                // @ts-ignore
+                const cfManifest = await this.cf.manifest(body);
+                if (cfManifest.hasOwnProperty('messages') || (cfManifest.hasOwnProperty('status') && cfManifest.status > 203)) {
+                    return LRes.resErr(res, cfManifest.status, cfManifest.messages);
+                }
+                return LRes.resOk(res, cfManifest);
+
+            } catch (err) {
+                return LRes.resErr(res, 401, err);
+            }
+        } else {
+            return LRes.resErr(res, 404, "not enough parameters");
+        }
+    };
+
+    public getManifest: any = async (req: Request, res: Response) => {
+        const _requestId: string | null = req.params.requestId || null;
+
+        if (_requestId !== null ) {
+
+            try {
+                if (this.cf == null) {
+                    await this.initCF(req, res);
+                }
+                // @ts-ignore
+                const cfManifest = await this.cf.getManifest(_requestId);
+                if (cfManifest.hasOwnProperty('messages') || (cfManifest.hasOwnProperty('status') && cfManifest.status > 203)) {
+                    return LRes.resErr(res, cfManifest.status, cfManifest.messages);
+                }
+                return LRes.resOk(res, cfManifest);
+
+            } catch (err) {
+                return LRes.resErr(res, 401, err);
+            }
+
+        } else {
+            return LRes.resErr(res, 404, "not enough parameters");
+        }
+
+    };
 }
 
 export default ShippingController;
