@@ -4,7 +4,6 @@ import * as bodyParser from 'body-parser';
 import cors from "cors";
 import loggerMiddleware from './middleware/logger';
 
-import HomeController from './controllers/home/home.controller';
 import './lib/env';
 import errorHandler from './middleware/errorHandler';
 import UsersController from "./controllers/users/users.controller";
@@ -22,7 +21,6 @@ if (process.env.PORT) {
 const app = new App({
     port: envPort,
     controllers: [
-        new HomeController(),
         new UsersController(),
         new ShippingController(),
         new CarrierController(),

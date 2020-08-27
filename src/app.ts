@@ -60,7 +60,7 @@ class App {
         })
     }
 
-    private connect() {
+    private async connect() {
         // Connect to the database
         let options: {
             useFindAndModify: boolean;
@@ -78,27 +78,15 @@ class App {
         if (process.env.NODE_ENV == 'development') {
             options.autoIndex = false;
             mongoose.set('debug', process.env.NODE_ENV === 'development');
-            // @ts-ignore
-            // mongoose.set("debug", (collectionName, method, query, doc) => {
-            //     console.log(`${collectionName}.${method}`, JSON.stringify(query), doc);
-            // });
         }
 
-
-        mongoose.connect(
+        try {
             // @ts-ignore
-            process.env.DB_CONNECTION,
-            options)
-            .then(() => {
-                console.log('***** Successfully Connected to Database *****');
-            })
-            .catch(err => {
-                console.log(
-                    `!!!!! ERROR !!!!! ***** Could not connect to database! ***** !!!!! ERROR !!!!!\n\t${err.stack}`
-                );
-
-                process.exit(1);
-            });
+            await mongoose.connect(process.env.DB_CONNECTION, {useNewUrlParser: true});
+        } catch (error) {
+            console.log(`!!!!! ERROR !!!!! ***** Could not connect to database! ***** !!!!! ERROR !!!!!\n\t${error.stack}`
+            );
+        }
 
     }
 }

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from "jsonwebtoken";
 
-export const UserRoleList: Array<String> = ["admin", "admin_super", "admin_account", "carrier", "customer"];
+export const UserRoleList: Array<String> = ["admin_super", "admin", "customer"];
 
 export interface IUserLogin extends Document {
     email: string;
@@ -18,7 +18,7 @@ export interface IUser extends Document {
     lastName: string;
     userName: string
     password: string;
-    role: "admin" | "admin_super" | "admin_account" | "carrier" | "customer";
+    role: "admin_super" | "admin" |  "customer";
     // pickupAccount: string,
     // facilityNumber: string,
     address?: {

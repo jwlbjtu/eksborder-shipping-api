@@ -3,6 +3,7 @@ import mongoose, {Document, Schema} from 'mongoose';
 export interface ICarrier extends Document {
     accountCode: string,
     accountName: string,
+    api_url: string,
     clientId: string,
     clientSecret: string,
     picture?: string,
@@ -27,6 +28,7 @@ export interface ICarrier extends Document {
 const CarrierSchema: Schema = new Schema({
     accountCode: {type: String, required: true, unique: true, minlength:2, maxlength:10, trim: true},
     accountName: {type: String, required: true, minlength:3, maxlength:250, trim: true},
+    api_url: {type: String, required: true, trim: true, minlength: 10},
     clientId: {type: String, required: true, minlength:3, trim: true},
     clientSecret: {type: String, required: true, minlength:3, trim: true},
     picture: {type: String, trim: true},

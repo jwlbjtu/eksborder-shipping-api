@@ -23,12 +23,12 @@ class UsersController implements ICRUDControllerBase {
 
     public initRoutes() {
         this.router.get(this.path + "/logout", this.logout);
-        this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.readOneGet);
-        this.router.get(this.path, this.authJwt.authenticateJWT, this.readGet);
-        this.router.post(this.path, this.authJwt.authenticateJWT, this.createPost);
+        this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readOneGet);
+        this.router.get(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readGet);
+        this.router.post(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
         this.router.post(this.path+"/login", this.login);
-        this.router.put(this.path, this.authJwt.authenticateJWT, this.updatePut);
-        this.router.delete(this.path + '/:id', this.authJwt.authenticateJWT, this.delDelete);
+        this.router.put(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.updatePut);
+        this.router.delete(this.path + '/:id', this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.delDelete);
     }
 
     public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {

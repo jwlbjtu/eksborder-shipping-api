@@ -1,7 +1,6 @@
 import ICarrierAPI from "../ICarrierAPI.interface";
 import AxiosapiLib from "../../axiosapi.lib";
 import qs from "qs";
-import conf from "./config";
 import Shipping, {IShipping} from "../../../models/shipping.model";
 import {IAccount} from "../../../models/account.model";
 import LRes from "../../lresponse.lib";
@@ -13,10 +12,10 @@ import LRes from "../../lresponse.lib";
 class DhlApi implements ICarrierAPI {
     private _props: object = {};
     private _credential: object | any = {
-        client_id: conf.client_id,
-        client_secret: conf.client_secret
+        client_id: '',
+        client_secret: ''
     };
-    private api_url: string = 'https://api-sandbox.dhlecs.com';
+    private api_url: string = '';
     private accesstoken: string = '';
 
     /**
@@ -25,6 +24,12 @@ class DhlApi implements ICarrierAPI {
     constructor(props?: object) {
         if (typeof props !== 'undefined' && typeof props == 'object') {
             this._props = props;
+            // @ts-ignore
+            this.api_url = this._props.account.carrierRef.api_url;
+            // @ts-ignore
+            this._credential.client_id = this._props.account.carrierRef.clientId;
+            // @ts-ignore
+            this._credential.client_secret = this._props.account.carrierRef.clientSecret;
         }
     }
 

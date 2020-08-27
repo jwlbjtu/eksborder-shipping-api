@@ -16,11 +16,11 @@ class CarrierController implements ICRUDControllerBase {
     }
 
     public initRoutes() {
-        this.router.get(this.path + "", this.authJwt.authenticateJWT, this.authJwt.checkRole("carrier"), this.readGet);
-        this.router.get(this.path + "/:code", this.authJwt.authenticateJWT, this.authJwt.checkRole("carrier"), this.readOneGet);
-        this.router.post(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("carrier"), this.createPost);
-        this.router.put(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("carrier"), this.updatePut);
-        this.router.delete(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("carrier"), this.delDelete);
+        this.router.get(this.path + "", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readGet);
+        this.router.get(this.path + "/:code", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readOneGet);
+        this.router.post(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
+        this.router.put(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.updatePut);
+        this.router.delete(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.delDelete);
     };
 
     public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
@@ -28,7 +28,6 @@ class CarrierController implements ICRUDControllerBase {
         await Carrier.findOne({accountCode: _code})
             .populate({path: 'pickupRef'})
             .populate({path: 'facilityRef'})
-            .populate({path: 'userRef'})
             .then(async (carrierOne: ICarrier | null) => {
                 LRes.resOk(res,carrierOne);
             })
