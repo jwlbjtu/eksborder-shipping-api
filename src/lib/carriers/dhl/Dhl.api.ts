@@ -2,9 +2,9 @@ import ICarrierAPI from "../ICarrierAPI.interface";
 import AxiosapiLib from "../../axiosapi.lib";
 import qs from "qs";
 import Shipping, {IShipping} from "../../../models/shipping.model";
-import {IAccount} from "../../../models/account.model";
 import LRes from "../../lresponse.lib";
 import Manifest, {IManifest} from "../../../models/manifest.model";
+import { IManifestRequest } from "../../../types/shipping.types";
 
 
 // let cf = new CarrierFactory('dhl');
@@ -25,8 +25,15 @@ class DhlApi implements ICarrierAPI {
     constructor(props?: object) {
         if (typeof props !== 'undefined' && typeof props == 'object') {
             this._props = props;
-            // @ts-ignore
-            this.api_url = this._props.account.carrierRef.api_url;
+            
+            if(process.env.NODE_ENV === "production") {
+                // @ts-ignore
+                this.api_url = process.env.DHL_ECOMMERCE_PROD;
+            } else {
+                // @ts-ignore
+                this.api_url = process.env.DHL_ECOMMERCE_TEST;
+            }
+            
             // @ts-ignore
             this._credential.client_id = this._props.account.carrierRef.clientId;
             // @ts-ignore
@@ -104,6 +111,11 @@ class DhlApi implements ICarrierAPI {
             });
     };
 
+    /**
+     * Create DHL eCommerce Shipping Label
+     * @param data 
+     * @param format 
+     */
     public label: any = async (data: object = {}, format: 'ZPL' | 'PNG' = 'PNG') => {
         // "returnAddress": {
         //         "name": "Dave Bloggs",
@@ -121,18 +133,24 @@ class DhlApi implements ICarrierAPI {
         // "billingReference1": "test bill ref 1",  - comp name - from used data
         // "packageId": "{{packageId}}", - auto gen uniq
 
-        const reformatBody: object = data;
+        const labelReqBody: object = {};
 
         // @ts-ignore
-        reformatBody.pickup = this._props.account.pickupRef.pickupAccount;
+        labelReqBody.pickup = this._props.account.pickupRef.pickupAccount;
         // @ts-ignore
-        reformatBody.distributionCenter = this._props.account.facilityRef.facilityNumber;
+        labelReqBody.distributionCenter = this._props.account.facilityRef.facilityNumber;
         // @ts-ignore
-        reformatBody.returnAddress = this._props.account.carrierRef.returnAddress;
+        labelReqBody.orderedProductId = data.service;
         // @ts-ignore
-        reformatBody.packageDetail.billingReference1 = this._props.account.userRef.companyName;
+        labelReqBody.consigneeAddress = this.convertToDHLAddress(data.toAddress);
         // @ts-ignore
-        reformatBody.packageDetail.packageId = "EK-"+Date.now();
+        labelReqBody.returnAddress = this.convertToDHLAddress(this._props.account.carrierRef.returnAddress);
+        // @ts-ignore
+        labelReqBody.packageDetail = data.packageDetail;
+        // @ts-ignore
+        labelReqBody.packageDetail.billingReference1 = this._props.account.userRef.companyName;
+        // @ts-ignore
+        labelReqBody.packageDetail.packageId = "EK-"+Date.now();
 
         const headers = await this.getHeaders(false);
 
@@ -140,30 +158,39 @@ class DhlApi implements ICarrierAPI {
             'format': format
         });
 
-        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/label?'+paramsStr, reformatBody, headers)
+        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/label?'+paramsStr, labelReqBody, headers)
             .then(async (response: Response | any) => {
-                await this.saveLog('label', reformatBody, response);
-                if (response.hasOwnProperty('labels')) {
-                    // @ts-ignore
-                    response.carrier = this._props.account.carrierRef.accountName;
+                await this.saveLog('label', labelReqBody, response); // TODO: change to log schema
+                if (response.hasOwnProperty('status') && response.status > 203) {
+                    return LRes.invalidParamsErr(
+                        response.status, 
+                        response.data.title, 
+                        // @ts-ignore
+                        this._props.account.carrierRef.accountCode,
+                        response.data.invalidParams
+                    );
+                }
 
-                    delete response.labels[0].packageId;
-                    delete response.labels[0].dhlPackageId;
-                    delete response.labels[0].link;
-                    delete response.labels[0].labelDetail;
-                }
-                if (response.hasOwnProperty('status')) {
-                    let err = {
-                        status: response.status,
-                        messages: response.data.title
-                    };
-                    return err;
-                }
+                // @ts-ignore
+                response.carrier = this._props.account.carrierRef.accountCode;
+                response.service = response.orderedProductId;
+                response.labels[0].trackingId = response.labels[0].dhlPackageId;
+                // @ts-ignore
+                response.pickup = this._props.account.pickupRef.description;
+                // @ts-ignore
+                response.distributionCenter = this._props.account.facilityRef.description;
+
+                delete response.orderedProductId;
+                delete response.labels[0].packageId;
+                delete response.labels[0].dhlPackageId;
+                delete response.labels[0].link;
+                delete response.labels[0].labelDetail;
+                
                 return response;
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('label', reformatBody, err, true);
+                await this.saveLog('label', labelReqBody, err, true);
                 return err;
             });
     };
@@ -181,14 +208,14 @@ class DhlApi implements ICarrierAPI {
                 await this.saveLog('getLabel', {url: _url}, response);
                 if (response.hasOwnProperty('labels')) {
                     // @ts-ignore
-                    response.carrier = this._props.account.carrierRef.accountName;
+                    response.carrier = this._props.account.carrierRef.accountCode;
 
                     delete response.labels[0].packageId;
                     delete response.labels[0].dhlPackageId;
                     delete response.labels[0].link;
                     delete response.labels[0].labelDetail;
                 }
-                if (response.hasOwnProperty('status')) {
+                if (response.hasOwnProperty('status') && response.status > 203) {
                     let err = {
                         status: response.status,
                         messages: response.data.title
@@ -205,76 +232,99 @@ class DhlApi implements ICarrierAPI {
 
     };
 
-    public manifest: any = async (data: object = {}) => {
-        const reformatBody: object = data;
+    /**
+     * Create DHL eCommerce Manifest
+     * @param data 
+     */
+    public manifest: any = async (data: IManifestRequest) => {
+        const manifestBody: object = {};
 
         // @ts-ignore
-        reformatBody.pickup = this._props.account.pickupRef.pickupAccount;
-
-        if(!data.hasOwnProperty('manifests')) {
-            // @ts-ignore
-            reformatBody.manifests = [];
-        }
+        manifestBody.pickup = this._props.account.pickupRef.pickupAccount;
+        // @ts-ignore
+        manifestBody.manifests = [
+            {
+                dhlPackageIds: data.manifests[0].trackingIds
+            }
+        ];
 
         const headers = await this.getHeaders(false);
 
-        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/manifest', reformatBody, headers)
+        return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/manifest', manifestBody, headers)
             .then(async (response: Response | any) => {
-                await this.saveLog('manifest', reformatBody, response, false, true);
-                if (response.hasOwnProperty('requestId')) {
-                    // @ts-ignore
-                    response.carrier = this._props.account.carrierRef.accountName;
-
-                    delete response.link;
-                }
+                await this.saveLog('manifest', manifestBody, response, false, true);
                 if (response.hasOwnProperty('title') || response.hasOwnProperty('status') ) {
-                    let r_split = response.type.split('.');
-                    let r_code = r_split[r_split.length -2];
-                    let err = {
-                        status: r_code,
-                        messages: response.data.title
-                    };
-                    return err;
+                    return LRes.invalidParamsErr(
+                        response.status, 
+                        response.data.title, 
+                        // @ts-ignore
+                        this._props.account.carrierRef.accountCode,
+                        response.data.invalidParams
+                    );
                 }
+
+                // @ts-ignore
+                response.carrier = this._props.account.carrierRef.accountCode;
+
+                delete response.link;
+                
                 return response;
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('manifest', reformatBody, err, true, true);
+                await this.saveLog('manifest', manifestBody, err, true, true);
                 return err;
             });
     };
 
+    /**
+     * Get Manifest from DHl
+     * @param requestId 
+     */
     public getManifest: any = async (requestId: string) => {
-        const headers = await this.getHeaders(false);
+        // @ts-ignore
+        const pickup = this._props.account.pickupRef.pickupAccount;        
 
-        const _url :string = this.api_url + '/shipping/v4/manifest/'+requestId;
+        const _url :string = this.api_url + '/shipping/v4/manifest/' + `${pickup}/${requestId}`;
+
+        const headers = await this.getHeaders(false);
 
         return await AxiosapiLib.doCall('get', _url, null, headers)
             .then(async (response: Response | any) => {
                 await this.saveLog('getManifest', {url: _url}, response, false, true);
-                if (response.hasOwnProperty('manifests')) {
-                    // @ts-ignore
-                    response.carrier = this._props.account.carrierRef.accountName;
+                if (response.hasOwnProperty('status') && typeof response.status != "string") {
+                    return LRes.invalidParamsErr(
+                        response.status, 
+                        response.data.title, 
+                        // @ts-ignore
+                        this._props.account.carrierRef.accountCode,
+                        response.data.invalidParams
+                    );
+                }
 
+                // @ts-ignore
+                response.carrier = this._props.account.carrierRef.accountCode;
+                
+                delete response.link;
+                delete response.pickup;
+
+                if (response.manifests) {
+                    response.manifests.forEach((item: any) => {
+                        delete item.distributionCenter;
+                        delete item.isInternational;
+                    })
                 }
-                if (response.hasOwnProperty('status')) {
-                    let err = {
-                        status: response.status,
-                        messages: response.data.title
-                    };
-                    return err;
-                }
+
                 return response;
             })
             .catch(async (err: Error) => {
+                console.log("GEt ing get manifest err handler ");
                 console.log(err);
                 await this.saveLog('getManifest', {url: _url}, err, true, true);
                 return err;
             });
 
     };
-
 
     private getHeaders: any = async (isAuth: boolean = false) => {
         let headers = {};
@@ -295,7 +345,7 @@ class DhlApi implements ICarrierAPI {
         return headers;
     };
 
-    private saveLog: any = async (call: string, req: object, res: object,isErr: boolean = false, isManifest: boolean = false) => {
+    private saveLog: any = async (call: string, req: object, res: object, isErr: boolean = false, isManifest: boolean = false) => {
         const shippingData: object = {
             request: req,
             response: res,
@@ -307,7 +357,8 @@ class DhlApi implements ICarrierAPI {
             userRef: this._props.account.userRef.id
         };
 
-        if (isErr == true || res.hasOwnProperty('status')) {
+        // @ts-ignore
+        if (isErr == true || (res.hasOwnProperty('status') && typeof res.status != "string")) {
             // @ts-ignore
             shippingData.response = {
                 // @ts-ignore
@@ -335,6 +386,21 @@ class DhlApi implements ICarrierAPI {
             }).catch((err: Error) => {
                 return err;
             });
+    }
+
+    private convertToDHLAddress(address: any) {
+        return {
+            name: address.name,
+            companyName: address.companyName,
+            address1: address.street1,
+            address2: address.street2,
+            city: address.city,
+            state: address.state,
+            country: address.country,
+            postalCode: address.postalCode,
+            email: address.email,
+            phone: address.phone
+        }
     }
 }
 

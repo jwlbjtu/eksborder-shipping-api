@@ -1,0 +1,43 @@
+<html>
+    <body style="font-family: sans-serif; width: 800px; height: 1000px;">
+        <div class="container" style="margin: 20px; padding: 0px 20px 50px 20px;">
+            <div class="header" style="height: 150px;">
+                <img src="{{ logoSource }}" alt="EKS Border" style="width: 250; height: 150px;"/>
+            </div>
+            <div class="service" style="height: 80px; padding-left: 50px; font-size: 20;">
+                <div>
+                    <p style="margin: 0;"><strong>Service: </strong> {{ service }} </p>
+                </div>
+                <div>
+                    <p style="margin: 0; display: inline-block; width: 45%;">
+                        <strong>Packages: </strong>{{ number }}
+                    </p>
+                    <p style="margin: 15 0 0 0; display: inline-block; width: 45%;text-align: right;">
+                        <strong>Weight: </strong>{{ weight }}
+                    </p>
+                </div>
+            </div>
+            <hr style="width: 100%; border: none; background-color: black; height: 5px;">
+            <div class="address" style="height: 40%; padding-left: 50px; margin-top: 40px;">
+                <div class="from" style="text-align: left; font-size: 20;">
+                    <p style="margin: 5 0 0 0;">{{ fromAddress.name }}</p>
+                    <p style="margin: 5 0 0 0;">{{ fromAddress.companyName }}</p>
+                    <p style="margin: 5 0 0 0;">{{ fromAddress.street1 }}</p>
+                    <p style="margin: 5 0 0 0;">{{ fromAddress.street2 }}</p>
+                    <p style="margin: 5 0 0 0;">{{ fromAddress.city }} {{ fromAddress.state }} {{ fromAddress.postalCode }}</p>
+                </div>
+                <div class="to" style="text-align: left; font-size: 30;margin: 40px 0 0 150px">
+                    <p style="margin: 5 0 0 0;">{{ toAddress.name }}</p>
+                    <p style="margin: 5 0 0 0;">{{ toAddress.companyName }}</p>
+                    <p style="margin: 5 0 0 0;">{{ toAddress.street1 }}</p>
+                    <p style="margin: 5 0 0 0;">{{ toAddress.street2 }}</p>
+                    <p style="margin: 5 0 0 0;">{{ toAddress.city }} {{ toAddress.state }} {{ toAddress.postalCode }}</p>
+                </div>
+            </div>
+            <hr style="width: 100%; border: none; background-color: black; height: 5px;">
+            <div class="barcode" style="text-align: center; height: 150px; margin-top: 20px;">
+                <img src="{{ barcodeSource }}" alt="barcode">
+            </div>
+        </div>
+    </body>
+</html>

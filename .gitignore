@@ -3,6 +3,7 @@
 *.map
 !_*.map
 
+dist
 node_modules
 
 package-lock.json

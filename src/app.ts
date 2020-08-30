@@ -68,6 +68,7 @@ class App {
             useNewUrlParser: boolean,
             useUnifiedTopology: boolean,
             autoIndex?: boolean };
+
         options = {
             useNewUrlParser: true,
             useFindAndModify: false,
@@ -82,7 +83,8 @@ class App {
 
         try {
             // @ts-ignore
-            await mongoose.connect(process.env.DB_CONNECTION, {useNewUrlParser: true});
+            await mongoose.connect(process.env.DB_CONNECTION, options);
+            console.log("Connect to Database!");
         } catch (error) {
             console.log(`!!!!! ERROR !!!!! ***** Could not connect to database! ***** !!!!! ERROR !!!!!\n\t${error.stack}`
             );

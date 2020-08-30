@@ -8,6 +8,7 @@ export interface IBilling extends Document {
     billingType: "proportions" | "amount";
     fee: number;
     total: number;
+    currency: string;
 }
 
 
@@ -33,6 +34,7 @@ const BillingSchema: Schema = new Schema({
     billingType: {type: String, required: true, enum: ["proportions", "amount"], default: "amount"},
     fee: {type: Number, required: true, min: 0},
     total: {type: Number, required: true, min: 0},
+    currency: {type: String, required: true}
 });
 
 

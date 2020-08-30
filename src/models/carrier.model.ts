@@ -1,18 +1,16 @@
 import mongoose, {Document, Schema} from 'mongoose';
 
 export interface ICarrier extends Document {
-    accountCode: string,
+    accountCode: string, // TODO: change to carrierName
     accountName: string,
-    api_url: string,
     clientId: string,
     clientSecret: string,
-    picture?: string,
     isTest: boolean,
     returnAddress: {
         name?: string,
         companyName: string,
-        address1: string,
-        address2?: string,
+        street1: string,
+        street2?: string,
         city: string,
         state: string,
         country: string,
@@ -26,18 +24,16 @@ export interface ICarrier extends Document {
 }
 
 const CarrierSchema: Schema = new Schema({
-    accountCode: {type: String, required: true, unique: true, minlength:2, maxlength:10, trim: true},
+    accountCode: {type: String, required: true, unique: true, minlength:2, trim: true},
     accountName: {type: String, required: true, minlength:3, maxlength:250, trim: true},
-    api_url: {type: String, required: true, trim: true, minlength: 10},
     clientId: {type: String, required: true, minlength:3, trim: true},
     clientSecret: {type: String, required: true, minlength:3, trim: true},
-    picture: {type: String, trim: true},
     isTest: {type: Boolean, default: false},
     returnAddress: {
         name: {type: String, trim: true},
         companyName: {type: String, required: true, trim: true},
-        address1: {type: String, required: true, trim: true},
-        address2: {type: String, trim: true},
+        street1: {type: String, required: true, trim: true},
+        street2: {type: String, trim: true},
         city: {type: String, required: true, minlength:3, maxlength:120, trim: true},
         state: {type: String, required: true, minlength:2, maxlength:3, trim: true},
         country: {type: String, required: true, minlength:2, maxlength:3, default: "US", trim: true},

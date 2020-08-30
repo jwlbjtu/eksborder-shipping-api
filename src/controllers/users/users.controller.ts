@@ -146,7 +146,8 @@ class UsersController implements ICRUDControllerBase {
             // @ts-ignore
             req.user._id,
             {isLogin: false},
-            {runValidators: true, new: true});
+            {runValidators: true, new: true}
+        );
 
         req.logout();
         delete req.user;

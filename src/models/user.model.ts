@@ -71,7 +71,7 @@ const UserSchema: Schema = new Schema({
     isActive: {type: Boolean, default: true},
     isLogin: {type: Boolean, default: false},
     companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
-    balance: {type: Number, min: 0}
+    balance: {type: Number, min: 0, default: 0}
 }, {
     timestamps: true,
     autoIndex: true,
