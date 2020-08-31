@@ -22,7 +22,7 @@ class UsersController implements ICRUDControllerBase {
     }
 
     public initRoutes() {
-        this.router.get(this.path + "/logout", this.logout);
+        this.router.get(this.path + "/logout", this.authJwt.authenticateJWT, this.logout);
         this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readOneGet);
         this.router.get(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readGet);
         this.router.post(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
@@ -117,15 +117,20 @@ class UsersController implements ICRUDControllerBase {
     public login: any = async (req: Request, res: Response, next: NextFunction) => {
         try {
             if(req.body.user.hasOwnProperty('password')) {
-                await passport.authenticate('local', {session: true}, (err: Error, user: IUserLogin, info: any) => {
+                await passport.authenticate('local', {session: true}, async (err: Error, user: IUserLogin, info: any) => {
                     if (err) {
                         LRes.resErr(res, 404, err);
                     }
-                    if (!user) {
+                    if (!user || user.isActive == false) {
                         LRes.resErr(res, 401, {code: "unauthorized"});
                     } else {
                         // @ts-ignore
                         const authJson = user.toAuthJSON();
+                        user.isLogin = true;
+                        await User.findByIdAndUpdate(
+                            {_id: user._id},
+                            {isLogin: true},
+                            {runValidators: true, new: true});
                         LRes.resOk(res, authJson);
                     }
                 })(req, res, next);
@@ -136,10 +141,18 @@ class UsersController implements ICRUDControllerBase {
     };
 
     public logout: any  = async (req: Request, res: Response) => {
+        // @ts-ignore
+        await User.findByIdAndUpdate(
+            // @ts-ignore
+            req.user._id,
+            {isLogin: false},
+            {runValidators: true, new: true});
+
         req.logout();
         delete req.user;
         // @ts-ignore
         delete req.session;
+
         LRes.resOk(res,'Logout')
     };
 }

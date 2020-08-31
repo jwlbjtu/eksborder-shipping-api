@@ -12,7 +12,7 @@ class AuthController {
                 console.log(err);
                 return res.status(401).json({status: "error", code: "unauthorized"});
             }
-            if (!user) {
+            if (!user || user.isActive == false || user.isLogin == false) {
                 return res.status(401).json({status: "error", code: "unauthorized"});
             } else {
                 req.user = user;

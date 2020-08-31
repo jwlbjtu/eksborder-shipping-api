@@ -21,7 +21,7 @@ passport.use(new LocalStrategy({
     usernameField: "user[email]",
     passwordField: 'user[password]'
 }, (email, password, done) => {
-    User.findOne({email: email.toLowerCase()}, (err: any, user: any) => {
+    User.findOne({email: email.toLowerCase(), isActive: true}, (err: any, user: any) => {
         if (err) {
             return done(err);
         }
@@ -45,7 +45,7 @@ passport.use(new JwtStrategy(
         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         secretOrKey: process.env.JWT_SECRET
     }, function (jwtToken, done) {
-        User.findOne({email: jwtToken.email}, function (err, user) {
+        User.findOne({email: jwtToken.email, isActive: true}, function (err, user) {
             if (err) {
                 return done(err, false);
             }

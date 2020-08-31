@@ -4,6 +4,7 @@ import qs from "qs";
 import Shipping, {IShipping} from "../../../models/shipping.model";
 import {IAccount} from "../../../models/account.model";
 import LRes from "../../lresponse.lib";
+import Manifest, {IManifest} from "../../../models/manifest.model";
 
 
 // let cf = new CarrierFactory('dhl');
@@ -36,7 +37,7 @@ class DhlApi implements ICarrierAPI {
     /**
      * auth user
      */
-    public auth: any = async () => {
+    private auth: any = async () => {
         const data = qs.stringify({
             'grant_type': 'client_credentials'
         });
@@ -93,12 +94,12 @@ class DhlApi implements ICarrierAPI {
 
         return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/products', reformatBody, headers)
             .then(async (response: Response | any) => {
-                await this.saveLog('products', reformatBody, response);
+                // await this.saveLog('products', reformatBody, response);
                 return response;
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('products', reformatBody, err, true);
+                // await this.saveLog('products', reformatBody, err, true);
                 return err;
             });
     };
@@ -219,7 +220,7 @@ class DhlApi implements ICarrierAPI {
 
         return await AxiosapiLib.doCall('post', this.api_url + '/shipping/v4/manifest', reformatBody, headers)
             .then(async (response: Response | any) => {
-                await this.saveLog('manifest', reformatBody, response);
+                await this.saveLog('manifest', reformatBody, response, false, true);
                 if (response.hasOwnProperty('requestId')) {
                     // @ts-ignore
                     response.carrier = this._props.account.carrierRef.accountName;
@@ -239,7 +240,7 @@ class DhlApi implements ICarrierAPI {
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('manifest', reformatBody, err, true);
+                await this.saveLog('manifest', reformatBody, err, true, true);
                 return err;
             });
     };
@@ -251,7 +252,7 @@ class DhlApi implements ICarrierAPI {
 
         return await AxiosapiLib.doCall('get', _url, null, headers)
             .then(async (response: Response | any) => {
-                await this.saveLog('getManifest', {url: _url}, response);
+                await this.saveLog('getManifest', {url: _url}, response, false, true);
                 if (response.hasOwnProperty('manifests')) {
                     // @ts-ignore
                     response.carrier = this._props.account.carrierRef.accountName;
@@ -268,7 +269,7 @@ class DhlApi implements ICarrierAPI {
             })
             .catch(async (err: Error) => {
                 console.log(err);
-                await this.saveLog('getManifest', {url: _url}, err, true);
+                await this.saveLog('getManifest', {url: _url}, err, true, true);
                 return err;
             });
 
@@ -294,7 +295,7 @@ class DhlApi implements ICarrierAPI {
         return headers;
     };
 
-    private saveLog: any = async (call: string, req: object, res: object,isErr: boolean = false,) => {
+    private saveLog: any = async (call: string, req: object, res: object,isErr: boolean = false, isManifest: boolean = false) => {
         const shippingData: object = {
             request: req,
             response: res,
@@ -322,14 +323,18 @@ class DhlApi implements ICarrierAPI {
             shippingData.isError = true;
         }
 
-        const shipping: IShipping = new Shipping(shippingData);
-        return await shipping.save()
+        let logData: IShipping | IManifest;
+        if (isManifest == false) {
+            logData = new Shipping(shippingData);
+        } else {
+            logData = new Manifest(shippingData);
+        }
+        return await logData.save()
             .then((result) => {
-               return result;
+                return result;
             }).catch((err: Error) => {
                 return err;
             });
-        return true;
     }
 }
 

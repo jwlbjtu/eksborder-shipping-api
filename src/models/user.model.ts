@@ -7,6 +7,8 @@ export const UserRoleList: Array<String> = ["admin_super", "admin", "customer"];
 export interface IUserLogin extends Document {
     email: string;
     password: string;
+    isActive: boolean;
+    isLogin: boolean;
 }
 
 export interface IUser extends Document {
@@ -33,7 +35,8 @@ export interface IUser extends Document {
     isActive: boolean;
     companyName: string,
     balance: number;
-    accountRef: {}
+    accountRef: {},
+    isLogin: boolean,
 }
 
 const UserSchema: Schema = new Schema({
@@ -66,6 +69,7 @@ const UserSchema: Schema = new Schema({
     },
     phone: {type: String, minlength:5, maxlength:20, trim: true, unique: true},
     isActive: {type: Boolean, default: true},
+    isLogin: {type: Boolean, default: false},
     companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
     balance: {type: Number, min: 0}
 }, {
@@ -93,16 +97,28 @@ UserSchema.pre<IUser>("save", function save(next) {
 });
 
 UserSchema.methods.comparePassword =  function (candidatePassword: string, callback: any) {
+    // bcrypt.hash(candidatePassword, this.salt, (err: Error, hash) => {
+    //     if (err) {
+    //         return callback(err, false);
+    //     }
+    //     if (this.password == hash) {
+    //         callback(err, true);
+    //     }
+    //     callback(err, false);
+    // });
+
     bcrypt.compare(candidatePassword, this.password, (err: Error, isMatch: boolean) => {
         callback(err, isMatch);
     });
+
+
 
 };
 
 
 UserSchema.methods.generateJWT = function () {
-    let today = new Date();
-    let exp = new Date(today);
+    let days = 1;
+    let exp = new Date(Date.now() + days*24*60*60*1000);
     // @ts-ignore
     const secret: string = process.env.JWT_SECRET;
 
@@ -112,16 +128,22 @@ UserSchema.methods.generateJWT = function () {
         fullName: this.fullName,
         email: this.email,
         role: this.role,
+        iat: Date.now(),
+        exp: exp.getTime()
     }, secret);
 };
 
 UserSchema.methods.toAuthJSON = function () {
+    let days = 1;
+    let exp = new Date(Date.now() + days*24*60*60*1000);
     return {
         id: this.id,
         fullName: this.fullName,
         email: this.email,
         role: this.role,
         token: this.generateJWT(),
+        iat: Date.now(),
+        exp: exp.getTime()
     };
 };
 

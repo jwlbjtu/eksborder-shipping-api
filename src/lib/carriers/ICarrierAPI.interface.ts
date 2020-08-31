@@ -3,10 +3,12 @@ import {Response} from 'express';
 type TResType = Response | any;
 
 interface ICarrierAPI {
-   auth(): TResType;
+   // auth(): TResType;
    products(): TResType;
    label(): TResType;
-   getLabel(): TResType
+   getLabel(): TResType;
+   manifest(): TResType;
+   getManifest(): TResType;
 
 }
 
