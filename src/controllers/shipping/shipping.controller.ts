@@ -274,10 +274,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             }).catch(async (err: Error) => {
                 console.log(err);
                 return LRes.resErr(res, 401, err);
-            });;
-
-
-
+            });
         } else {
             return LRes.resErr(res, 404, "not enough parameters");
         }
