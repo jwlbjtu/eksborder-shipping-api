@@ -161,7 +161,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             if(carrier === DHL_ECOMMERCE && service === "FLAT") {
                 // Crate FLAT label
                 const account = await HelperLib.getCurrentUserAccount(carrierAccount, req.user);
-                labelResponse = await createFlatLabel(body, account);
+                labelResponse = await createFlatLabel(body, account, req.user);
             } else {
                 // @ts-ignore
                 labelResponse = await this.cf.label(body);

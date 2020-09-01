@@ -34,6 +34,7 @@ export interface IUser extends Document {
     phone: string;
     isActive: boolean;
     companyName: string,
+    logoImage?: Buffer,
     balance: number;
     accountRef: {},
     isLogin: boolean,
@@ -54,10 +55,7 @@ const UserSchema: Schema = new Schema({
     userName: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
     hash: String,
     salt: String,
-    password: {
-        type: String,
-        // get: (): undefined => undefined,
-    },
+    password: {type: String, required: true, minlength: 8, trim: true},
     role: {type: String, required: true, enum: UserRoleList, default: 'customer'},
     address: {
         address1: {type: String, required: true, trim: true},
@@ -71,6 +69,7 @@ const UserSchema: Schema = new Schema({
     isActive: {type: Boolean, default: true},
     isLogin: {type: Boolean, default: false},
     companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
+    logoImage: {type: Buffer},
     balance: {type: Number, min: 0, default: 0}
 }, {
     timestamps: true,

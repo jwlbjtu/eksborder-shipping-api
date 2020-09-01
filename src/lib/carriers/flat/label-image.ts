@@ -3,19 +3,23 @@ import fs from "fs";
 import path from "path";
 import { IFlatShippingInfo } from "./flat.helper";
 
-export const generateLabel = (shippingInfo: IFlatShippingInfo, barcodeBase64: string) => {
+export const generateLabel = (shippingInfo: IFlatShippingInfo, barcodeBase64: string, user? : any) => {
     const logoPath = path.join(__dirname, "../../../../static/eksborder.png");
     const logoImage = fs.readFileSync(logoPath);
     // @ts-ignore
-    const base64Image = new Buffer.from(logoImage).toString("base64");
-    const imageUrl = `data:image/png;base64,${ base64Image }`;
-
+    let base64Image = new Buffer.from(logoImage).toString("base64");
+    
+    // Use customer's logo image if available
+    if(user && user.logoImage) {
+        base64Image = user.logoImage.toString("base64");
+    }
+    const logoImageUrl = `data:image/png;base64,${ base64Image }`;
     const templatePath = path.join(__dirname, "../../../../static/template.html")
 
     return htmlToImage({
         html: fs.readFileSync(templatePath).toString(),
         content: {
-            logoSource: imageUrl,
+            logoSource: logoImageUrl,
             service: shippingInfo.service,
             number: shippingInfo.number,
             weight: shippingInfo.weight,

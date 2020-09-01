@@ -1,6 +1,7 @@
 import { trackingNumberGenerator } from "./tracking-generator";
 import { createBarcode } from "./barcode";
 import { generateLabel } from "./label-image";
+import { IUser } from "../../../models/user.model";
 
 export interface IAddress {
     name?: string,
@@ -21,7 +22,7 @@ export interface IFlatShippingInfo {
     weight: string
 };
 
-export const createFlatLabel = async (body: any, account: any) => {
+export const createFlatLabel = async (body: any, account: any, user?: any) => {
     // Generate tracking number
     const trackingNumber = trackingNumberGenerator();
     // Genereate bardcode based on the tracking number
@@ -29,7 +30,7 @@ export const createFlatLabel = async (body: any, account: any) => {
     // Create Shipping Info from Body
     const shippingInfo = shippingInfoFromBody(body, account);
     // @ts-ignore // Generate PNG format label buffer
-    const labelBuffer = await generateLabel(shippingInfo, barcode);
+    const labelBuffer = await generateLabel(shippingInfo, barcode, user);
     const createdDate = new Date();
     // Encode to base64
     const labelData = labelBuffer.toString("base64");
