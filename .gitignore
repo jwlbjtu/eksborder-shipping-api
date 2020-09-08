@@ -1,0 +1,13 @@
+*.js
+!_*.js
+*.map
+!_*.map
+
+dist
+node_modules
+
+package-lock.json
+
+.DS_Store
+.idea
+.env
