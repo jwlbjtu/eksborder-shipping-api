@@ -254,7 +254,7 @@ class DhlApi implements ICarrierAPI {
                     status: response.status,
                     title: dhlError.title,
                     //@ts-ignore
-                    carrier: this._props.account.carrierRef.accountCode,
+                    carrier: this._props.account.carrierRef.carrierName,
                     error: dhlError.invalidParams
                 }
                 return labelError;
@@ -264,7 +264,7 @@ class DhlApi implements ICarrierAPI {
             const labelResponse: ILabelResponse = {
                 timestamp: dhlLabelResponse.timestamp,
                 //@ts-ignore
-                carrier: this._props.account.carrierRef.accountCode,
+                carrier: this._props.account.carrierRef.carrierName,
                 service: dhlLabelResponse.orderedProductId,
                 labels: dhlLabelResponse.labels.map((item: IDHLeCommerceLabel) => {
                     const result: ILabel = {
@@ -365,7 +365,7 @@ class DhlApi implements ICarrierAPI {
                     status: response.status,
                     title: dhlError.title,
                     //@ts-ignore
-                    carrier: this._props.account.carrierRef.accountCode,
+                    carrier: this._props.account.carrierRef.carrierName,
                     error: dhlError.invalidParams
                 }
                 return manifestError;
@@ -394,7 +394,7 @@ class DhlApi implements ICarrierAPI {
             const manifestResponse: IManifestResponse = {
                 timestamp: dhlManifestResponse.timestamp,
                 //@ts-ignore
-                carrier: this._props.account.carrierRef.accountCode,
+                carrier: this._props.account.carrierRef.carrierName,
                 requestId: dhlManifestResponse.requestId,
                 status: dhlManifestResponse.status,
                 manifests:dhlManifestResponse.manifests?.map((item: IDHLeCommerceManifest) => {

@@ -53,9 +53,9 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         this.router.get(this.path + "/manifest/:carrierAccount/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
     }
 
-    private initCF: CarrierFactory | any = async (account: any, user: any) => {
+    private initCF: CarrierFactory | any = async (account: IAccount, user: IUser) => {
         // @ts-ignore
-        const cf = new CarrierFactory(account.carrierRef.accountCode, {user, account});
+        const cf = new CarrierFactory(account.carrierRef.carrierName, {user, account});
         // @ts-ignore
         await cf.auth();
         return cf;
