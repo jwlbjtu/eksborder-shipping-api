@@ -1,51 +1,16 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from "jsonwebtoken";
 
-export const UserRoleList: Array<String> = ["admin_super", "admin", "customer"];
-
-export interface IUserLogin extends Document {
-    email: string;
-    password: string;
-    isActive: boolean;
-    isLogin: boolean;
-}
-
-export interface IUser extends Document {
-    id: string,
-    token: any;
-    salt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    userName: string
-    password: string;
-    role: "admin_super" | "admin" |  "customer";
-    // pickupAccount: string,
-    // facilityNumber: string,
-    address?: {
-        address1: string,
-        address2?: string,
-        city: string,
-        state: string,
-        country: string,
-        postalCode: string,
-    };
-    phone: string;
-    isActive: boolean;
-    companyName: string,
-    logoImage?: Buffer,
-    balance: number;
-    accountRef: {},
-    isLogin: boolean,
-}
+import { UserRoleList } from "../lib/constants";
+import { IUser } from '../types/user.types';
 
 const UserSchema: Schema = new Schema({
     email: {
         type: String,
         lowercase: true,
         unique: true,
-        required: [true],
+        required: true,
         match: [/\S+@\S+\.\S+/],
         index: true,
         trim: true
@@ -53,7 +18,6 @@ const UserSchema: Schema = new Schema({
     firstName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
     lastName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
     userName: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
-    hash: String,
     salt: String,
     password: {type: String, required: true, minlength: 8, trim: true},
     role: {type: String, required: true, enum: UserRoleList, default: 'customer'},
@@ -67,10 +31,17 @@ const UserSchema: Schema = new Schema({
     },
     phone: {type: String, minlength:5, maxlength:20, trim: true, unique: true},
     isActive: {type: Boolean, default: true},
-    isLogin: {type: Boolean, default: false},
     companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
     logoImage: {type: Buffer},
-    balance: {type: Number, min: 0, default: 0}
+    balance: {type: Number, min: 0, default: 0},
+    currency: {type: String, default: "USD"},
+    apiToken: {type: String},
+    tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
+    }]
 }, {
     timestamps: true,
     autoIndex: true,
@@ -81,70 +52,96 @@ const UserSchema: Schema = new Schema({
 });
 
 
-UserSchema.pre<IUser>("save", function save(next) {
+UserSchema.pre<IUser>("save", async function save(next) {
     const user = this;
 
-    bcrypt.genSalt(10, (err, salt) => {
-        if (err) { return next(err); }
+    if(user.isModified("password")) {
+        const salt = await bcrypt.genSalt();
+        const hashedPass = await bcrypt.hash(user.password, salt);
         user.salt = salt;
-        bcrypt.hash(this.password, salt, (err: Error, hash) => {
-            if (err) { return next(err); }
-            user.password = hash;
-            next();
-        });
-    });
+        user.password = hashedPass;
+    }
+
+    next();
 });
 
-UserSchema.methods.comparePassword =  function (candidatePassword: string, callback: any) {
-    // bcrypt.hash(candidatePassword, this.salt, (err: Error, hash) => {
-    //     if (err) {
-    //         return callback(err, false);
-    //     }
-    //     if (this.password == hash) {
-    //         callback(err, true);
-    //     }
-    //     callback(err, false);
-    // });
-
-    bcrypt.compare(candidatePassword, this.password, (err: Error, isMatch: boolean) => {
-        callback(err, isMatch);
-    });
-
-
-
+UserSchema.methods.comparePassword = async function (candidatePassword: string) {
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
+    return isMatch;
 };
 
+UserSchema.methods.toJSON = function () {
+    const user = this;
+    const userObject = user.toObject();
 
-UserSchema.methods.generateJWT = function () {
-    let days = 1;
-    let exp = new Date(Date.now() + days*24*60*60*1000);
+    delete userObject.password;
+    delete userObject.logoImage;
+    delete userObject.tokens;
+    delete userObject.salt;
+
+    return userObject;
+}
+
+UserSchema.methods.generateJWT = function (expTime?: number) {
     // @ts-ignore
     const secret: string = process.env.JWT_SECRET;
-
-    // @ts-ignore
-    return jwt.sign({
+    let payload: any = {
         id: this.id,
         fullName: this.fullName,
         email: this.email,
-        role: this.role,
-        iat: Date.now(),
-        exp: exp.getTime()
-    }, secret);
+        role: this.role
+    };
+
+    if(expTime) {
+        payload.exp = Math.floor(Date.now() / 1000) + expTime;
+    }
+
+    // @ts-ignore
+    return jwt.sign(payload, secret);
 };
 
-UserSchema.methods.toAuthJSON = function () {
-    let days = 1;
-    let exp = new Date(Date.now() + days*24*60*60*1000);
+UserSchema.methods.toAuthJSON = async function () {
+    const user = this;
+
+    let expTime = 3600;
+    const token = this.generateJWT(expTime);
+
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+
     return {
         id: this.id,
         fullName: this.fullName,
         email: this.email,
         role: this.role,
-        token: this.generateJWT(),
-        iat: Date.now(),
-        exp: exp.getTime()
+        token_type: "Bearer",
+        token,
+        expire_in: expTime
     };
 };
+
+UserSchema.methods.apiAuthJSON = async function () {
+    const user = this;
+    const token = this.generateJWT();
+
+    // Remove exist api token to make sure we always have one api token
+    if(user.apiToken) {
+        const oldToken = user.apiToken;
+        user.tokens = user.tokens.filter((item: {token: string}) => {
+            return item.token !== oldToken;
+        })
+    }
+
+    user.apiToken = token;
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+
+    return {
+        email: this.email,
+        token,
+        token_type: "Bearer"
+    }
+}
 
 UserSchema.virtual('fullName').get(function () {
     // @ts-ignore

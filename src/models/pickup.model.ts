@@ -1,13 +1,6 @@
-import mongoose, {Document, Schema, Types} from 'mongoose';
-import {IUser} from "./user.model";
+import mongoose, { Schema } from 'mongoose';
 import ObjectId from "mongodb";
-
-export interface IPickup extends Document {
-    pickupAccount: string,
-    description: string,
-    carrierRef: object,
-    isActive: boolean
-}
+import { IPickup } from '../types/record.types';
 
 const PickupSchema: Schema = new Schema({
     pickupAccount: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},

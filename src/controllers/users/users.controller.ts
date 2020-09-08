@@ -1,17 +1,16 @@
 import * as express from "express";
 import {NextFunction, Request, Response} from "express";
+import passport from "passport";
 import multer from "multer";
 import sharp from "sharp";
-import ICRUDControllerBase from "../../interfaces/ICRUDControllerBase.interface";
-import User, {IUser, IUserLogin} from "../../models/user.model";
+
+import AuthHandler from "../../lib/auth/auth.handler"
+import User from "../../models/user.model";
 import LRes from "../../lib/lresponse.lib";
 
-import passport from "passport";
-// import "../auth/passportHandler";
+import ICRUDControllerBase from "../../interfaces/ICRUDControllerBase.interface";
+import { IUser, IUserLogin } from "../../types/user.types";
 import '../../lib/env';
-import AuthController from "../auth/auth.controller"
-
-import CarrierFactory from "../../lib/carrier.factory";
 
 const upload = multer({
     limits: {
@@ -26,35 +25,98 @@ const upload = multer({
 })
 
 class UsersController implements ICRUDControllerBase {
-    public path = "/user";
+    public path = "/users";
     public router = express.Router();
-    private authJwt: AuthController =  new AuthController();
+    private authJwt: AuthHandler =  new AuthHandler();
 
     constructor() {
         this.initRoutes();
     }
 
     public initRoutes() {
-        this.router.get(this.path + "/logout", this.authJwt.authenticateJWT, this.logout);
-        this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readOneGet);
-        this.router.get(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.readGet);
+        // Create User - later can consider to allow customers to register use by themselves
         this.router.post(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
+        // User Login
         this.router.post(this.path + "/login", this.login);
-        this.router.put(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.updatePut);
+        // User Logout
+        this.router.get(this.path + "/logout", this.authJwt.authenticateJWT, this.logout);
+        // Get User by ID
+        this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readOneGet);
+        // Get All Users
+        this.router.get(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readGet);
+        // Update User by ID        
+        this.router.put(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.updatePut);
+        // Delete User by ID
         this.router.delete(this.path + '/:id', this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.delDelete);
+        // Update User Logo Image
         this.router.post(this.path + "/logo/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), upload.single("upload"), this.upload,
             (error: Error | null, req: Request, res: Response, next: NextFunction) => {
                 res.status(400).json({ title: error?.message });
             }    
         );
+        // TODO: enable user
+        // TODO: disable user
     }
+
+    public createPost: any = async (req: Request, res: Response) => {
+        try {
+            const user: IUser = req.body;
+            // TODO: later need to add limits about fields can be created, others should be default
+            const createdUser = new User(user);
+            await createdUser.save(); 
+            // @ts-ignore
+            const authJson = await createdUser.apiAuthJSON();
+            LRes.resOk(res, authJson);
+        } catch (error) {
+            LRes.resErr(res, 500, error);
+        }
+    };
+
+    public login: any = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            if(!req.body.user.hasOwnProperty("email") || !req.body.user.hasOwnProperty('password')) {
+                return LRes.resErr(res, 400, { message: "Invalid username or password" });
+            }
+            await passport.authenticate('local', {session: true}, async (err: Error, user: IUserLogin, info: any) => {
+                if(err) return LRes.resErr(res, 404, err);
+                
+                // @ts-ignore
+                const authJson = await user.toAuthJSON();
+
+                LRes.resOk(res, authJson);                
+            })(req, res, next);
+        } catch (err) {
+            LRes.resErr(res, 500, err);
+        }
+    };
+
+    public logout: any  = async (req: Request, res: Response) => {
+        try {
+            // @ts-ignore
+            req.user.tokens = req.user.tokens.filter((token: {token:string}) => {
+                // @ts-ignore
+                return token.token != req.token;
+            });
+            // @ts-ignore
+            await req.user.save();
+
+            req.logout();
+            delete req.user;
+            // @ts-ignore
+            delete req.session;
+    
+            LRes.resOk(res, { message: 'Logout'});
+        } catch (error) {
+            LRes.resErr(res, 500, error);
+        }
+    };
 
     public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
         const _id: string = req.params.id;
         if(!_id) return res.status(400).json({ title: "Please provide a valid user id" });
         
         try{
-            let user = await User.findById(_id).populate({path: "accountRef"});
+            let user = await User.findById(_id);
             if(user) return LRes.resOk(res, user);
             LRes.resErr(res, 404, { title: "No user found" });
         } catch (error) {
@@ -64,28 +126,16 @@ class UsersController implements ICRUDControllerBase {
 
     public readGet: any = async (req: Request, res: Response) => {
         try{
-            const users = await User.find({}).populate({path: "accountRef"});
+            const users = await User.find({});
             LRes.resOk(res, users);
         } catch (error) {
             LRes.resErr(res, 500, error);
         }        
     };
 
-    public createPost: any = async (req: Request, res: Response) => {
-        try {
-            const user: IUser = req.body;
-            const createdUser = new User(user);
-            await createdUser.save(); 
-            // @ts-ignore
-            const authJson = createdUser.toAuthJSON();
-            LRes.resOk(res, { 'email': createdUser.email, 'token': authJson.token });
-        } catch (error) {
-            LRes.resErr(res, 500, error);
-        }
-    };
-
     public updatePut: any = async (req: Request, res: Response) => {
         try {
+            // TODO: add limit of fields can be updated
             const user = req.body;
             const updates = Object.keys(user);
             const id = req.params.id;
@@ -108,6 +158,7 @@ class UsersController implements ICRUDControllerBase {
     public delDelete: any = async (req: Request, res: Response) => {
         const id = req.params.id;
         try {
+            // TODO: cancatinate delete - delete all related data
             const user = await User.findByIdAndDelete(id);
             if(!user) return LRes.resErr(res, 404, "No user deleted");
             LRes.resOk(res, user);
@@ -116,52 +167,9 @@ class UsersController implements ICRUDControllerBase {
         }
     };
 
-    public login: any = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            if(req.body.user.hasOwnProperty('password')) {
-                await passport.authenticate('local', {session: true}, async (err: Error, user: IUserLogin, info: any) => {
-                    if (err) {
-                        LRes.resErr(res, 404, err);
-                    }
-                    if (!user || user.isActive == false) {
-                        LRes.resErr(res, 401, {code: "unauthorized"});
-                    } else {
-                        // @ts-ignore
-                        const authJson = user.toAuthJSON();
-                        user.isLogin = true;
-                        await User.findByIdAndUpdate(
-                            {_id: user._id},
-                            {isLogin: true},
-                            {runValidators: true, new: true});
-                        LRes.resOk(res, authJson);
-                    }
-                })(req, res, next);
-            }
-        } catch (err) {
-            LRes.resErr(res, 500, err);
-        }
-    };
-
-    public logout: any  = async (req: Request, res: Response) => {
-        // @ts-ignore
-        await User.findByIdAndUpdate(
-            // @ts-ignore
-            req.user._id,
-            {isLogin: false},
-            {runValidators: true, new: true}
-        );
-
-        req.logout();
-        delete req.user;
-        // @ts-ignore
-        delete req.session;
-
-        LRes.resOk(res,'Logout')
-    };
-
     public upload: any = async (req: Request, res: Response) => {
         const buffer = await sharp(req.file.buffer)
-            .resize(250, 150).toBuffer();
+                        .resize(250, 150).toBuffer();
         const id = req.params.id;
         try{
             const user = await User.findById(id);

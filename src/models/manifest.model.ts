@@ -1,25 +1,31 @@
-import mongoose, {Document, Schema, Types} from 'mongoose';
-
-export interface IManifest extends Document {
-    request: object;
-    response: object | any;
-    isError: boolean;
-    callType: string;
-    accountRef: object;
-    userRef: object;
-}
-
+import mongoose, { Schema } from 'mongoose';
+import { IManifestResponse } from '../types/shipping.types';
 
 const ManifestSchema: Schema = new Schema({
-    request: {type: Object, required: true},
-    response: {type: Object},
-    isError: {type: Boolean, default: false},
-    callType: {type: String, trim: true, required: true},
-    accountRef: {
-        type: Schema.Types.ObjectId,
-        ref: "Account",
-        required: true
+    timestamp: { type: Date, required: true },
+    carrier: { type: String, required: true},
+    requestId: { type: String, required: true, index: true},
+    status: { type: String, enum: ["CREATED", "IN PROGRESS", "COMPLETED"], index: true },
+    manifests: [{
+        createdOn: { type: Date, required: true },
+        manifestId: { type: String, required: true },
+        total: { type: Number, required: true},
+        manifestData: { type: String, required: true},
+        encodeType: { type: String, required: true },
+        format: { type: String, required: true }
+    }],
+    manifestSummary: {
+        total: { type: Number },
+        invalid: {
+            total: { type: Number },
+            trackingIds: [{
+                trackingId: { type: String, required: true },
+                errorCode: { type: String, required: true },
+                errorDescription: { type: String, required: true}
+            }]
+        }
     },
+    trackingIds: [String],
     userRef: {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -35,4 +41,4 @@ const ManifestSchema: Schema = new Schema({
 });
 
 
-export default mongoose.model<IManifest>('Manifest', ManifestSchema);
+export default mongoose.model<IManifestResponse>('Manifest', ManifestSchema);

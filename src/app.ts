@@ -56,7 +56,7 @@ class App {
 
     private routes(controllers: IIterateParams) {
         controllers.forEach(controller => {
-            this.app.use(process.env.URL_PREFIX+'/', controller.router)
+            this.app.use('/', controller.router)
         })
     }
 

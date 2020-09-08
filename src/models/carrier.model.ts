@@ -1,37 +1,17 @@
-import mongoose, {Document, Schema} from 'mongoose';
-
-export interface ICarrier extends Document {
-    accountCode: string, // TODO: change to carrierName
-    accountName: string,
-    clientId: string,
-    clientSecret: string,
-    isTest: boolean,
-    returnAddress: {
-        name?: string,
-        companyName: string,
-        street1: string,
-        street2?: string,
-        city: string,
-        state: string,
-        country: string,
-        postalCode: string,
-        email: string,
-        phone: number
-    },
-    pickupRef: [],
-    facilityRef: [],
-    isActive: boolean
-}
+import mongoose, { Schema } from 'mongoose';
+import { ICarrier } from '../types/record.types';
+import Pickup from "../models/pickup.model";
+import Facility from "../models/facility.model";
 
 const CarrierSchema: Schema = new Schema({
-    accountCode: {type: String, required: true, unique: true, minlength:2, trim: true},
+    carrierName: {type: String, required: true, unique: true, minlength:2, trim: true},
     accountName: {type: String, required: true, minlength:3, maxlength:250, trim: true},
     clientId: {type: String, required: true, minlength:3, trim: true},
     clientSecret: {type: String, required: true, minlength:3, trim: true},
     isTest: {type: Boolean, default: false},
     returnAddress: {
         name: {type: String, trim: true},
-        companyName: {type: String, required: true, trim: true},
+        company: {type: String, required: true, trim: true},
         street1: {type: String, required: true, trim: true},
         street2: {type: String, trim: true},
         city: {type: String, required: true, minlength:3, maxlength:120, trim: true},
@@ -51,6 +31,12 @@ const CarrierSchema: Schema = new Schema({
     },
 });
 
+CarrierSchema.pre("remove", async function (next: any) {
+    const carrier = this;
+    await Pickup.deleteMany({ carrierRef: carrier._id });
+    await Facility.deleteMany({ carrierRef: carrier._id });
+    next();
+});
 
 CarrierSchema.virtual('pickupRef', {
     ref: 'Pickup', // The model to use

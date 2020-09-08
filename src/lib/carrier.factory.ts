@@ -1,5 +1,5 @@
 import DhlApi from "./carriers/dhl/Dhl.api";
-import { DHL_ECOMMERCE } from "./carriers/constants";
+import { DHL_ECOMMERCE } from "./constants";
 
 type carrierType = 'dhl ecommerce' | 'fedex' | 'ups' | 'usps';
 

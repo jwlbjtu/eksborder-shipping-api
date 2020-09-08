@@ -12,6 +12,7 @@ import CarrierController from "./controllers/carrier/carrier.controller";
 import PickupController from "./controllers/carrier/pickup.controller";
 import FacilityController from "./controllers/carrier/facility.controller";
 import AccountController from "./controllers/users/account.controller";
+import APIController from "./controllers/api/api.controller";
 
 let envPort: number = 5000;
 if (process.env.PORT) {
@@ -26,7 +27,8 @@ const app = new App({
         new CarrierController(),
         new PickupController(),
         new FacilityController(),
-        new AccountController()
+        new AccountController(),
+        new APIController()
     ],
     middleWares: [
         bodyParser.json(),

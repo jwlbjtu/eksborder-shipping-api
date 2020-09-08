@@ -1,26 +1,6 @@
-import {Response, response} from 'express'
-import { errorTypes } from './carriers/constants';
-
-interface IFormatDataOne {
-    data: any,
-    count: number,
-    status: number
-};
-
-interface IFormatDataErr {
-    error: any,
-    status: number
-};
-
-export interface IInvalidParamsErr {
-    invalidParams: Array<IParamInfo>
-};
-
-export interface IParamInfo {
-    name: string, 
-    path: string, 
-    reason: string
-};
+import { Response } from 'express'
+import { errorTypes } from './constants';
+import { IFormatDataErr, IParamInfo, IError } from '../types/error.types';
 
 class LRes {
     public resOk = (res: Response, data: any) => {
@@ -45,48 +25,49 @@ class LRes {
         res.status(status).send(formatData);
     };
 
-    public invalidParamsErr = (status: number = 500, title: string, carrier: string, error: IInvalidParamsErr | null = null) => {
-        const errData = {
+    public invalidParamsErr = (status: number = 500, title: string, carrier?: string, error?: IParamInfo[]) => {
+        const errData: IError = {
             status,
             title,
             carrier,
-            invalidParams: error
+            error
         }
         return errData;
     };
 
-    public fieldErr = (name: string, path: string, type: string, value?: any, carrier?: string | null) => {
-        let reason = "Unknown Error";
+    public fieldErr = (name: string, path: string, type: string, value?: any, carrier?: string) => {
+        let reason: string | undefined = undefined;
         switch (type) {
             case errorTypes.MISSING:
                 reason = `required key [${name}] not found`;
                 break;
             case errorTypes.UNSUPPORTED:
-                reason = `Unsupported value [${value}] for [${name}]`;
+                reason = `Unsupported value [${value}] for key [${name}]`;
                 break;
             case errorTypes.EMPTY:
-                reason = "expected minimum item count: 1, found: 0";
+                reason = "Expected minimum item count: 1, found: 0";
+                break;
+            case errorTypes.INVALID:
+                reason = `Invalid value [${value}] for key [${name}]`
                 break;
             default:
                 break;
         }
         
-        const errBody: IParamInfo = {
-            name,
-            path,
-            reason
-        };
-
-        const arrBody: IInvalidParamsErr = {
-            invalidParams: [errBody]
-        };
+        let errBody: IParamInfo | undefined = undefined;
+        if(reason) {
+            errBody = {
+                name,
+                path,
+                reason
+            };
+        }
 
         return this.invalidParamsErr(
             400, 
-            "Static Validation Failed", 
-            // @ts-ignore
+            "Validation Failed", 
             carrier,
-            arrBody
+            errBody? [errBody] : errBody
         );
     }
 }

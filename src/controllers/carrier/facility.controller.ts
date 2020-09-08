@@ -1,10 +1,11 @@
 import * as express from "express";
 import {NextFunction, Request, Response} from "express";
-import Facility, {IFacility} from "../../models/facility.model";
+import Facility from "../../models/facility.model";
 
-import AuthController from "../auth/auth.controller"
+import AuthController from "../../lib/auth/auth.handler"
 import ICRUDControllerBase from "../../interfaces/ICRUDControllerBase.interface";
 import LRes from "../../lib/lresponse.lib";
+import { IFacility } from "../../types/record.types";
 
 
 class FacilityController implements ICRUDControllerBase {
@@ -17,81 +18,61 @@ class FacilityController implements ICRUDControllerBase {
     }
 
     public initRoutes() {
-        this.router.get(this.path + "", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readGet);
-        this.router.get(this.path + "/:code", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readOneGet);
+        this.router.get(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readGet);
+        this.router.get(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.readOneGet);
         this.router.post(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
-        this.router.put(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.updatePut);
-        this.router.delete(this.path , this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.delDelete);
-    };
-
-    public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
-        const _code: string = req.params.code;
-        await Facility.findOne({facilityNumber: _code})
-            .populate({path: 'carrierRef'})
-            .then(async (facilityOne: IFacility | null) => {
-                LRes.resOk(res,facilityOne);
-            })
-            .catch((err: Error) => {
-                LRes.resErr(res, 404, err);
-            });
+        this.router.put(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.updatePut);
+        this.router.delete(this.path + "/:id", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.delDelete);
     };
 
     public readGet: any = async (req: Request, res: Response) => {
-        await Facility.find()
-            .populate({path: 'carrierRef'})
-            .then(async (facilityLists: IFacility[]) => {
-                LRes.resOk(res,facilityLists);
-            })
-            .catch((err: Error) => {
-                LRes.resErr(res, 404, err);
-            });
+        try {
+            const facility = await Facility.find();
+            return LRes.resOk(res, facility);
+        } catch (error) {
+            return LRes.resErr(res, 500, error);
+        }
+    };
+
+    public readOneGet: any = async (req: Request, res: Response, next: NextFunction) => {
+        const id = req.params.id;
+        try {
+            const facility = await Facility.findById(id);
+            return LRes.resOk(res, facility);
+        } catch (error) {
+            return LRes.resErr(res, 500, error);
+        }
     };
 
     public createPost: any = async (req: Request, res: Response) => {
         const facility: IFacility = req.body;
-
-        const createdFacility: IFacility= new Facility(facility);
-        await createdFacility.save()
-            .then(async (result:IFacility) => {
-                LRes.resOk(res, result.toJSON());
-            }).catch((err: Error) => {
-                LRes.resErr(res, 500, err);
-            });
+        try {
+            const createdFacility: IFacility= new Facility(facility);
+            await createdFacility.save();
+            return LRes.resOk(res, createdFacility);
+        } catch (error) {
+            return LRes.resErr(res, 500, error);
+        }
     };
 
     public updatePut: any = async (req: Request, res: Response) => {
+        const id = req.params.id;
         const facilityOne: IFacility = req.body;
-        if (facilityOne.hasOwnProperty('facilityNumber') && facilityOne.facilityNumber.length > 0) {
-            const filter: Object = {
-                facilityNumber: facilityOne.facilityNumber,
-            };
-
-            await Facility.findOneAndUpdate(filter, facilityOne, {new: true})
-                .then(async (result: IFacility | null) => {
-                    LRes.resOk(res, result);
-                }).catch((err: Error) => {
-                    LRes.resErr(res, 500, err);
-                });
-        } else {
-            LRes.resErr(res, 404, "incorrect facilityNumber");
+        try {
+            const updatedFacility = await Facility.findByIdAndUpdate(id, facilityOne, {new: true});
+            return LRes.resOk(res, updatedFacility);
+        } catch (error) {
+            return LRes.resErr(res, 500, error);
         }
     };
 
     public delDelete: any = async (req: Request, res: Response) => {
-        const facilityOne: IFacility = req.body;
-        if (facilityOne.hasOwnProperty('facilityNumber') && facilityOne.facilityNumber.length > 0) {
-            const filter: Object = {
-                facilityNumber: facilityOne.facilityNumber,
-            };
-
-            await Facility.findOneAndDelete(filter)
-                .then(async (result: IFacility | null) => {
-                    LRes.resOk(res, result);
-                }).catch((err: Error) => {
-                    LRes.resErr(res, 500, err);
-                });
-        } else {
-            LRes.resErr(res, 404, "incorrect facilityNumber");
+        const id = req.params.id;
+        try {
+            await Facility.findByIdAndDelete(id);
+            return res.send();
+        } catch (error) {
+            return LRes.resErr(res, 500, error);
         }
     };
 }
