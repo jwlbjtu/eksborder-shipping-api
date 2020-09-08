@@ -1,30 +1,36 @@
-import mongoose, {Document, Schema, Types} from 'mongoose';
-
-export interface IShipping extends Document {
-    request: object;
-    response: object | any;
-    isError: boolean;
-    callType: string;
-    accountRef: object;
-    userRef: object;
-}
-
+import mongoose, { Schema } from 'mongoose';
+import { IShipping } from '../types/record.types';
 
 const ShippingSchema: Schema = new Schema({
-    request: {type: Object, required: true},
-    response: {type: Object},
-    isError: {type: Boolean, default: false},
-    callType: {type: String, trim: true, required: true},
-    accountRef: {
-        type: Schema.Types.ObjectId,
-        ref: "Account",
-        required: true
+    timestamp: { type: Date, required: true},
+    carrier: { type: String, required: true},
+    service: { type: String, required: true},
+    labels: [{
+        createdOn: { type: Date},
+        trackingId: { type: String },
+        labelData: { type: String },
+        encodeType: { type: String },
+        format: { type: String }
+    }],
+    toAddress: {
+        name: { type: String },
+        company: { type: String },
+        street1: { type: String, required: true },
+        street2: { type: String },
+        city: { type: String, required: true},
+        state: { type: String },
+        country: { type: String, required: true },
+        postalCode: { type: String, required: true },
+        email: { type: String },
+        phone: { type: String }
     },
+    trackingId: { type: String, required: true, index: true},
+    manifested: { type: Boolean, required: true, default: false },
     userRef: {
         type: Schema.Types.ObjectId,
         ref: "User",
         required: true
-    },
+    }
 }, {
     timestamps: true,
     autoIndex: true,
@@ -33,6 +39,5 @@ const ShippingSchema: Schema = new Schema({
         getters: true,
     },
 });
-
 
 export default mongoose.model<IShipping>('Shipping', ShippingSchema);

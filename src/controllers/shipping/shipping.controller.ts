@@ -1,65 +1,64 @@
 import * as express from "express";
-import {NextFunction, Request, Response} from "express";
+import { Request, Response} from "express";
 import convert from "convert-units";
 import LRes from "../../lib/lresponse.lib";
-import AuthController from "../auth/auth.controller"
+import AuthController from "../../lib/auth/auth.handler"
 
 import CarrierFactory from "../../lib/carrier.factory";
 import IControllerBase from "../../interfaces/IControllerBase.interface";
 import ICarrierAPI from "../../lib/carriers/ICarrierAPI.interface";
 import HelperLib from "../../lib/helper.lib";
-import { DHL_ECOMMERCE, DHL_FLAT_PRICES, massUnits, errorTypes, BILLING_TYPES } from "../../lib/carriers/constants";
+import { 
+    DHL_ECOMMERCE, 
+    DHL_FLAT_PRICES, 
+    massUnits, 
+    errorTypes, 
+    BILLING_TYPES, 
+    SUPPORTED_CARRIERS, 
+    SUPPORTED_SERVICES} from "../../lib/constants";
 import { createFlatLabel } from "../../lib/carriers/flat/flat.helper";
-import { IManifestRequest } from "../../types/shipping.types";
 
-import Billing, {IBilling} from "../../models/billing.model";
-import Shipping, {IShipping} from "../../models/shipping.model";
-import Manifest, {IManifest} from "../../models/manifest.model";
-import User, {IUser} from "../../models/user.model";
+import Billing from "../../models/billing.model";
+import Shipping from "../../models/shipping.model";
+import Manifest from "../../models/manifest.model";
+import User from "../../models/user.model";
+
+import { 
+    IManifestRequest, 
+    IProduct, 
+    ILabelRequest, 
+    IProductResponse, 
+    IProductRequest, 
+    ILabelResponse, 
+    IManifestResponse,
+    IManifestSummary,
+    IManifestSummaryError} from "../../types/shipping.types";
+import { IBilling, IShipping } from "../../types/record.types";
+import { IUser, IAccount } from "../../types/user.types";
 
 class ShippingController implements IControllerBase, ICarrierAPI {
     public path = "/shipping";
     public router = express.Router();
     private authJwt: AuthController = new AuthController();
-    private cf: CarrierFactory | null = null;
-
-    private carriersType: Array<string> = [];
-    private account: Array<string> = [];
 
     constructor() {
         this.initRoutes();
     }
 
     public initRoutes() {
-        this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
+        //this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
         this.router.post(this.path + "/label", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
-        this.router.get(this.path + "/label/:type/:packageId/:dhlPackageId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
+        this.router.get(this.path + "/label/:carrierAccount/:trackingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
         this.router.post(this.path + "/manifest", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.manifest);
         this.router.get(this.path + "/manifest/:carrierAccount/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
     }
 
-    // private auth: any = async (req: Request, res: Response, next: NextFunction) => {
-    //     try {
-    //         const cfAuth = await this.initCF(req, req,);
-    //         return LRes.resOk(res, cfAuth);
-    //     } catch (err) {
-    //         return LRes.resErr(res, 401, err)
-    //     }
-    // };
-
-    private initCF: CarrierFactory | any = async (req: Request, res: Response) => {
-        const accountName: string = req.body.carrierAccount;
-        this.carriersType = await HelperLib.getCarrierType();
-        this.account = await HelperLib.getCurrentUserAccount(accountName, req.user);
+    private initCF: CarrierFactory | any = async (account: any, user: any) => {
         // @ts-ignore
-        if (accountName !== undefined && accountName.length > 0 && this.account !== null && accountName == this.account.accountName && this.carriersType.includes(this.account.carrierRef.accountCode)) {
-            // @ts-ignore
-            this.cf = new CarrierFactory(this.account.carrierRef.accountCode, {user: req.user, account: this.account});
-            // @ts-ignore
-            return  await this.cf.auth();
-        } else {
-            return LRes.resErr(res, 400, "Invalid carrier account");
-        }
+        const cf = new CarrierFactory(account.carrierRef.accountCode, {user, account});
+        // @ts-ignore
+        await cf.auth();
+        return cf;
     };
 
     public products: any = async (req: Request, res: Response) => {
@@ -86,19 +85,33 @@ class ShippingController implements IControllerBase, ICarrierAPI {
      * @param res 
      */
     public label: any = async (req: Request, res: Response) => {
-        const body = req.body;
-        const carrier: string | null = body.carrier || null;
-        const service: string | null = body.service || null;
-        const carrierAccount: string | null = body.carrierAccount || null;
-
-        if(!carrier) return res.status(400).json(LRes.fieldErr("carrier", "/", errorTypes.MISSING));
-        if(!service) return res.status(400).json(LRes.fieldErr("service", "/", errorTypes.MISSING, carrier));
-        if(!carrierAccount) return res.status(400).json(LRes.fieldErr("carrierAccount", "/", errorTypes.MISSING,carrier));
+        const body: ILabelRequest = req.body;
+        let carrier: string | undefined = body.carrier || undefined;
+        let service: string | undefined = body.service || undefined;
+        let carrierAccount: string | undefined = body.carrierAccount || undefined;
+        let account: IAccount | undefined | null = undefined;
 
         try {
-            // 1. Check Package Price
+            carrier = this.validateCarrier(carrier);
+            service = this.validateService(carrier.toLowerCase(), service);
+            // @ts-ignore
+            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            carrierAccount = checkValues.carrierAccount;
+            account = checkValues.account;
+        } catch (error) {
+            return res.status(400).json(error);
+        }
+
+        // Set packageId and billingReference
+        body.packageDetail.packageId = "EK-" + Date.now();
+        // @ts-ignore
+        body.packageDetail.billingReference1 = req.user.company;
+
+        try {
+            console.log("1. Check Package Price");
             let packagePrice: number | undefined = undefined;
-            let priceCurrency: string | undefined = undefined;
+            let priceCurrency: string = "USD";
+            let product: IProduct | undefined = undefined;
             if(carrier === DHL_ECOMMERCE && service === "FLAT") {
                 // TODO: Create FLAT Rate data in database
                 // Load and Check FLAT Rate based on request
@@ -111,69 +124,85 @@ class ShippingController implements IControllerBase, ICarrierAPI {
                         "/packageDetail/weight/unitOfMeasure", 
                         errorTypes.UNSUPPORTED, unitOfMeasure, carrier));
                 }
-
+                // @ts-ignore
                 const weightInOZ = convert(weight).from(unitOfMeasure.toLowerCase()).to("oz");
                 packagePrice = DHL_FLAT_PRICES[Math.ceil(weightInOZ).toString()];
                 priceCurrency = "USD";
             } else {
                 // Check price from Carrier Product Finder
-                await this.initCF(req, res); // TODO: refine carrier factory auth logic
-                // @ts-ignore
-                const productResponse = await this.cf.products(body);
-                if (productResponse.hasOwnProperty('messages') || (productResponse.hasOwnProperty('status') && productResponse.status > 203)) {
-                    return res.status(productResponse.status).json(productResponse);
-                }
-                if (productResponse.hasOwnProperty('products') && productResponse.products.length > 0) {
-                    const product = productResponse.products[0];
+                const cf = await this.initCF(account, req.user); // TODO: refine carrier factory auth logic
 
-                    if(product.hasOwnProperty("rate")) {
-                        const rate = product.rate;
-                        packagePrice = rate.amonut;
+                const prodRequest: IProductRequest = {
+                    ...body,
+                    rate: {
+                        calculate: true,
+                        currency: "USD"
+                    },
+                    estimatedDeliveryDate: {
+                        calculate: true
+                    }
+                }
+
+                const response = await cf.products(prodRequest);
+                if (response.hasOwnProperty('status') && response.status > 203) {
+                    return res.status(response.status).json(response);
+                }
+
+                const productResponse: IProductResponse = response;
+                if (productResponse.products && productResponse.products.length > 0) {
+                    const productBody: IProduct = productResponse.products[0];
+
+                    if(productBody && productBody.rate) {
+                        const rate = productBody.rate;
+                        packagePrice = rate.amount;
                         priceCurrency = rate.currency;
+                        product = productBody;
                     } else {
-                        return LRes.resErr(res, 404, product.messages);
+                        return LRes.resErr(res, 404, productBody.messages);
                     }
                 }
             }
-            console.log(packagePrice);
+
+            console.log(`Package price is ${packagePrice} ${priceCurrency}`);            
             if(!packagePrice) return res.status(500).json(LRes.invalidParamsErr(500, "Failed to compute package price", carrier));
 
-            // 2. Apply fee on top of the price to get total price
+            console.log("2. Apply fee on top of the price to get total price");
             // @ts-ignore
-            const billingType = this.account.billingType;
+            const billingType = account.billingType;
             // @ts-ignore
-            const fee = this.account.fee;
+            const fee = account.fee;
 
-            let totalCost = packagePrice;
-            if (billingType === BILLING_TYPES.AMOUNT) {
-                totalCost = parseFloat(totalCost + fee);
-            } else if (billingType === BILLING_TYPES.PROPORTION) {
-                const procAmount: number = parseFloat((totalCost * (1 + (fee / 100))).toFixed(2));
-                totalCost = totalCost + procAmount;
+            let totalFee = fee;
+            if (billingType === BILLING_TYPES.PROPORTION) {
+                totalFee = parseFloat((packagePrice * (fee / 100)).toFixed(2));
             }
+            const totalCost = parseFloat((packagePrice + totalFee).toFixed(2));
 
-            // 3. Check total price against user balance
+            console.log("3. Check total price against user balance");
             // @ts-ignore
             if (req.user.balance < totalCost) return res.status(400).json(LRes.invalidParamsErr(400, "Insufficient balance, please contact the customer service.", carrier));
 
-            // 4. Create Shipping label and response data
-            let labelResponse = undefined;
+            console.log("4. Create Shipping label and response data");
+            let labelResponse: ILabelResponse | undefined = undefined;
             if(carrier === DHL_ECOMMERCE && service === "FLAT") {
                 // Crate FLAT label
-                const account = await HelperLib.getCurrentUserAccount(carrierAccount, req.user);
+                // @ts-ignore
                 labelResponse = await createFlatLabel(body, account, req.user);
             } else {
-                // @ts-ignore
-                labelResponse = await this.cf.label(body);
-                if ((labelResponse.hasOwnProperty('status') && labelResponse.status > 203)) {
-                    return res.status(labelResponse.status).json(labelResponse);
+                const cf = await this.initCF(account, req.user); // TODO: refine carrier factory auth logic
+
+                const response = await cf.label(body);
+                if ((response.hasOwnProperty('status') && response.status > 203)) {
+                    return res.status(response.status).json(response);
                 }
+                labelResponse = response;
             }
+            // @ts-ignore
             if(!labelResponse) return res.status(500).json(LRes.invalidParamsErr(500, "Failed to create label", carrier));
             
-            // 5. Charge the fee from user balance
+            console.log("5. Charge the fee from user balance");
             // @ts-ignore
-            const newBalance = req.user.balance - totalCost;
+            const newBalance = parseFloat((req.user.balance - totalCost).toFixed(2));
             await User.findByIdAndUpdate(
                 // @ts-ignore
                 {_id: req.user._id},
@@ -182,39 +211,44 @@ class ShippingController implements IControllerBase, ICarrierAPI {
                 {runValidators: true, new: true}
             );
                         
-            // 6. Create shipping record
+            console.log("6. Create shipping record");
             // @ts-ignore
-            const shippingRecord = await Shipping.findOne({
-                callType: "label",
+            const shippingRecord: IShipping = {
+                ...labelResponse,
+                toAddress: body.toAddress,
+                trackingId: labelResponse.labels[0].trackingId,
+                manifested: false,
                 // @ts-ignore
-                userRef: req.user._id,
-                isError: false,
-                // @ts-ignore
-                "response.pickup": this.account.pickupRef.pickupAccount
-            }).sort('-createdAt');
+                userRef: req.user.id
+            }
+            await new Shipping(shippingRecord).save();
 
-            // 7. Generate billing record
+            console.log("7. Generate billing record");
             // @ts-ignore
             const billingObj: IBilling = {
                 // @ts-ignore
-                shippingRef: shippingRecord._id,
-                // @ts-ignore
-                accountRef: this.account._id,
-                // @ts-ignore
-                userRef: req.user._id,
-                shippingCost: packagePrice,
-                // @ts-ignore
-                billingType: billingType,
-                // @ts-ignore
-                fee: fee,
+                userRef: req.user.id,
+                description: `${carrier}, ${service}, ${labelResponse.labels[0].trackingId}`,
+                account: carrierAccount,
                 total: totalCost,
-                // @ts-ignore
-                currency: priceCurrency
+                balance: newBalance,
+                currency: priceCurrency,
+                details: {
+                    shippingCost: {
+                        amount: packagePrice,
+                        components: product?.rate?.rateComponents
+                    },
+                    fee: {
+                        amount: totalFee,
+                        type: billingType === BILLING_TYPES.PROPORTION ? 
+                            `${fee}%` : `$${fee}`
+                    }
+                }
             };
             const createBilling = new Billing(billingObj);
             await createBilling.save();
             
-            // 8. Return Label Data
+            console.log("8. Return Label Data");
             return LRes.resOk(res, labelResponse);
         } catch (err) {
             console.log("!!!ERROR!!!" + err);
@@ -222,51 +256,61 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         }
     };
 
+    /**
+     * Get Label (Shipping) data
+     * @param req 
+     * @param res 
+     */
     public getLabel: any = async (req: Request, res: Response) => {
-        const _packageId: string | null = req.params.packageId || null;
-        const _dhlPackageId: string | null = req.params.dhlPackageId || null;
+        const trackingId: string | undefined = req.params.trackingId || undefined;
+        let carrierAccount: string | undefined = req.params.carrierAccount || undefined;
+        let account: IAccount | undefined | null = undefined;
 
-        if (_packageId !== null && _dhlPackageId !== null ) {
-            await this.initCF(req, res);
-
-            await Shipping.findOne({
-                callType: "label",
-                // @ts-ignore
-                userRef: req.user._id,
-                isError: false,
-                "response.labels.packageId": _packageId,
-                "response.labels.dhlPackageId": _dhlPackageId,
-            }).then(async (lData) => {
-                if (!lData) {
-                    try {
-                        // @ts-ignore
-                        const cfLabel = await this.cf.getLabel(_packageId, _dhlPackageId);
-                        if (cfLabel.hasOwnProperty('messages') || (cfLabel.hasOwnProperty('status') && cfLabel.status > 203)) {
-                            return LRes.resErr(res, cfLabel.status, cfLabel.messages);
-                        }
-                        return LRes.resOk(res, cfLabel);
-
-                    } catch (err) {
-                        return LRes.resErr(res, 401, err);
-                    }
-                } else {
-                    delete lData.response.labels[0].packageId;
-                    delete lData.response.labels[0].dhlPackageId;
-                    delete lData.response.labels[0].link;
-                    delete lData.response.labels[0].labelDetail;
-                    return LRes.resOk(res, lData.response);
-                }
-            }).catch(async (err: Error) => {
-                console.log(err);
-                return LRes.resErr(res, 401, err);
-            });
-
-        } else {
-            return LRes.resErr(res, 404, "not enough parameters");
+        if(!trackingId) return res.status(400).json(LRes.fieldErr("trackingId", "/", errorTypes.MISSING));
+        try {
+            // @ts-ignore
+            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            carrierAccount = checkValues.carrierAccount;
+            account = checkValues.account;
+        } catch (error) {
+            console.log(error);
+            return res.status(400).send(error);
         }
 
+        try {
+            // first try to find the label data from local
+            // @ts-ignore
+            const shipping: IShipping = await Shipping.findOne({ trackingId: trackingId, userRef: req.user._id });
+            if(shipping) {
+                const label: ILabelResponse = {
+                    timestamp: shipping.timestamp,
+                    carrier: shipping.carrier,
+                    service: shipping.service,
+                    labels: shipping.labels
+                };
+                console.log("Find local Label Data");
+                return LRes.resOk(res, label);
+            } else {
+                // Get label data from carrier                
+                console.log("Getting Label Data from Carrier");
+                // @ts-ignore
+                const cf = await this.initCF(account, req.user._id);
+                // @ts-ignore
+                const response = await cf.getLabel(trackingId);
+                if ((response.hasOwnProperty('status') && response.status > 203)) {
+                    return res.status(response.status).json(response);
+                }
+
+                console.log("Return Label Data");
+                return LRes.resOk(res, response);
+            }
+        } catch (error) {
+            console.log(error);
+            return LRes.resErr(res, 500, error);
+        }
     };
 
+    
     /**
      * Reqiest Manifest from Carrier
      * @param req 
@@ -274,31 +318,59 @@ class ShippingController implements IControllerBase, ICarrierAPI {
      */
     public manifest: any = async (req: Request, res: Response) => {
         const body: IManifestRequest = req.body;
-        const carrier: string | null = body.carrier || null;
-        const carrierAccount: string | null = body.carrierAccount || null;
-        const manifests: [{ trackingIds: [string] }] = body.manifests;
+        let carrier: string | undefined = body.carrier || undefined;
+        let carrierAccount: string | undefined = body.carrierAccount || undefined;
+        let account: IAccount | undefined | null = undefined;
+        const manifests: [{ trackingIds: string[] }] = body.manifests;
 
-        if(!carrier) return res.status(400).json(LRes.fieldErr("carrier", "/", errorTypes.MISSING));
-        if(!carrierAccount) return res.status(400).json(LRes.fieldErr("carrierAccount", "/", errorTypes.MISSING, carrier));
+        try {
+            carrier = this.validateCarrier(carrier);
+            // @ts-ignore
+            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            carrierAccount = checkValues.carrierAccount;
+            account = checkValues.account;
+        } catch (error) {
+            return res.status(400).json(error);
+        }
+
         if(!manifests) return res.status(400).json(LRes.fieldErr("manifests", "/", errorTypes.MISSING, carrier));
         if(manifests.length < 1) return res.status(400).json(LRes.fieldErr("manifests", "/", errorTypes.EMPTY, carrier));
         if(!manifests[0].trackingIds) res.status(400).json(LRes.fieldErr("trackingIds", "/manifests/0/trackingIds", errorTypes.MISSING, carrier));
         if(manifests[0].trackingIds.length < 1) return res.status(400).json(LRes.fieldErr("trackingIds", "/manifests/0/trackingIds", errorTypes.EMPTY, carrier));
 
-        try {
-            await this.initCF(req, res);
-            // @ts-ignore
-            const cfManifest = await this.cf.manifest(body);
-            if ((cfManifest.hasOwnProperty('status') && cfManifest.status > 203)) {
-                return res.status(cfManifest.status).json(cfManifest);
-            }
-            // TODO: save manifest response data into database
-            return LRes.resOk(res, cfManifest);
+        // make sure all tracking ids belong to the request user
+        // @ts-ignore
+        const shippings = await Shipping.find({trackingId: { $in: manifests[0].trackingIds }, userRef: req.user._id}, "trackingId");
+        if(!shippings || shippings.length < 1) return res.status(400).json(LRes.fieldErr("trackingIds", "/manifests/0/trackingIds", errorTypes.INVALID, "trackingIds", carrier));
+        console.log(shippings);
+        const newIds = shippings.map((item: IShipping) => {
+            return item.trackingId;
+        });
+        console.log(newIds);
+        body.manifests[0].trackingIds = newIds;
 
+        try {
+            const cf = await this.initCF(account, req.user);
+            // @ts-ignore
+            const response = await cf.manifest(body);
+            if ((response.hasOwnProperty('status') && typeof response.status !== "string" && response.status > 203)) {
+                return res.status(response.status).json(response);
+            }
+
+            const manifestResponse: IManifestResponse = response;
+            //@ts-ignore
+            manifestResponse.userRef = req.user._id;
+            manifestResponse.trackingIds = manifests[0].trackingIds;
+            // save manifest response data into database
+            await new Manifest(manifestResponse).save();
+
+            return LRes.resOk(res, manifestResponse);
         } catch (err) {
+            console.log(err);
             return LRes.resErr(res, 500, err);
         }
     };
+
 
     /**
      * Download Manifest from Carrier
@@ -306,39 +378,106 @@ class ShippingController implements IControllerBase, ICarrierAPI {
      * @param res 
      */
     public getManifest: any = async (req: Request, res: Response) => {
-        const _requestId: string | null = req.params.requestId || null;
-        const carrierAccount: string | null = req.params.carrierAccount || null;
+        const requestId: string | undefined = req.params.requestId || undefined;
+        let carrierAccount: string | undefined = req.params.carrierAccount || undefined;
+        let account: IAccount | undefined | null = undefined;
 
-        if(!_requestId) return res.status(400).json(LRes.fieldErr("requestId", "/", errorTypes.MISSING));
-        if(!carrierAccount) return res.status(400).json(LRes.fieldErr("carrierAccount", "/", errorTypes.MISSING));
-
-        req.body.carrierAccount = carrierAccount;
+        if(!requestId) return res.status(400).json(LRes.fieldErr("requestId", "/", errorTypes.MISSING));
+        try {
+            // @ts-ignore
+            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            carrierAccount = checkValues.carrierAccount;
+            account = checkValues.account;
+        } catch (error) {
+            console.log(error);
+            return res.status(400).send(error);
+        }
 
         try {
-            // TODO : Check local data before send to Carrier
+            // check if data is available in the system
             const manifest = await Manifest.findOne(
-                {
-                    callType: "manifest",
-                    // @ts-ignore
-                    userRef: req.user._id,
-                    isError: false,
-                    "response.requestId": _requestId,
-                }
+                // @ts-ignore
+                { requestId: requestId, userRef: req.user._id}
             );
-            // TODO: check for manifest status is not COMPLETE then require from carrier
-            await this.initCF(req, res);
-            // @ts-ignore
-            const cfManifest = await this.cf.getManifest(_requestId);
-            if ((cfManifest.hasOwnProperty('status') && cfManifest.status > 203)) {
-                return LRes.resErr(res, cfManifest.status, "cfManifest.messages");
-            }
-            // TODO: save manifest data into database
-            return LRes.resOk(res, cfManifest);
+            if(!manifest) return LRes.resErr(res, 404, `No manifest found with requiredId [${requestId}], please create manifest first`);
+            if(manifest.status === "COMPLETED") return LRes.resOk(res, manifest);
 
-        } catch (err) {
-            return LRes.resErr(res, 500, err);
+            // request latest manifest data from carrier
+            const cf = await this.initCF(account, req.user);
+            // @ts-ignore
+            const response = await cf.getManifest(requestId);
+            if ((response.hasOwnProperty('status') && typeof response.status !== "string" && response.status > 203)) {
+                return res.status(response.status).json(response);
+            }
+            // update local manifest data
+            const manifestResponse: IManifestResponse = response;
+            // @ts-ignore
+            manifestResponse.userRef = req.user._id;
+
+            const updatedManifest = await Manifest.findOneAndUpdate(
+                // @ts-ignore
+                { requestId: requestId, userRef: req.user._id},
+                manifestResponse,
+                { new: true }
+            );
+
+            // if the manifest is completed update shipping records
+            if(updatedManifest && updatedManifest.status === "COMPLETED") {
+                console.log("start to check for tracking ids");
+                let trackingIds: string[] | undefined = updatedManifest.trackingIds;
+                console.log(trackingIds);
+                if(trackingIds) {
+                    const summary: IManifestSummary | undefined = updatedManifest.manifestSummary;
+                    if(summary) {
+                        const invalidTrackingIds: IManifestSummaryError[] | undefined = summary.invalid.trackingIds;
+                        if(invalidTrackingIds) {
+                            console.log("Find summary");
+                            console.log(invalidTrackingIds);
+                            const invalidIds = invalidTrackingIds.map((item: IManifestSummaryError) => {
+                                return item.trackingId;
+                            });
+                            console.log(invalidIds);
+                            trackingIds = trackingIds.filter((item: string) => {
+                                return invalidIds.includes(item) === false;
+                            });
+                            console.log(trackingIds);
+                        }
+                    }
+                    console.log("Updating");
+                    console.log(trackingIds);
+                    await Shipping.updateMany(
+                        { trackingId: { $in: trackingIds } },
+                        { $set: { manifested: true } }
+                    );
+                } 
+            }
+
+            return LRes.resOk(res, updatedManifest);
+        } catch (error) {
+            console.log(error);
+            return LRes.resErr(res, 500, error);
         }
     };
+
+    private validateCarrier = (carrier: string | undefined): string => {
+        if(!carrier) throw LRes.fieldErr("carrier", "/", errorTypes.MISSING);
+        if(!SUPPORTED_CARRIERS.includes(carrier.toLowerCase())) throw LRes.fieldErr("carrier", "/", errorTypes.UNSUPPORTED, carrier);
+        return carrier;
+    }
+
+    private validateService = (carrier: string, service: string | undefined): string => {
+        if(!service) throw LRes.fieldErr("service", "/", errorTypes.MISSING);
+        const supportedServices = SUPPORTED_SERVICES[carrier];
+        if(!supportedServices.includes(service)) throw LRes.fieldErr("service", "/", errorTypes.UNSUPPORTED, service, carrier);
+        return service;
+    }
+
+    private validateCarrierAccount = async (carrierAccount: string | undefined, user: IUser): Promise<{carrierAccount: string, account: IAccount}> => {
+        if(!carrierAccount) throw LRes.fieldErr("carrierAccount", "/", errorTypes.MISSING);
+        const account = await HelperLib.getCurrentUserAccount(carrierAccount, user);
+        if(!account) throw LRes.fieldErr("carrierAccount", "/", errorTypes.INVALID, carrierAccount);
+        return {carrierAccount, account};
+    }
 }
 
 export default ShippingController;

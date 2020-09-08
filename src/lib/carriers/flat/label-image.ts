@@ -1,9 +1,10 @@
 var htmlToImage = require('node-html-to-image');
 import fs from "fs";
 import path from "path";
-import { IFlatShippingInfo } from "./flat.helper";
+import { IFlatShippingInfo } from "../../../types/shipping.types";
+import { IUser } from "../../../types/user.types";
 
-export const generateLabel = (shippingInfo: IFlatShippingInfo, barcodeBase64: string, user? : any) => {
+export const generateLabel = (shippingInfo: IFlatShippingInfo, barcodeBase64: string, user? : IUser) => {
     const logoPath = path.join(__dirname, "../../../../static/eksborder.png");
     const logoImage = fs.readFileSync(logoPath);
     // @ts-ignore

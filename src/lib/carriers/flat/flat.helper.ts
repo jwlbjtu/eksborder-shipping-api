@@ -1,28 +1,10 @@
 import { trackingNumberGenerator } from "./tracking-generator";
 import { createBarcode } from "./barcode";
 import { generateLabel } from "./label-image";
-import { IUser } from "../../../models/user.model";
+import { IFlatShippingInfo, ILabelRequest, ILabelResponse } from "../../../types/shipping.types";
+import { IAccount, IUser } from "../../../types/user.types";
 
-export interface IAddress {
-    name?: string,
-    companyName?: string,
-    street1: string,
-    street2?: string,
-    city: string,
-    state: string,
-    country: string,
-    postal_code: string
-}
-
-export interface IFlatShippingInfo {
-    fromAddress: IAddress,
-    toAddress: IAddress,
-    service: string,
-    number: number,
-    weight: string
-};
-
-export const createFlatLabel = async (body: any, account: any, user?: any) => {
+export const createFlatLabel = async (body: ILabelRequest, account: IAccount, user?: IUser) => {
     // Generate tracking number
     const trackingNumber = trackingNumberGenerator();
     // Genereate bardcode based on the tracking number
@@ -38,8 +20,8 @@ export const createFlatLabel = async (body: any, account: any, user?: any) => {
     return generateResponse(body, trackingNumber, labelData, createdDate);
 };
 
-const generateResponse = (body: any, trackingId: any, labelData: string, createdOn: Date) => {
-    const labelRespsone = {
+const generateResponse = (body: ILabelRequest, trackingId: any, labelData: string, createdOn: Date) => {
+    const labelRespsone: ILabelResponse = {
         timestamp: new Date(),
         carrier: body.carrier,
         service: body.service,
@@ -57,10 +39,11 @@ const generateResponse = (body: any, trackingId: any, labelData: string, created
     return labelRespsone;
 }
 
-const shippingInfoFromBody = (body: any, account: any): IFlatShippingInfo => {
+const shippingInfoFromBody = (body: ILabelRequest, account: IAccount): IFlatShippingInfo => {
     const weight = body.packageDetail.weight;
 
     const shippingInfo: IFlatShippingInfo = {
+        // @ts-ignore
         fromAddress: account.carrierRef.returnAddress,
         toAddress: body.toAddress,
         service: `${body.carrier} ${body.service}`,

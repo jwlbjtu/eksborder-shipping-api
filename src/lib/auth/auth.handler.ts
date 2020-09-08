@@ -1,45 +1,43 @@
 import {NextFunction, Request, Response} from 'express';
 import passport from 'passport';
 
-import './passportHandler';
-import {UserRoleList} from "../../models/user.model";
+import './passport.handler';
+import {UserRoleList} from "../../lib/constants";
+// @ts-ignore
+import User from "../../models/user.model";
 
-class AuthController {
+class AuthHandler {
 
     public authenticateJWT(req: Request, res: Response, next: NextFunction) {
-        passport.authenticate("jwt", function (err, user, info) {
+        passport.authenticate("jwt", async function (err, user, jwtToken) {
             if (err) {
                 console.log(err);
                 return res.status(401).json({status: "error", code: "unauthorized"});
             }
-            if (!user || user.isActive == false || user.isLogin == false) {
-                return res.status(401).json({status: "error", code: "unauthorized"});
-            } else {
+            try {
+                if(jwtToken.name && jwtToken.name === "TokenExpiredError") {
+                    return res.status(401).json({status: "error", title: "Access Token Expired"});
+                }
+                const token = req.header("Authorization")?.replace("Bearer ", "");
+                const user = await User.findOne({
+                    email: jwtToken.email,
+                    "tokens.token": token,
+                    isActive: true
+                });
+                if (!user || user.isActive == false) {
+                    return res.status(401).json({status: "error", title: "unauthorized"});
+                }
+
                 req.user = user;
+                // @ts-ignore
+                req.token = token;
                 return next();
-            }
+            } catch (error) {
+                return res.status(401).json({status: "error", title: "unauthorized"});
+            }           
+
         })(req, res, next);
     }
-
-    // public authorizeJWT(req: Request, res: Response, next: NextFunction) {
-    //     passport.authenticate("jwt", function (err, user, jwtToken) {
-    //         if (err) {
-    //             console.log(err);
-    //             return res.status(401).json({status: "error", code: "unauthorized"});
-    //         }
-    //         if (!user) {
-    //             return res.status(401).json({status: "error", code: "unauthorized"});
-    //         } else {
-    //             const scope = req.baseUrl.split("/").slice(-1)[0];
-    //             const authScope = jwtToken.scope;
-    //             if (authScope && authScope.indexOf(scope) > -1) {
-    //                 return next();
-    //             } else {
-    //                 return res.status(401).json({status: "error", code: "unauthorized"});
-    //             }
-    //         }
-    //     })(req, res, next);
-    // }
 
     public checkRole(role: string) {
         return (req: Request, res: Response, next: NextFunction) => {
@@ -67,4 +65,4 @@ class AuthController {
 
 
 }
-export default AuthController;
+export default AuthHandler;

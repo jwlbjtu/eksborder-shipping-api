@@ -5,9 +5,11 @@ export const massUnits = ["LB", "OZ", "KG", "G"];
 export const dimensionUnits = ["IN", "CM"];
 
 export const errorTypes = {
+    UNKNOWN: "unknown",
     MISSING: "missing",
     UNSUPPORTED: "unsupported",
-    EMPTY: "empty"
+    EMPTY: "empty",
+    INVALID: "invalid"
 }
 
 // This is the FLAT price of DHL eCommerce
@@ -35,3 +37,39 @@ export const BILLING_TYPES = {
     AMOUNT: "amount",
     PROPORTION: "proportion"
 };
+
+export const USER_ROLES = {
+    ADMIN_SUPER: "admin_super",
+    ADMIN: "admin",
+    API_USER: "customer"
+}
+
+export const UserRoleList: Array<String> = [
+    USER_ROLES.ADMIN_SUPER, 
+    USER_ROLES.ADMIN, 
+    USER_ROLES.API_USER
+];
+
+
+export const CARRIERS = {
+    DHL_ECOMMERCE: "dhl ecommerce"
+};
+
+export const SUPPORTED_CARRIERS = [
+    CARRIERS.DHL_ECOMMERCE
+];
+
+export const SUPPORTED_SERVICES = {
+    [CARRIERS.DHL_ECOMMERCE] : [
+        "FLAT",
+        "EXP",
+        "GND",
+        "MAX"
+    ]
+}
+
+export const DHL_ECOMMERCE_MANIFEST_STATUS = {
+    CREATED: "CREATED",
+    IN_PROGRESS: "IN PROGRESS",
+    COMPLETED: "COMPLETED"
+}

@@ -1,19 +1,5 @@
-import mongoose, {Document, Schema, Types} from 'mongoose';
-
-export interface IAccount extends Document {
-    accountName: string;
-    carrierRef: object;
-    pickupRef: object;
-    userRef: object;
-    facilityRef: object;
-    billingType: "proportions" | "amount";
-    fee: number;
-    apiId: string;
-    note: string;
-    isTest: boolean;
-    isActive: boolean;
-}
-
+import mongoose, { Schema } from 'mongoose';
+import { IAccount } from '../types/user.types';
 
 
 const AccountSchema: Schema = new Schema({
@@ -52,15 +38,6 @@ const AccountSchema: Schema = new Schema({
         virtuals: true,
         getters: true,
     },
-});
-
-AccountSchema.virtual('shippingRef', {
-    ref: 'Shipping', // The model to use
-    localField: '_id', // Find people where `localField`
-    foreignField: 'accountRef', // is equal to `foreignField`
-    // If `justOne` is true, 'members' will be a single doc as opposed to
-    // an array. `justOne` is false by default.
-    justOne: false
 });
 
 export default mongoose.model<IAccount>('Account', AccountSchema);
