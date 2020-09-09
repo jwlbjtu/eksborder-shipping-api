@@ -36,6 +36,7 @@ class UsersController implements ICRUDControllerBase {
     public initRoutes() {
         // Create User - later can consider to allow customers to register use by themselves
         this.router.post(this.path, this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.createPost);
+        //this.router.post(this.path, this.createPost);
         // User Login
         this.router.post(this.path + "/login", this.login);
         // User Logout

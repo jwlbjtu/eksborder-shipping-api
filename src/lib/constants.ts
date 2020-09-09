@@ -35,7 +35,7 @@ export const DHL_FLAT_PRICES: {[key: string]: number} = {
 
 export const BILLING_TYPES = {
     AMOUNT: "amount",
-    PROPORTION: "proportion"
+    PROPORTION: "proportions"
 };
 
 export const USER_ROLES = {
