@@ -11,7 +11,7 @@ export const createFlatLabel = async (body: ILabelRequest, account: IAccount, us
     const barcode = await createBarcode(trackingNumber);
     // Create Shipping Info from Body
     const shippingInfo = shippingInfoFromBody(body, account);
-    // @ts-ignore // Generate PNG format label buffer
+    // Generate PNG format label buffer
     const labelBuffer = await generateLabel(shippingInfo, barcode, user);
     const createdDate = new Date();
     // Encode to base64
