@@ -1,7 +1,7 @@
 import bwipjs from "bwip-js";
 
-export const createBarcode = (code: string) => {
-    return new Promise((resolve , reject)=>{
+export const createBarcode = (code: string): Promise<Buffer> => {
+    return new Promise((resolve , reject) => {
         bwipjs.toBuffer({
             bcid:        'code128',       // Barcode type
             text:        code,           // Text to encode
@@ -13,7 +13,7 @@ export const createBarcode = (code: string) => {
             if (err) {
                 return reject(err);
             } else {
-                return resolve(png.toString('base64'));
+                return resolve(png);
             }
         });
     });
