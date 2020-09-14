@@ -1,6 +1,7 @@
 import ICarrierAPI from "../ICarrierAPI.interface";
 import AxiosapiLib from "../../axiosapi.lib";
 import qs from "qs";
+import convert from "convert-units";
 import { saveLog } from "../../../lib/log.handler";
 import { 
     IManifestRequest, 
@@ -12,11 +13,8 @@ import {
     ILabelResponse, 
     ILabel, 
     IManifestResponse,
-    IManifest,
-    IManifestSummary,
-    IManifestSummaryError,
     IPackageDetail} from "../../../types/shipping.types";
-import { IDHLeCommerceError, IError, IPBError, IParamInfo } from "../../../types/error.types";
+import { IError, IPBError, IParamInfo } from "../../../types/error.types";
 import { IUser, IAccount } from "../../../types/user.types";
 import { 
     IPBRatesRequest, 
@@ -32,7 +30,7 @@ import {
 import LRes from "../../lresponse.lib";
 import { errorTypes, SUPPORTED_PARCEL_TYPES } from "../../constants";
 
-class PbApi { //implements ICarrierAPI {
+class PbApi implements ICarrierAPI {
     private _props: {account: IAccount, user: IUser};
     private _credential: {
         client_id: string,
@@ -449,20 +447,28 @@ class PbApi { //implements ICarrierAPI {
     }
 
     private buildPBParcel(packageDetail: IPackageDetail) {
-        // PB-TODO: if USPS convert weigth to oz
+        // For USPS convert weigth to oz
+        // @ts-ignore
+        const weightInOZ = convert(packageDetail.weight.value).from(packageDetail.weight.unitOfMeasure.toLowerCase()).to("oz");
         const pbParcel: IPBParcel = {
             weight: {
-                weight: packageDetail.weight.value,
-                unitOfMeasurement: packageDetail.weight.unitOfMeasure
+                weight: weightInOZ,
+                unitOfMeasurement:  "OZ"
             }
         }
-        // PB-TODO: if USPS convert unit to in
+        // For USPS convert unit to in
         if(packageDetail.dimension) {
-            pbParcel.dimentsion = {
-                width: packageDetail.dimension.width,
-                height: packageDetail.dimension.height,
-                length: packageDetail.dimension.length,
-                unitOfMeasurement: packageDetail.dimension.unitOfMeasure
+            // @ts-ignore
+            const widthIn = convert(packageDetail.dimension.width).from(packageDetail.dimension.unitOfMeasure.toLowerCase()).to("in");
+            // @ts-ignore
+            const heightIn = convert(packageDetail.dimension.height).from(packageDetail.dimension.unitOfMeasure.toLowerCase()).to("in");
+            // @ts-ignore
+            const lengthIn = convert(packageDetail.dimension.length).from(packageDetail.dimension.unitOfMeasure.toLowerCase()).to("in");
+            pbParcel.dimension = {
+                width: widthIn,
+                height: heightIn,
+                length: lengthIn,
+                unitOfMeasurement: "IN"
             }
         }
 

@@ -261,6 +261,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             return LRes.resOk(res, labelResponse);
         } catch (err) {
             console.log("!!!ERROR!!!" + err);
+            console.log(err);
             return LRes.resErr(res, 500, err);
         }
     };

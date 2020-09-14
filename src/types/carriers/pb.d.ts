@@ -52,7 +52,7 @@ export interface IPBAddress  {
 
 export interface IPBParcel {
     weight: IPBWeight,
-    dimentsion?: IPBDimension
+    dimension?: IPBDimension
 }
 
 export interface IPBWeight {

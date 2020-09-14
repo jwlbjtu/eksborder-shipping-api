@@ -143,7 +143,7 @@ export interface IDHLeCommercePackageDetail {
     packageId: string,
     packageDescription?: string,
     weight: IDHLeCommerceWeight,
-    dimentsion?: IDHLeCommerceDimension,
+    dimension?: IDHLeCommerceDimension,
     shippingCost?: IDHLeCommerceShippingCost,
     billingReference1?: string,
     billingReference2?: string

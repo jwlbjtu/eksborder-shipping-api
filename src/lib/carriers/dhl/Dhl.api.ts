@@ -92,7 +92,7 @@ class DhlApi implements ICarrierAPI {
             packageId: data.packageDetail.packageId ||  "EK-" + Date.now(),
             packageDescription: data.packageDetail.packageDescription,
             weight: data.packageDetail.weight,
-            dimentsion: data.packageDetail.dimension,
+            dimension: data.packageDetail.dimension,
             billingReference1: data.packageDetail.billingReference1,
             billingReference2: data.packageDetail.billingReference2
         }
@@ -160,7 +160,7 @@ class DhlApi implements ICarrierAPI {
             packageId: data.packageDetail.packageId ||  "EK-" + Date.now() + Math.round(Math.random() * 1000000).toString(),
             packageDescription: data.packageDetail.packageDescription,
             weight: data.packageDetail.weight,
-            dimentsion: data.packageDetail.dimension,
+            dimension: data.packageDetail.dimension,
             billingReference1: data.packageDetail.billingReference1,
             billingReference2: data.packageDetail.billingReference2
         }
