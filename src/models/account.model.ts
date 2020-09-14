@@ -11,13 +11,11 @@ const AccountSchema: Schema = new Schema({
     },
     pickupRef: {
         type: Schema.Types.ObjectId,
-        ref: "Pickup",
-        required: true
+        ref: "Pickup"
     },
     facilityRef: {
         type: Schema.Types.ObjectId,
-        ref: "Facility",
-        required: true
+        ref: "Facility"
     },
     userRef: {
         type: Schema.Types.ObjectId,

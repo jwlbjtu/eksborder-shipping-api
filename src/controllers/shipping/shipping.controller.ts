@@ -15,7 +15,9 @@ import {
     errorTypes, 
     BILLING_TYPES, 
     SUPPORTED_CARRIERS, 
-    SUPPORTED_SERVICES} from "../../lib/constants";
+    SUPPORTED_SERVICES,
+    CARRIERS,
+    SUPPORTED_PROVIDERS} from "../../lib/constants";
 import { createFlatLabel } from "../../lib/carriers/flat/flat.helper";
 
 import Billing from "../../models/billing.model";
@@ -48,7 +50,8 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     public initRoutes() {
         //this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
         this.router.post(this.path + "/label", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
-        this.router.get(this.path + "/label/:carrierAccount/:trackingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
+        this.router.get(this.path + "/label/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
+        //this.router.get(this.path + "/label/:carrierAccount/:carrier/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
         this.router.post(this.path + "/manifest", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.manifest);
         this.router.get(this.path + "/manifest/:carrierAccount/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
     }
@@ -62,21 +65,21 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     };
 
     public products: any = async (req: Request, res: Response) => {
+        res.send();
+        // const body = req.body;
 
-        const body = req.body;
+        // try {
+        //     await this.initCF(req, res);
+        //     // @ts-ignore
+        //     const cfFind = await this.cf.products(body);
+        //     if (cfFind.hasOwnProperty('messages') || (cfFind.hasOwnProperty('status') && cfFind.status > 203)) {
+        //         return LRes.resErr(res, cfFind.status, cfFind.messages);
+        //     }
+        //     return LRes.resOk(res, cfFind);
 
-        try {
-            await this.initCF(req, res);
-            // @ts-ignore
-            const cfFind = await this.cf.products(body);
-            if (cfFind.hasOwnProperty('messages') || (cfFind.hasOwnProperty('status') && cfFind.status > 203)) {
-                return LRes.resErr(res, cfFind.status, cfFind.messages);
-            }
-            return LRes.resOk(res, cfFind);
-
-        } catch (err) {
-            return LRes.resErr(res, 401, err);
-        }
+        // } catch (err) {
+        //     return LRes.resErr(res, 401, err);
+        // }
     };
 
     /**
@@ -87,23 +90,26 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     public label: any = async (req: Request, res: Response) => {
         const body: ILabelRequest = req.body;
         let carrier: string | undefined = body.carrier || undefined;
+        let provider: string | undefined = body.provider || undefined;
         let service: string | undefined = body.service || undefined;
         let carrierAccount: string | undefined = body.carrierAccount || undefined;
         let account: IAccount | undefined | null = undefined;
-
         try {
-            carrier = this.validateCarrier(carrier);
-            service = this.validateService(carrier.toLowerCase(), service);
+            const checkedCarrier = this.validateCarrier(carrier, provider);
+            carrier = checkedCarrier.carrier;
+            provider = checkedCarrier.provider;
+            service = this.validateService(carrier.toLowerCase(), provider, service);
             // @ts-ignore
             const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
             carrierAccount = checkValues.carrierAccount;
             account = checkValues.account;
         } catch (error) {
+            console.log(error);
             return res.status(400).json(error);
         }
 
         // Set packageId and billingReference
-        body.packageDetail.packageId = "EK-" + Date.now();
+        body.packageDetail.packageId = "EK-" + Date.now() + Math.round(Math.random() * 1000000).toString();
         // @ts-ignore
         body.packageDetail.billingReference1 = req.user.company;
 
@@ -191,6 +197,8 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             } else {
                 const cf = await this.initCF(account, req.user); // TODO: refine carrier factory auth logic
 
+                body.rate = { currency: "USD" };
+
                 const response = await cf.label(body);
                 if ((response.hasOwnProperty('status') && response.status > 203)) {
                     return res.status(response.status).json(response);
@@ -217,6 +225,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
                 ...labelResponse,
                 toAddress: body.toAddress,
                 trackingId: labelResponse.labels[0].trackingId,
+                shippingId: labelResponse.shippingId,
                 manifested: false,
                 // @ts-ignore
                 userRef: req.user.id
@@ -252,57 +261,38 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             return LRes.resOk(res, labelResponse);
         } catch (err) {
             console.log("!!!ERROR!!!" + err);
+            console.log(err);
             return LRes.resErr(res, 500, err);
         }
     };
 
     /**
-     * Get Label (Shipping) data
+     * Get Label from Eksborder Database
      * @param req 
      * @param res 
      */
     public getLabel: any = async (req: Request, res: Response) => {
-        const trackingId: string | undefined = req.params.trackingId || undefined;
-        let carrierAccount: string | undefined = req.params.carrierAccount || undefined;
-        let account: IAccount | undefined | null = undefined;
+        const shippingId: string | undefined = req.params.shippingId || undefined;
 
-        if(!trackingId) return res.status(400).json(LRes.fieldErr("trackingId", "/", errorTypes.MISSING));
-        try {
-            // @ts-ignore
-            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
-            carrierAccount = checkValues.carrierAccount;
-            account = checkValues.account;
-        } catch (error) {
-            console.log(error);
-            return res.status(400).send(error);
-        }
+        if(!shippingId) return res.status(400).json(LRes.fieldErr("shippingId", "/", errorTypes.MISSING));
 
         try {
             // first try to find the label data from local
             // @ts-ignore
-            const shipping: IShipping = await Shipping.findOne({ trackingId: trackingId, userRef: req.user._id });
+            const shipping: IShipping = await Shipping.findOne({shippingId, userRef: req.user._id });
             if(shipping) {
                 const label: ILabelResponse = {
                     timestamp: shipping.timestamp,
                     carrier: shipping.carrier,
+                    provider: shipping.provider,
                     service: shipping.service,
-                    labels: shipping.labels
+                    labels: shipping.labels,
+                    shippingId: shipping.shippingId
                 };
                 console.log("Find local Label Data");
                 return LRes.resOk(res, label);
             } else {
-                // Get label data from carrier                
-                console.log("Getting Label Data from Carrier");
-                // @ts-ignore
-                const cf = await this.initCF(account, req.user._id);
-                // @ts-ignore
-                const response = await cf.getLabel(trackingId);
-                if ((response.hasOwnProperty('status') && response.status > 203)) {
-                    return res.status(response.status).json(response);
-                }
-
-                console.log("Return Label Data");
-                return LRes.resOk(res, response);
+                return LRes.resErr(res, 404, `No label found for shippingId [${shippingId}]`);
             }
         } catch (error) {
             console.log(error);
@@ -319,12 +309,15 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     public manifest: any = async (req: Request, res: Response) => {
         const body: IManifestRequest = req.body;
         let carrier: string | undefined = body.carrier || undefined;
+        let provider: string | undefined = body.provider || undefined;
         let carrierAccount: string | undefined = body.carrierAccount || undefined;
         let account: IAccount | undefined | null = undefined;
         const manifests: [{ trackingIds: string[] }] = body.manifests;
 
         try {
-            carrier = this.validateCarrier(carrier);
+            const checkedCarrier = this.validateCarrier(carrier, provider);
+            carrier = checkedCarrier.carrier;
+            provider = checkedCarrier.provider;
             // @ts-ignore
             const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
             carrierAccount = checkValues.carrierAccount;
@@ -459,15 +452,20 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         }
     };
 
-    private validateCarrier = (carrier: string | undefined): string => {
+    private validateCarrier = (carrier: string | undefined, provider: string | undefined) => {
         if(!carrier) throw LRes.fieldErr("carrier", "/", errorTypes.MISSING);
         if(!SUPPORTED_CARRIERS.includes(carrier.toLowerCase())) throw LRes.fieldErr("carrier", "/", errorTypes.UNSUPPORTED, carrier);
-        return carrier;
+        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && !provider) throw LRes.fieldErr("provider", "/", errorTypes.MISSING);
+        if(provider && !SUPPORTED_PROVIDERS[carrier.toLowerCase()].includes(provider)) throw LRes.fieldErr("provider", "/", errorTypes.UNSUPPORTED, provider, carrier);
+        return { carrier, provider };
     }
 
-    private validateService = (carrier: string, service: string | undefined): string => {
+    private validateService = (carrier: string, provider: string | undefined, service: string | undefined): string => {
         if(!service) throw LRes.fieldErr("service", "/", errorTypes.MISSING);
-        const supportedServices = SUPPORTED_SERVICES[carrier];
+        let supportedServices = SUPPORTED_SERVICES[carrier.toLowerCase()];
+        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && provider) {
+            supportedServices = SUPPORTED_SERVICES[provider];
+        }
         if(!supportedServices.includes(service)) throw LRes.fieldErr("service", "/", errorTypes.UNSUPPORTED, service, carrier);
         return service;
     }
@@ -481,3 +479,60 @@ class ShippingController implements IControllerBase, ICarrierAPI {
 }
 
 export default ShippingController;
+
+//************************************************************//
+//*************** Get Label From Carrier API *****************//
+//************************************************************//
+// /**
+//  * Get Label (Shipping) data
+//  * @param req 
+//  * @param res 
+//  */
+// public getLabel: any = async (req: Request, res: Response) => {
+//     const shippingId: string | undefined = req.params.shippingId || undefined;
+//     let carrierAccount: string | undefined = req.params.carrierAccount || undefined;
+//     let account: IAccount | undefined | null = undefined;
+
+//     if(!shippingId) return res.status(400).json(LRes.fieldErr("shippingId", "/", errorTypes.MISSING));
+//     try {
+//         // @ts-ignore
+//         const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+//         carrierAccount = checkValues.carrierAccount;
+//         account = checkValues.account;
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(400).send(error);
+//     }
+
+//     try {
+//         // first try to find the label data from local
+//         // @ts-ignore
+//         const shipping: IShipping = await Shipping.findOne({shippingId, userRef: req.user._id });
+//         if(false) {
+//             const label: ILabelResponse = {
+//                 timestamp: shipping.timestamp,
+//                 carrier: shipping.carrier,
+//                 service: shipping.service,
+//                 labels: shipping.labels
+//             };
+//             console.log("Find local Label Data");
+//             return LRes.resOk(res, label);
+//         } else {
+//             // Get label data from carrier                
+//             console.log("Getting Label Data from Carrier");
+//             // @ts-ignore
+//             const cf = await this.initCF(account, req.user._id);
+//             // @ts-ignore
+//             const response = await cf.getLabel(shippingId, "usps");
+//             if ((response.hasOwnProperty('status') && response.status > 203)) {
+//                 return res.status(response.status).json(response);
+//             }
+
+//             console.log("Return Label Data");
+//             return LRes.resOk(res, response);
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         return LRes.resErr(res, 500, error);
+//     }
+// };

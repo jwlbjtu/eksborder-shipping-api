@@ -1,4 +1,6 @@
 export const DHL_ECOMMERCE = "DHL eCommerce";
+export const PITNEY_BOWES = "Pitney Bowes";
+export const USPS = "USPS";
 
 export const massUnits = ["LB", "OZ", "KG", "G"];
 
@@ -52,11 +54,14 @@ export const UserRoleList: Array<String> = [
 
 
 export const CARRIERS = {
-    DHL_ECOMMERCE: "dhl ecommerce"
+    DHL_ECOMMERCE: "dhl ecommerce",
+    PITNEY_BOWES: "pitney bowes",
+    USPS: "usps"
 };
 
 export const SUPPORTED_CARRIERS = [
-    CARRIERS.DHL_ECOMMERCE
+    CARRIERS.DHL_ECOMMERCE,
+    CARRIERS.PITNEY_BOWES
 ];
 
 export const SUPPORTED_SERVICES = {
@@ -65,6 +70,22 @@ export const SUPPORTED_SERVICES = {
         "EXP",
         "GND",
         "MAX"
+    ],
+    [USPS] : [
+        "FCM"
+    ]
+}
+
+export const SUPPORTED_PARCEL_TYPES: {[key: string] : string[]} = {
+    "FCM": [
+        "FLAT",
+        "PKG"
+    ]
+}
+
+export const SUPPORTED_PROVIDERS: {[key:string] : string[]} = {
+    [CARRIERS.PITNEY_BOWES] : [
+        "USPS"
     ]
 }
 

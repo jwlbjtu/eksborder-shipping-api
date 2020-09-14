@@ -4,12 +4,14 @@ import { IShipping } from '../types/record.types';
 const ShippingSchema: Schema = new Schema({
     timestamp: { type: Date, required: true},
     carrier: { type: String, required: true},
+    provider: { type: String },
     service: { type: String, required: true},
     labels: [{
         createdOn: { type: Date},
         trackingId: { type: String },
         labelData: { type: String },
         encodeType: { type: String },
+        parcelType: {type: String },
         format: { type: String }
     }],
     toAddress: {
@@ -25,6 +27,7 @@ const ShippingSchema: Schema = new Schema({
         phone: { type: String }
     },
     trackingId: { type: String, required: true, index: true},
+    shippingId: { type: String },
     manifested: { type: Boolean, required: true, default: false },
     userRef: {
         type: Schema.Types.ObjectId,

@@ -3,6 +3,7 @@ import { IAddress } from "../lib/carriers/flat/flat.helper";
 
 export interface IProductRequest {
     carrier: string,
+    provider?: string,
     carrierAccount: string,
     merchantId?: string,
     service?: string,
@@ -19,23 +20,28 @@ export interface IProductResponse extends IProductRequest {
 
 export interface ILabelRequest {
     carrier: string,
+    provider?: string,
     carrierAccount: string,
     merchantId?: string,
     service: string,
     toAddress: IAddress,
     fromAddress?: IAddress,
-    packageDetail: IPackageDetail
+    packageDetail: IPackageDetail,
+    rate: { currency: string }
 }
 
 export interface ILabelResponse {
     timestamp: Date,
     carrier: string,
+    provider?: string,
     service: string,
-    labels: ILabel[]
+    labels: ILabel[],
+    shippingId?: string
 }
 
 export interface IManifestRequest {
     carrier: string,
+    provider?: string,
     carrierAccount: string,
     manifests: [
         {
@@ -47,6 +53,7 @@ export interface IManifestRequest {
 export interface IManifestResponse extends Document {
     timestamp: Date,
     carrier: string,
+    provider?: string,
     requestId: string,
     status?: "CREATED" | "IN PROGRESS" | "COMPLETED",
     manifests?: IManifest[],
@@ -56,10 +63,13 @@ export interface IManifestResponse extends Document {
 }
 
 export interface IProduct {
-    service: string,
-    productName: string,
-    description: string,
-    trackingAvailable: string,
+    carrier?: string,
+    service?: string,
+    parcelType?: string,
+    productName?: string,
+    description?: string,
+    trackingAvailable?: string,
+    dimentionalWeight?: IWeight,
     rate?: {
         amount: number,
         currency: string,
@@ -73,7 +83,7 @@ export interface IProduct {
         deliveryDaysMin: number,
         deliveryDaysMax: number,
         estimateDeliveryMin: string,
-        estimateDeliveryMax: string
+        estimateDeliveryMax?: string
     },
     messages?: {
         messageText: string
@@ -85,7 +95,8 @@ export interface ILabel {
     trackingId: string,
     labelData: string,
     encodeType: string,
-    format: string
+    format: string,
+    parcelType?: string
 }
 
 export interface IManifest {
@@ -130,7 +141,8 @@ export interface IPackageDetail {
     weight: IWeight,
     dimension?: IDimension,
     billingReference1?: string,
-    billingReference2?: string
+    billingReference2?: string,
+    parcelType?: string
 }
 
 export interface IWeight {

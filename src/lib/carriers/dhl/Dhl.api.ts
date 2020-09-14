@@ -29,13 +29,13 @@ import {
     IDHLeCommerceManifest,
     IDHLeCommerceManifestSummaryError} from "../../../types/carriers/dhl.ecommerce";
 import { IDHLeCommerceError, IError } from "../../../types/error.types";
-import { brotliDecompressSync } from "zlib";
+import { IAccount, IUser } from "../../../types/user.types";
 
 class DhlApi implements ICarrierAPI {
-    private _props: object = {};
-    private _credential: object | any = {
-        client_id: '',
-        client_secret: ''
+    private _props: {account: IAccount, user: IUser};
+    private _credential: {
+        client_id: string,
+        client_secret: string
     };
     private api_url: string = '';
     private accesstoken: string = '';
@@ -43,23 +43,23 @@ class DhlApi implements ICarrierAPI {
     /**
      * @param props
      */
-    constructor(props?: object) {
-        if (typeof props !== 'undefined' && typeof props == 'object') {
-            this._props = props;
-            
-            if(process.env.NODE_ENV === "production") {
-                // @ts-ignore
-                this.api_url = process.env.DHL_ECOMMERCE_PROD;
-            } else {
-                // @ts-ignore
-                this.api_url = process.env.DHL_ECOMMERCE_TEST;
-            }
-            
+    constructor(props: {account: IAccount, user: IUser}) {
+        this._props = props;
+        
+        if(process.env.NODE_ENV === "production") {
             // @ts-ignore
-            this._credential.client_id = this._props.account.carrierRef.clientId;
+            this.api_url = process.env.DHL_ECOMMERCE_PROD;
+        } else {
             // @ts-ignore
-            this._credential.client_secret = this._props.account.carrierRef.clientSecret;
+            this.api_url = process.env.DHL_ECOMMERCE_TEST;
         }
+
+        this._credential = {
+            // @ts-ignore
+            client_id: this._props.account.carrierRef.clientId,
+            // @ts-ignore
+            client_secret: this._props.account.carrierRef.clientSecret
+        };
     }
 
     /**
@@ -92,7 +92,7 @@ class DhlApi implements ICarrierAPI {
             packageId: data.packageDetail.packageId ||  "EK-" + Date.now(),
             packageDescription: data.packageDetail.packageDescription,
             weight: data.packageDetail.weight,
-            dimentsion: data.packageDetail.dimension,
+            dimension: data.packageDetail.dimension,
             billingReference1: data.packageDetail.billingReference1,
             billingReference2: data.packageDetail.billingReference2
         }
@@ -157,10 +157,10 @@ class DhlApi implements ICarrierAPI {
     public label: any = async (data: ILabelRequest, format: 'ZPL' | 'PNG' = 'PNG') => {
 
         const dhlPackageDetail: IDHLeCommercePackageDetail = {
-            packageId: data.packageDetail.packageId ||  "EK-" + Date.now(),
+            packageId: data.packageDetail.packageId ||  "EK-" + Date.now() + Math.round(Math.random() * 1000000).toString(),
             packageDescription: data.packageDetail.packageDescription,
             weight: data.packageDetail.weight,
-            dimentsion: data.packageDetail.dimension,
+            dimension: data.packageDetail.dimension,
             billingReference1: data.packageDetail.billingReference1,
             billingReference2: data.packageDetail.billingReference2
         }
@@ -215,7 +215,8 @@ class DhlApi implements ICarrierAPI {
                         format: item.format
                     }
                     return result;
-                })
+                }),
+                shippingId: dhlLabelResponse.labels[0].dhlPackageId
             }
 
             console.log("Return data from DHL eCommerce [Label] endpoint");
@@ -232,11 +233,11 @@ class DhlApi implements ICarrierAPI {
      * @param packageId 
      * @param dhlPackageId 
      */
-    public getLabel: any = async (trackingId: string) => {
+    public getLabel: any = async (shippingId: string, carrier: string) => {
         // @ts-ignore
         const pickup = this._props.account.pickupRef.pickupAccount;    
         const paramsStr: string = qs.stringify({
-            'dhlPackageId': trackingId
+            'dhlPackageId': shippingId
         });
         const _url :string = this.api_url + '/shipping/v4/label/' + pickup + '?' + paramsStr;
 

@@ -1,16 +1,21 @@
+import { DHL_ECOMMERCE, PITNEY_BOWES, errorTypes } from "./constants";
+import { IAccount, IUser } from "../types/user.types";
+import LRes from "../lib/lresponse.lib";
 import DhlApi from "./carriers/dhl/Dhl.api";
-import { DHL_ECOMMERCE } from "./constants";
-
-type carrierType = 'dhl ecommerce' | 'fedex' | 'ups' | 'usps';
+import PbApi from "./carriers/pb/Pb.api";
 
 class CarrierFactory {
 
-    private carriersType: Array<String> = [];
-
-    constructor(type: string, props?: object) {
-        if (type === DHL_ECOMMERCE) {
-            // @ts-ignore
-            return new DhlApi(props);
+    constructor(type: string, props: {account: IAccount, user: IUser}) {
+        switch (type) {
+            case DHL_ECOMMERCE:
+                console.log("DHL ECOMMERCE API");
+                return new DhlApi(props);
+            case PITNEY_BOWES:
+                console.log("PITNEY BOWES API");
+                return new PbApi(props);        
+            default:
+                throw LRes.fieldErr("carrier", "/", errorTypes.UNSUPPORTED, type);
         }
     }
 }
