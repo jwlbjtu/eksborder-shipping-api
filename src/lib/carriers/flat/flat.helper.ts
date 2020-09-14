@@ -33,7 +33,8 @@ const generateResponse = (body: ILabelRequest, trackingId: any, labelData: strin
                 encodeType: "BASE64",
                 format: "PNG"
             }
-        ]
+        ],
+        shippingId: trackingId
     }
 
     return labelRespsone;

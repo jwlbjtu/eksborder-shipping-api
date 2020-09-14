@@ -21,6 +21,7 @@ const CarrierSchema: Schema = new Schema({
         email: {type: String, lowercase: true, match: [/\S+@\S+\.\S+/], trim: true},
         phone: {type: String, minlength:5, maxlength:20, trim: true},
     },
+    shipperId: {type: String},
     isActive: {type: Boolean, default: true}
 }, {
     timestamps: true,

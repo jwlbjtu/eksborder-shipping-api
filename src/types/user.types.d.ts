@@ -38,9 +38,9 @@ export interface IAccount extends Document {
     id: object,
     accountName: string;
     carrierRef: object;
-    pickupRef: object;
+    pickupRef?: object;
     userRef: object;
-    facilityRef: object;
+    facilityRef?: object;
     billingType: "proportions" | "amount";
     fee: number;
     apiId: string;

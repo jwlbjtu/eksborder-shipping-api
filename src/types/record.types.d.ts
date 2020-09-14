@@ -10,6 +10,7 @@ export interface ICarrier extends Document {
     returnAddress: IAddress,
     pickupRef: IPickup[],
     facilityRef: IFacility[],
+    shipperId?: string,
     isActive: boolean
 }
 
@@ -54,6 +55,7 @@ export interface IBilling extends Document {
 export interface IShipping extends ILabelResponse, Document {
     toAddress: IAddress,
     trackingId: string,
+    shippingId?: string,
     manifested: boolean = false,
     userRef: object
 }

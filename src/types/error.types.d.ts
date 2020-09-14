@@ -4,6 +4,13 @@ export interface IDHLeCommerceError {
     invalidParams?: IParamInfo[]
 }
 
+export interface IPBError {
+    errorCode: string,
+    errorDescription: string,
+    additionalInfo: any,
+    parameters: string[]
+}
+
 export interface IError {
     status: number,
     title: string,
@@ -13,8 +20,8 @@ export interface IError {
 
 export interface IParamInfo {
     name: string, 
-    path: string, 
-    reason: string
+    path?: string, 
+    reason?: string
 };
 
 export interface IFormatDataOne {
