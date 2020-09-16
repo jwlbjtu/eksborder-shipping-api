@@ -69,11 +69,8 @@ class PbApi implements ICarrierAPI {
             'grant_type': 'client_credentials'
         });
         const headers = await this.getHeaders(true);
-        console.log(headers);
         return await AxiosapiLib.doCall('post', this.api_url + '/oauth/token', data, headers)
             .then((response: Response | any) => {
-                console.log("PB-TEST");
-                console.log(response);
                 this.accesstoken = response.access_token;
                 console.log("Authenticate to Pitney Bowes succefylly.");
                 return response;
