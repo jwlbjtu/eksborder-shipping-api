@@ -8,7 +8,7 @@ export interface IPBError {
     errorCode: string,
     errorDescription: string,
     additionalInfo: any,
-    parameters: string[]
+    parameters?: string[]
 }
 
 export interface IError {
