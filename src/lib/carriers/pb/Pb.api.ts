@@ -216,7 +216,7 @@ class PbApi implements ICarrierAPI {
                     status: response.status,
                     title: pbErrors[0].errorDescription,
                     carrier: data.carrier,
-                    error: pbErrors[0].parameters.map((item: string) => {
+                    error: pbErrors[0].parameters?.map((item: string) => {
                         const invalidParam: IParamInfo = {
                             name: item
                         };
@@ -282,7 +282,7 @@ class PbApi implements ICarrierAPI {
                     title: pbErrors[0].errorDescription,
                     // @ts-ignore
                     carrier: this._props.account.carrierRef.carrierName,
-                    error: pbErrors[0].parameters.map((item: string) => {
+                    error: pbErrors[0].parameters?.map((item: string) => {
                         const invalidParam: IParamInfo = {
                             name: item
                         };
@@ -357,7 +357,7 @@ class PbApi implements ICarrierAPI {
                     status: response.status,
                     title: pbErrors[0].errorDescription,
                     carrier: data.carrier,
-                    error: pbErrors[0].parameters.map((item: string) => {
+                    error: pbErrors[0].parameters?.map((item: string) => {
                         const invalidParam: IParamInfo = {
                             name: item
                         };
