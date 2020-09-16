@@ -323,6 +323,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             carrierAccount = checkValues.carrierAccount;
             account = checkValues.account;
         } catch (error) {
+            console.log(error);
             return res.status(400).json(error);
         }
 
@@ -456,7 +457,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         if(!carrier) throw LRes.fieldErr("carrier", "/", errorTypes.MISSING);
         if(!SUPPORTED_CARRIERS.includes(carrier.toLowerCase())) throw LRes.fieldErr("carrier", "/", errorTypes.UNSUPPORTED, carrier);
         if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && !provider) throw LRes.fieldErr("provider", "/", errorTypes.MISSING);
-        if(provider && !SUPPORTED_PROVIDERS[carrier.toLowerCase()].includes(provider)) throw LRes.fieldErr("provider", "/", errorTypes.UNSUPPORTED, provider, carrier);
+        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && provider && !SUPPORTED_PROVIDERS[carrier.toLowerCase()].includes(provider)) throw LRes.fieldErr("provider", "/", errorTypes.UNSUPPORTED, provider, carrier);
         return { carrier, provider };
     }
 
