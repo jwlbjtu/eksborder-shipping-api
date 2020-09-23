@@ -8,7 +8,8 @@ import IControllerBase from "../../interfaces/IControllerBase.interface";
 import { 
     DHL_ECOMMERCE,
     errorTypes, 
-    BILLING_TYPES
+    BILLING_TYPES,
+    PITNEY_BOWES
 } from "../../lib/constants";
 import { createFlatLabel } from "../../lib/carriers/flat/flat.helper";
 
@@ -29,7 +30,7 @@ import {
     IManifestSummary,
     IManifestSummaryError} from "../../types/shipping.types";
 import { IBilling, IShipping } from "../../types/record.types";
-import { IAccount } from "../../types/user.types";
+import { IAccount, IUser } from "../../types/user.types";
 import { 
     validateMassUnit, 
     validateCarrier, 
@@ -51,12 +52,30 @@ class ShippingController implements IControllerBase {
 
     public initRoutes() {
         // TODO: Add Carrier Rules
+        this.router.get(this.path + "/admin/rules", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.rules);
         this.router.post(this.path + "/admin/products", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
         this.router.post(this.path + "/label", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
         this.router.get(this.path + "/label/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
         //this.router.get(this.path + "/label/:carrierAccount/:carrier/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
         this.router.post(this.path + "/manifest", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.manifest);
         this.router.get(this.path + "/manifest/:carrierAccount/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
+    }
+
+    public rules: any = async (req: Request, res: Response) => {
+        // build account for admin
+        const carrierRef = await Carrier.findOne({carrierName: PITNEY_BOWES});
+        // @ts-ignore
+        const account  = ShippingUtil.buildIAccountForAdmin(carrierRef!, req.user);
+
+        try {
+            // @ts-ignore
+            const api = await ShippingUtil.initCF(account, req.user); 
+            const response = await api.rules("USPS", "US", "US");
+            return LRes.resOk(res, response);
+        } catch (error) {
+            console.log(error);
+            return LRes.resErr(res, 500, error);
+        }        
     }
 
     /**
@@ -91,7 +110,7 @@ class ShippingController implements IControllerBase {
         // build account for admin
         const carrierRef = await Carrier.findOne({carrierName: carrier});
         // @ts-ignore
-        const account  = ShippingUtil.buildIAccountForAdmin(body, carrierRef!, req.user);
+        const account  = ShippingUtil.buildIAccountForAdmin(carrierRef!, req.user, body.pickup, body.distributionCenter);
         // build IProductRequest
         const productRequest = ShippingUtil.buildIProductRequestForAdmin(body);
 

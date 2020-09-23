@@ -81,6 +81,10 @@ class DhlApi implements ICarrierAPI {
                 return err;
             });
     };
+ 
+    public rules: any = async (carrier: string, originCountryCode: string, destinationCountryCode: string) => {
+        return;
+    }
 
     /**
      * Find product rate of DHL eCommerce

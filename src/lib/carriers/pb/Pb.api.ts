@@ -80,6 +80,17 @@ class PbApi implements ICarrierAPI {
             });
     };
 
+    public rules: any = async (carrier: string, originCountryCode: string, destinationCountryCode: string) => {
+        try {
+            const headers = await this.getHeaders(false);
+            const response = await AxiosapiLib.doCall('get', this.api_url + `/shippingservices/v1/information/rules/rating-services?carrier=${carrier}&originCountryCode=${originCountryCode}&destinationCountryCode=${destinationCountryCode}`, null, headers);
+            return response;
+        } catch (error) {
+            console.log(error);
+            return error;
+        }
+    }
+
     /**
      * Find product rate of DHL eCommerce
      * @param data

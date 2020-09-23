@@ -86,7 +86,7 @@ class ShippingUtil {
         return productResponse;
     }
 
-    static buildIAccountForAdmin = (data: IAdminProductRequest, carrierRef: ICarrier, userRef: IUser) => {
+    static buildIAccountForAdmin = (carrierRef: ICarrier, userRef: IUser, pickup?: string, distributionCenter?: string) => {
         // @ts-ignore
         const account: IAccount = {
             accountName: "admin_account",
@@ -94,11 +94,11 @@ class ShippingUtil {
             fee: 0,
             carrierRef,
             pickupRef: {
-                pickupAccount: data.pickup
+                pickupAccount: pickup
             },
             userRef,
             facilityRef: {
-                facilityNumber: data.distributionCenter
+                facilityNumber: distributionCenter
             },
             isActive: true,
             isTest: true
