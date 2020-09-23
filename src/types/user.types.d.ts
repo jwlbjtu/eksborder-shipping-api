@@ -43,8 +43,8 @@ export interface IAccount extends Document {
     facilityRef?: object;
     billingType: "proportions" | "amount";
     fee: number;
-    apiId: string;
-    note: string;
+    apiId?: string;
+    note?: string;
     isTest: boolean;
     isActive: boolean;
 }

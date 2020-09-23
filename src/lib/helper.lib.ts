@@ -2,8 +2,6 @@ import Carrier from "../models/carrier.model";
 import Account from "../models/account.model";
 import { IAccount, IUser } from "../types/user.types";
 
-
-
 class HelperLib {
 
     static getCurrentUserAccount = async (name: string, user: IUser): Promise<IAccount | null> => {

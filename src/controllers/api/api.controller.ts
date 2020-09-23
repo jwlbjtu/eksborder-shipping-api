@@ -3,8 +3,9 @@ import { Request, Response} from "express";
 import AuthHandler from "../../lib/auth/auth.handler";
 import LRes from "../../lib/lresponse.lib";
 import User from "../../models/user.model";
+import IControllerBase from "../../interfaces/IControllerBase.interface";
 
-class APIController {
+class APIController implements IControllerBase{
     public path = "/api";
     public router = express.Router();
     private authJwt: AuthHandler = new AuthHandler();

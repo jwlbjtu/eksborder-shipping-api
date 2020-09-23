@@ -11,7 +11,8 @@ export const errorTypes = {
     MISSING: "missing",
     UNSUPPORTED: "unsupported",
     EMPTY: "empty",
-    INVALID: "invalid"
+    INVALID: "invalid",
+    ACCOUNT_ERROR: "account_error"
 }
 
 // This is the FLAT price of DHL eCommerce
@@ -66,20 +67,30 @@ export const SUPPORTED_CARRIERS = [
 
 export const SUPPORTED_SERVICES = {
     [CARRIERS.DHL_ECOMMERCE] : [
-        "FLAT",
-        "EXP",
-        "GND",
-        "MAX"
+        "FLAT", // DHL Large Envelope/Flat
+        "EXP", // DHL Parcel Expedited
+        "GND", // DHL Parcel Ground
+        "MAX" // DHL Parcel Expedited Max
     ],
     [USPS] : [
-        "FCM"
+        "FCM", // First-Class Mail
+        "PM" // Priority Mail
     ]
 }
 
 export const SUPPORTED_PARCEL_TYPES: {[key: string] : string[]} = {
     "FCM": [
-        "FLAT",
-        "PKG"
+        "FLAT", // Large Envelope/Flat. Only with FCM, and a label size of DOC_6X4
+        "PKG" // Package
+    ],
+    "PM": [
+        "FRE", // Flat Rate Envelope
+        "LGLFRENV", // Legal Flat Rate Envelope
+        "PFRENV", // Padded Flat Rate Envelope
+        "SFRB", // Small Flat Rate Box
+        "FRB", // Medium Flat Rate Box 
+        "LFRB", // Large Flat Rate Box
+        "PKG" // Package
     ]
 }
 

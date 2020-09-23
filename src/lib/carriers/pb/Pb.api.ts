@@ -27,8 +27,6 @@ import {
     IPBDocument,
     IPBManifestRequest,
     IPBManifestResponse} from "../../../types/carriers/pb";
-import LRes from "../../lresponse.lib";
-import { errorTypes, SUPPORTED_PARCEL_TYPES } from "../../constants";
 
 class PbApi implements ICarrierAPI {
     private _props: {account: IAccount, user: IUser};
@@ -64,7 +62,7 @@ class PbApi implements ICarrierAPI {
     /**
      * auth user
      */
-    private auth: any = async () => {
+    public auth: any = async () => {
         const data = qs.stringify({
             'grant_type': 'client_credentials'
         });
@@ -87,13 +85,6 @@ class PbApi implements ICarrierAPI {
      * @param data
      */
     public products: any = async (data: IProductRequest) => {
-        const serviceId = data.service!;
-        const parcelType = data.packageDetail.parcelType;
-        if(!parcelType) return LRes.fieldErr("parcelType", "/packageDetail/parcelType", errorTypes.MISSING, data.carrier);
-        if(parcelType && !SUPPORTED_PARCEL_TYPES[serviceId].includes(parcelType)) {
-            return  LRes.fieldErr("parcelType", "/packageDetail/parcelType", errorTypes.UNSUPPORTED, parcelType);
-        }
-
         const prodReqBody: IPBRatesRequest = {
             //@ts-ignore
             fromAddress: this.convertToPBAddress(this._props.account.carrierRef.returnAddress),
@@ -156,13 +147,6 @@ class PbApi implements ICarrierAPI {
      * @param format 
      */
     public label: any = async (data: ILabelRequest) => {
-        const serviceId = data.service!;
-        const parcelType = data.packageDetail.parcelType;
-        if(!parcelType) return LRes.fieldErr("parcelType", "/packageDetail/parcelType", errorTypes.MISSING, data.carrier);
-        if(parcelType && !SUPPORTED_PARCEL_TYPES[serviceId].includes(parcelType)) {
-            return  LRes.fieldErr("parcelType", "/packageDetail/parcelType", errorTypes.UNSUPPORTED, parcelType);
-        }
-
         const rates = this.buildPBRates(data);
 
         const labelReqBody: IPBShppingRequest = {
@@ -175,9 +159,8 @@ class PbApi implements ICarrierAPI {
                 {
                     type: "SHIPPING_LABEL",
                     contentType: "BASE64",
-                    size: "DOC_6X4",
+                    size: "DOC_4X6",
                     fileFormat: "PNG",
-                    resolution: "DPI_203",
                     printDialogOption: "NO_PRINT_DIALOG"
                 }
             ],
@@ -186,17 +169,21 @@ class PbApi implements ICarrierAPI {
                     name: "SHIPPER_ID",
                     // @ts-ignore
                     value: this._props.account.carrierRef.shipperId
+                },
+                {
+                    name: "HIDE_TOTAL_CARRIER_CHARGE",
+                    value: true
                 }
             ]
         }
 
-        if(rates[0].serviceId === "FCM" && rates[0].parcelType !== "FLAT") {
+        if(rates[0].serviceId === "FCM" && rates[0].parcelType === "FLAT") {
+            labelReqBody.documents[0].size = "DOC_6X4";
+        } else {
             labelReqBody.shipmentOptions.push({
                 name: "ADD_TO_MANIFEST",
                 value: "true"
             });
-
-            labelReqBody.documents[0].size = "DOC_4X6";
         }
 
         const headers = await this.getHeaders(false);
@@ -475,21 +462,23 @@ class PbApi implements ICarrierAPI {
     }
 
     private buildPBRates(data: IProductRequest | ILabelRequest) {
-        const carrier = data.provider!;
+        const provider = data.provider!;
         const serviceId = data.service!;
         const parcelType = data.packageDetail.parcelType!;
 
         const pbRate: IPBRate = {
-            carrier: carrier,
+            carrier: provider,
             serviceId: serviceId,
             parcelType: parcelType,
-            currencyCode: data.rate.currency
-        }
-        
-        if(serviceId === "FCM" && parcelType === "PKG") {
-            pbRate.specialServices = [{
+            currencyCode: data.rate.currency,
+            specialServices: [{
+                // Delivery Confirmation - free of charge
                 specialServiceId: "DelCon"
-            }];
+            }]
+        };
+
+        if((!parcelType) || (serviceId === "FCM" && parcelType === "FLAT")) {
+            pbRate.specialServices = undefined;
         } 
 
         return [pbRate];

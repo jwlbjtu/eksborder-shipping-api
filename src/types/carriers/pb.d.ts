@@ -105,7 +105,7 @@ export interface IPBDocument {
     contentType: string,
     size: string,
     fileFormat: string,
-    resolution: string,
+    resolution?: string,
     contents?: string,
     pages?: {contents: string}[]
     printDialogOption?: string

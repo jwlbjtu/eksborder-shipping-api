@@ -16,7 +16,7 @@ import {
     IManifestSummary,
     IManifestSummaryError} from "../../../types/shipping.types";
 import { 
-    IDHLeCommerceProductRequest, 
+    IDHLeCommerceProductRequest,
     IDHLeCommercePackageDetail, 
     IDHLeCommerceProductResponse, 
     IDHLeCommerceAddress, 
@@ -65,7 +65,7 @@ class DhlApi implements ICarrierAPI {
     /**
      * auth user
      */
-    private auth: any = async () => {
+    public auth: any = async () => {
         const data = qs.stringify({
             'grant_type': 'client_credentials'
         });

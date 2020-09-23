@@ -4,26 +4,19 @@ import convert from "convert-units";
 import LRes from "../../lib/lresponse.lib";
 import AuthController from "../../lib/auth/auth.handler"
 
-import CarrierFactory from "../../lib/carrier.factory";
 import IControllerBase from "../../interfaces/IControllerBase.interface";
-import ICarrierAPI from "../../lib/carriers/ICarrierAPI.interface";
-import HelperLib from "../../lib/helper.lib";
 import { 
-    DHL_ECOMMERCE, 
-    DHL_FLAT_PRICES, 
-    massUnits, 
+    DHL_ECOMMERCE,
     errorTypes, 
-    BILLING_TYPES, 
-    SUPPORTED_CARRIERS, 
-    SUPPORTED_SERVICES,
-    CARRIERS,
-    SUPPORTED_PROVIDERS} from "../../lib/constants";
+    BILLING_TYPES
+} from "../../lib/constants";
 import { createFlatLabel } from "../../lib/carriers/flat/flat.helper";
 
 import Billing from "../../models/billing.model";
 import Shipping from "../../models/shipping.model";
 import Manifest from "../../models/manifest.model";
 import User from "../../models/user.model";
+import Carrier from "../../models/carrier.model";
 
 import { 
     IManifestRequest, 
@@ -36,9 +29,18 @@ import {
     IManifestSummary,
     IManifestSummaryError} from "../../types/shipping.types";
 import { IBilling, IShipping } from "../../types/record.types";
-import { IUser, IAccount } from "../../types/user.types";
+import { IAccount } from "../../types/user.types";
+import { 
+    validateMassUnit, 
+    validateCarrier, 
+    validateCarrierAccount, 
+    validateService,
+    validateParcelType
+} from "../../lib/validation";
+import ShippingUtil from "../../lib/utils/shipping.utils";
+import { IAdminProductRequest } from "../../types/admin.types";
 
-class ShippingController implements IControllerBase, ICarrierAPI {
+class ShippingController implements IControllerBase {
     public path = "/shipping";
     public router = express.Router();
     private authJwt: AuthController = new AuthController();
@@ -48,7 +50,8 @@ class ShippingController implements IControllerBase, ICarrierAPI {
     }
 
     public initRoutes() {
-        //this.router.post(this.path + "/products/:type", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
+        // TODO: Add Carrier Rules
+        this.router.post(this.path + "/admin/products", this.authJwt.authenticateJWT, this.authJwt.checkRole("admin_super"), this.products);
         this.router.post(this.path + "/label", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.label);
         this.router.get(this.path + "/label/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
         //this.router.get(this.path + "/label/:carrierAccount/:carrier/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
@@ -56,30 +59,55 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         this.router.get(this.path + "/manifest/:carrierAccount/:requestId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getManifest);
     }
 
-    private initCF: CarrierFactory | any = async (account: IAccount, user: IUser) => {
-        // @ts-ignore
-        const cf = new CarrierFactory(account.carrierRef.carrierName, {user, account});
-        // @ts-ignore
-        await cf.auth();
-        return cf;
-    };
-
+    /**
+     * Get Carrier Product Prices
+     * @param req 
+     * @param res 
+     */
     public products: any = async (req: Request, res: Response) => {
-        res.send();
-        // const body = req.body;
+        const body: IAdminProductRequest = req.body;
+        let carrier: string | undefined = body.carrier || undefined;
+        let provider: string | undefined = body.provider || undefined;
+        let service: string | undefined = body.service || undefined;
+        const weight = body.packageDetail.weight.value;
+        const unitOfMeasure = body.packageDetail.weight.unitOfMeasure;
 
-        // try {
-        //     await this.initCF(req, res);
-        //     // @ts-ignore
-        //     const cfFind = await this.cf.products(body);
-        //     if (cfFind.hasOwnProperty('messages') || (cfFind.hasOwnProperty('status') && cfFind.status > 203)) {
-        //         return LRes.resErr(res, cfFind.status, cfFind.messages);
-        //     }
-        //     return LRes.resOk(res, cfFind);
+        try {
+            const checkedCarrier = validateCarrier(carrier, provider);
+            carrier = checkedCarrier.carrier;
+            provider = checkedCarrier.provider;
+            validateMassUnit(unitOfMeasure, carrier);
+        } catch (error) {
+            console.log(error);
+            return res.status(400).json(error);
+        }
+        // @ts-ignore
+        const weightInOZ = convert(weight).from(unitOfMeasure.toLowerCase()).to("oz");
+        // Set packageId and billingReference
+        body.packageDetail.packageId = "EK-" + Date.now() + Math.round(Math.random() * 1000000).toString();
+        // @ts-ignore
+        body.packageDetail.billingReference1 = req.user.company;
 
-        // } catch (err) {
-        //     return LRes.resErr(res, 401, err);
-        // }
+        // build account for admin
+        const carrierRef = await Carrier.findOne({carrierName: carrier});
+        // @ts-ignore
+        const account  = ShippingUtil.buildIAccountForAdmin(body, carrierRef!, req.user);
+        // build IProductRequest
+        const productRequest = ShippingUtil.buildIProductRequestForAdmin(body);
+
+        try {
+            // @ts-ignore
+            const response = await ShippingUtil.getProducts(account, req.user, productRequest, weightInOZ, carrier, service);
+            if(!response) return res.status(500).json(LRes.invalidParamsErr(500, "Failed to compute package price", carrier));
+            if (response.hasOwnProperty('status') && response.status > 203) {
+                return res.status(response.status).json(response);
+            }          
+            return LRes.resOk(res, response);
+        } catch (err) {
+            console.log("!!!PRODUCT ERROR!!!" + err);
+            console.log(err);
+            return LRes.resErr(res, 500, err);
+        }
     };
 
     /**
@@ -92,22 +120,33 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         let carrier: string | undefined = body.carrier || undefined;
         let provider: string | undefined = body.provider || undefined;
         let service: string | undefined = body.service || undefined;
+        let parcelType: string | undefined = body.packageDetail.parcelType;
         let carrierAccount: string | undefined = body.carrierAccount || undefined;
         let account: IAccount | undefined | null = undefined;
+        const weight = body.packageDetail.weight.value;
+        const unitOfMeasure = body.packageDetail.weight.unitOfMeasure;
+
         try {
-            const checkedCarrier = this.validateCarrier(carrier, provider);
+            const checkedCarrier = validateCarrier(carrier, provider);
             carrier = checkedCarrier.carrier;
             provider = checkedCarrier.provider;
-            service = this.validateService(carrier.toLowerCase(), provider, service);
+            service = validateService(carrier.toLowerCase(), provider, service);
+            parcelType = validateParcelType(carrier, service, parcelType);
             // @ts-ignore
-            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            const checkValues = await validateCarrierAccount(carrierAccount, req.user);
             carrierAccount = checkValues.carrierAccount;
             account = checkValues.account;
+            // @ts-ignore
+            if(account.carrierRef.carrierName !== carrier) {
+                return res.status(400).json(LRes.fieldErr("carrierAccount", "/", errorTypes.ACCOUNT_ERROR, carrierAccount, carrier));
+            }
+            validateMassUnit(unitOfMeasure, carrier);
         } catch (error) {
             console.log(error);
             return res.status(400).json(error);
         }
-
+        // @ts-ignore
+        const weightInOZ = convert(weight).from(unitOfMeasure.toLowerCase()).to("oz");
         // Set packageId and billingReference
         body.packageDetail.packageId = "EK-" + Date.now() + Math.round(Math.random() * 1000000).toString();
         // @ts-ignore
@@ -118,56 +157,34 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             let packagePrice: number | undefined = undefined;
             let priceCurrency: string = "USD";
             let product: IProduct | undefined = undefined;
-            if(carrier === DHL_ECOMMERCE && service === "FLAT") {
-                // TODO: Create FLAT Rate data in database
-                // Load and Check FLAT Rate based on request
-                const weight = body.packageDetail.weight.value;
-                const unitOfMeasure = body.packageDetail.weight.unitOfMeasure;
 
-                if(!massUnits.includes(unitOfMeasure.toUpperCase())) {
-                    return res.status(400).json(LRes.fieldErr(
-                        "unitOfMeasure", 
-                        "/packageDetail/weight/unitOfMeasure", 
-                        errorTypes.UNSUPPORTED, unitOfMeasure, carrier));
+            const prodRequest: IProductRequest = req.body;
+            prodRequest.rate = {
+                calculate: true,
+                currency: "USD"
+            };    
+            prodRequest.estimatedDeliveryDate = {
+                calculate: true
+            };
+            // @ts-ignore
+            const pResponse = await ShippingUtil.getProducts(account, req.user, prodRequest, weightInOZ, carrier, service);
+            if(!pResponse) return res.status(500).json(LRes.invalidParamsErr(500, "Failed to compute package price", carrier));
+            if (pResponse.hasOwnProperty('status') && pResponse.status > 203) {
+                return res.status(pResponse.status).json(pResponse);
+            } 
+            const productResponse: IProductResponse = pResponse;
+            if (productResponse.products && productResponse.products.length > 0) {
+                const productBody: IProduct = productResponse.products[0];
+
+                if(productBody && productBody.rate) {
+                    const rate = productBody.rate;
+                    packagePrice = rate.amount;
+                    priceCurrency = rate.currency;
+                    product = productBody;
+                } else {
+                    return LRes.resErr(res, 404, productBody.messages);
                 }
-                // @ts-ignore
-                const weightInOZ = convert(weight).from(unitOfMeasure.toLowerCase()).to("oz");
-                packagePrice = DHL_FLAT_PRICES[Math.ceil(weightInOZ).toString()];
-                priceCurrency = "USD";
-            } else {
-                // Check price from Carrier Product Finder
-                const cf = await this.initCF(account, req.user); // TODO: refine carrier factory auth logic
-
-                const prodRequest: IProductRequest = {
-                    ...body,
-                    rate: {
-                        calculate: true,
-                        currency: "USD"
-                    },
-                    estimatedDeliveryDate: {
-                        calculate: true
-                    }
-                }
-
-                const response = await cf.products(prodRequest);
-                if (response.hasOwnProperty('status') && response.status > 203) {
-                    return res.status(response.status).json(response);
-                }
-
-                const productResponse: IProductResponse = response;
-                if (productResponse.products && productResponse.products.length > 0) {
-                    const productBody: IProduct = productResponse.products[0];
-
-                    if(productBody && productBody.rate) {
-                        const rate = productBody.rate;
-                        packagePrice = rate.amount;
-                        priceCurrency = rate.currency;
-                        product = productBody;
-                    } else {
-                        return LRes.resErr(res, 404, productBody.messages);
-                    }
-                }
-            }
+            }   
 
             console.log(`Package price is ${packagePrice} ${priceCurrency}`);            
             if(!packagePrice) return res.status(500).json(LRes.invalidParamsErr(500, "Failed to compute package price", carrier));
@@ -195,11 +212,12 @@ class ShippingController implements IControllerBase, ICarrierAPI {
                 // @ts-ignore
                 labelResponse = await createFlatLabel(body, account, req.user);
             } else {
-                const cf = await this.initCF(account, req.user); // TODO: refine carrier factory auth logic
+                // @ts-ignore
+                const api = await ShippingUtil.initCF(account, req.user); // TODO: refine carrier factory auth logic
 
                 body.rate = { currency: "USD" };
 
-                const response = await cf.label(body);
+                const response = await api.label(body);
                 if ((response.hasOwnProperty('status') && response.status > 203)) {
                     return res.status(response.status).json(response);
                 }
@@ -315,11 +333,11 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         const manifests: [{ trackingIds: string[] }] = body.manifests;
 
         try {
-            const checkedCarrier = this.validateCarrier(carrier, provider);
+            const checkedCarrier = validateCarrier(carrier, provider);
             carrier = checkedCarrier.carrier;
             provider = checkedCarrier.provider;
             // @ts-ignore
-            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            const checkValues = await validateCarrierAccount(carrierAccount, req.user);
             carrierAccount = checkValues.carrierAccount;
             account = checkValues.account;
         } catch (error) {
@@ -344,9 +362,9 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         body.manifests[0].trackingIds = newIds;
 
         try {
-            const cf = await this.initCF(account, req.user);
             // @ts-ignore
-            const response = await cf.manifest(body);
+            const api = await ShippingUtil.initCF(account, req.user);
+            const response = await api.manifest(body);
             if ((response.hasOwnProperty('status') && typeof response.status !== "string" && response.status > 203)) {
                 return res.status(response.status).json(response);
             }
@@ -379,7 +397,7 @@ class ShippingController implements IControllerBase, ICarrierAPI {
         if(!requestId) return res.status(400).json(LRes.fieldErr("requestId", "/", errorTypes.MISSING));
         try {
             // @ts-ignore
-            const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
+            const checkValues = await validateCarrierAccount(carrierAccount, req.user);
             carrierAccount = checkValues.carrierAccount;
             account = checkValues.account;
         } catch (error) {
@@ -397,9 +415,9 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             if(manifest.status === "COMPLETED") return LRes.resOk(res, manifest);
 
             // request latest manifest data from carrier
-            const cf = await this.initCF(account, req.user);
             // @ts-ignore
-            const response = await cf.getManifest(requestId);
+            const api = await ShippingUtil.initCF(account, req.user);
+            const response = await api.getManifest(requestId);
             if ((response.hasOwnProperty('status') && typeof response.status !== "string" && response.status > 203)) {
                 return res.status(response.status).json(response);
             }
@@ -452,31 +470,6 @@ class ShippingController implements IControllerBase, ICarrierAPI {
             return LRes.resErr(res, 500, error);
         }
     };
-
-    private validateCarrier = (carrier: string | undefined, provider: string | undefined) => {
-        if(!carrier) throw LRes.fieldErr("carrier", "/", errorTypes.MISSING);
-        if(!SUPPORTED_CARRIERS.includes(carrier.toLowerCase())) throw LRes.fieldErr("carrier", "/", errorTypes.UNSUPPORTED, carrier);
-        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && !provider) throw LRes.fieldErr("provider", "/", errorTypes.MISSING);
-        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && provider && !SUPPORTED_PROVIDERS[carrier.toLowerCase()].includes(provider)) throw LRes.fieldErr("provider", "/", errorTypes.UNSUPPORTED, provider, carrier);
-        return { carrier, provider };
-    }
-
-    private validateService = (carrier: string, provider: string | undefined, service: string | undefined): string => {
-        if(!service) throw LRes.fieldErr("service", "/", errorTypes.MISSING);
-        let supportedServices = SUPPORTED_SERVICES[carrier.toLowerCase()];
-        if(carrier.toLowerCase() === CARRIERS.PITNEY_BOWES && provider) {
-            supportedServices = SUPPORTED_SERVICES[provider];
-        }
-        if(!supportedServices.includes(service)) throw LRes.fieldErr("service", "/", errorTypes.UNSUPPORTED, service, carrier);
-        return service;
-    }
-
-    private validateCarrierAccount = async (carrierAccount: string | undefined, user: IUser): Promise<{carrierAccount: string, account: IAccount}> => {
-        if(!carrierAccount) throw LRes.fieldErr("carrierAccount", "/", errorTypes.MISSING);
-        const account = await HelperLib.getCurrentUserAccount(carrierAccount, user);
-        if(!account) throw LRes.fieldErr("carrierAccount", "/", errorTypes.INVALID, carrierAccount);
-        return {carrierAccount, account};
-    }
 }
 
 export default ShippingController;

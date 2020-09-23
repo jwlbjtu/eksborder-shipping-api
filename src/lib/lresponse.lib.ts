@@ -3,6 +3,10 @@ import { errorTypes } from './constants';
 import { IFormatDataErr, IParamInfo, IError } from '../types/error.types';
 
 class LRes {
+    public getError = (status: number, title: string) => {
+        return {status, title};
+    }
+
     public resOk = (res: Response, data: any) => {
         if (data && data !== null && data !== undefined) {
             data.count = data.length;
@@ -49,6 +53,9 @@ class LRes {
                 break;
             case errorTypes.INVALID:
                 reason = `Invalid value [${value}] for key [${name}]`
+                break;
+            case errorTypes.ACCOUNT_ERROR:
+                reason = `Account [${value}] cannot be used for [${carrier}]`;
                 break;
             default:
                 break;

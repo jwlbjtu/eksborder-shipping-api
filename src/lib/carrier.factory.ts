@@ -6,7 +6,7 @@ import PbApi from "./carriers/pb/Pb.api";
 
 class CarrierFactory {
 
-    constructor(type: string, props: {account: IAccount, user: IUser}) {
+    static getCarrierAPI(type: string, props: {account: IAccount, user: IUser}) {
         switch (type) {
             case DHL_ECOMMERCE:
                 console.log("DHL ECOMMERCE API");
