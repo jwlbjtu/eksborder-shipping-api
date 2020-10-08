@@ -1,8 +1,12 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from "jsonwebtoken";
-
 import { UserRoleList } from "../lib/constants";
+import Account from "../models/account.model";
+import Billing from "../models/billing.model";
+import Shipping from "../models/shipping.model";
+import Manifest from "../models/manifest.model";
+import Log from "../models/log.model";
 import { IUser } from '../types/user.types';
 
 const UserSchema: Schema = new Schema({
@@ -22,8 +26,8 @@ const UserSchema: Schema = new Schema({
     password: {type: String, required: true, minlength: 8, trim: true},
     role: {type: String, required: true, enum: UserRoleList, default: 'customer'},
     address: {
-        address1: {type: String, required: true, trim: true},
-        address2: {type: String, trim: true},
+        street1: {type: String, required: true, trim: true},
+        street2: {type: String, trim: true},
         city: {type: String, required: true, minlength:3, maxlength:120, trim: true},
         state: {type: String, required: true, minlength:2, maxlength:3, trim: true},
         country: {type: String, required: true, minlength:2, maxlength:3, default: "US", trim: true},
@@ -62,6 +66,16 @@ UserSchema.pre<IUser>("save", async function save(next) {
         user.password = hashedPass;
     }
 
+    next();
+});
+
+UserSchema.pre("remove", async function (next) {
+    const user = this;
+    await Account.deleteMany({ userRef: user._id });
+    await Billing.deleteMany({ userRef: user._id });
+    await Shipping.deleteMany({ userRef: user._id });
+    await Manifest.deleteMany({ userRef: user._id });
+    await Log.deleteMany({ userRef: user._id });
     next();
 });
 

@@ -4,16 +4,24 @@
   "description": "Eksborder shipment API",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "init-n": "echo \" npm init -y && npm i express && npm i -D typescript ts-node nodemon @types/node @types/express \" run this command",
-    "init-ts": "echo \" ./node_modules/typescript/bin/tsc --init\" run this command outDir: ./dist | rootDir: ./src | moduleResolution: node",
-    "tsc": "./node_modules/typescript/bin/tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
-    "build": "tsc -p ."
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "test": "NODE_ENV=test jest --detectOpenHandles --runInBand --testTimeout=20000",
+    "build": "./node_modules/typescript/bin/tsc -p ."
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testEnvironment": "node"
   },
   "keywords": [],
-  "author": "",
+  "author": "Wenlong Jiang",
   "license": "ISC",
   "dependencies": {
     "async": "^3.2.0",
@@ -42,6 +50,7 @@
     "@types/dotenv-safe": "^8.1.1",
     "@types/express": "^4.17.7",
     "@types/images": "^2.2.2",
+    "@types/jest": "^26.0.14",
     "@types/mongoose": "^5.7.36",
     "@types/multer": "^1.4.4",
     "@types/node": "^14.6.1",
@@ -49,8 +58,12 @@
     "@types/passport-jwt": "^3.0.3",
     "@types/passport-local": "^1.0.33",
     "@types/sharp": "^0.25.1",
+    "@types/supertest": "^2.0.10",
     "@types/svg2png": "^4.1.0",
+    "jest": "^26.4.2",
     "nodemon": "^2.0.4",
+    "supertest": "^5.0.0",
+    "ts-jest": "^26.4.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   },

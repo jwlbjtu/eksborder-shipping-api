@@ -55,7 +55,7 @@ class AccountController implements ICRUDControllerBase {
         const account: IAccount = req.body;
         try {
             const createdAccount: IAccount= new Account(account);
-            await createdAccount.save()
+            await createdAccount.save();
             return LRes.resOk(res, createdAccount);
         } catch (error) {
             return LRes.resErr(res, 500, error);

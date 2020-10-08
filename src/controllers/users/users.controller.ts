@@ -79,7 +79,7 @@ class UsersController implements ICRUDControllerBase {
                 return LRes.resErr(res, 400, { message: "Invalid username or password" });
             }
             await passport.authenticate('local', {session: true}, async (err: Error, user: IUserLogin, info: any) => {
-                if(err) return LRes.resErr(res, 404, err);
+                if(err) return LRes.resErr(res, 400, err);
                 
                 // @ts-ignore
                 const authJson = await user.toAuthJSON();

@@ -392,6 +392,9 @@ class ShippingController implements IControllerBase {
             //@ts-ignore
             manifestResponse.userRef = req.user._id;
             manifestResponse.trackingIds = manifests[0].trackingIds;
+            if (carrier === PITNEY_BOWES) {
+                manifestResponse.status = "COMPLETED";
+            }
             // save manifest response data into database
             await new Manifest(manifestResponse).save();
 

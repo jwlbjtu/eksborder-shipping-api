@@ -1,23 +1,19 @@
 import express, {Application} from 'express';
 import IIterateParams from "./interfaces/IIterateParams.interface";
 import mongoose from 'mongoose';
-import './lib/env';
 
 mongoose.Promise = global.Promise;
 
 interface IAppInit {
-    port: number;
     middleWares: any;
     controllers: any;
 }
 
 class App {
     public app: Application;
-    public port: number;
 
     constructor(appInit: IAppInit) {
         this.app = express();
-        this.port = appInit.port;
 
         this.middlewares(appInit.middleWares);
         this.routes(appInit.controllers);
@@ -27,12 +23,6 @@ class App {
 
         this.connect();
 
-    }
-
-    public listen() {
-        this.app.listen(this.port, () => {
-            console.log(`App listening on the http://localhost:${this.port}`)
-        })
     }
 
     private middlewares(middleWares: IIterateParams) {

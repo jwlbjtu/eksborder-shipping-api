@@ -8,7 +8,6 @@ export interface IUserLogin extends Document {
 
 export interface IUser extends Document {
     id: object,
-    token: any,
     salt: string,
     email: string,
     firstName: string,
@@ -17,8 +16,8 @@ export interface IUser extends Document {
     password: string;
     role: "admin_super" | "admin" |  "customer";
     address?: {
-        address1: string,
-        address2?: string,
+        street1: string,
+        street2?: string,
         city: string,
         state: string,
         country: string,
@@ -31,7 +30,10 @@ export interface IUser extends Document {
     balance: number,
     currency: string,
     accountRef: {},
-    apiToken?: string
+    apiToken?: string,
+    tokens?: [{
+        token: string
+    }]
 }
 
 export interface IAccount extends Document {
