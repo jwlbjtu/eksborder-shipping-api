@@ -12,3 +12,5 @@ package-lock.json
 .idea
 .env
 .env.test
+
+.eslintcache
