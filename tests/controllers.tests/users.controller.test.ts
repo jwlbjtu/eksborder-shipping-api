@@ -8,6 +8,7 @@ import {
   createUser,
   setupDB
 } from '../fixtures/users';
+import { USER_ROLES } from '../../src/lib/constants';
 
 describe('User Controller Tests', () => {
   beforeAll(setupDB);
@@ -24,7 +25,7 @@ describe('User Controller Tests', () => {
       })
       .expect(200)
       .expect(async (res) => {
-        expect(res.body.role).toBe('admin_super');
+        expect(res.body.role).toBe(USER_ROLES.ADMIN_SUPER);
 
         const loginUser = await User.findById(adminUser._id);
         // @ts-expect-error: ignore
@@ -44,7 +45,7 @@ describe('User Controller Tests', () => {
       })
       .expect(200)
       .expect(async (res) => {
-        expect(res.body.role).toBe('customer');
+        expect(res.body.role).toBe(USER_ROLES.API_USER);
         const loginUser = await User.findById(customerUser._id);
         // @ts-expect-error: ignore
         expect(res.body.token).toBe(loginUser.tokens[1].token);
@@ -71,7 +72,7 @@ describe('User Controller Tests', () => {
       .send()
       .expect(200)
       .expect((res) => {
-        expect(res.body.role).toBe('customer');
+        expect(res.body.role).toBe(USER_ROLES.API_USER);
       });
   });
 

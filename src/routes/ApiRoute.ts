@@ -4,6 +4,7 @@ import {
   generateApiToken,
   deleteApiToken
 } from '../controllers/users/api.controller';
+import { USER_ROLES } from '../lib/constants';
 
 class APIRoute {
   public path = '/api';
@@ -18,16 +19,16 @@ class APIRoute {
     // Create and Refresh user API Token
     this.router.get(
       this.path + '/refresh/:id',
-      //TODO:   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       generateApiToken
     );
 
     // Revoke user API Token
     this.router.get(
       this.path + '/revoke/:id',
-      //TODO:   this.authJwt.authenticateJWT,
-      //TODO:   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       deleteApiToken
     );
   }

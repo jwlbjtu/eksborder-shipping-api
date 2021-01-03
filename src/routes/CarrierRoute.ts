@@ -7,6 +7,7 @@ import {
   updateCarrier,
   deleteCarrierById
 } from '../controllers/carrier/carrier.controller';
+import { USER_ROLES } from '../lib/constants';
 
 class CarrierRoute {
   public path = '/carrier';
@@ -20,36 +21,36 @@ class CarrierRoute {
   public initRoutes(): void {
     this.router.get(
       this.path,
-      //TODO: this.authJwt.authenticateJWT,
-      //TODO: this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getAllCarriers
     );
 
     this.router.get(
       this.path + '/:id',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin_super'),
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getCarrierById
     );
 
     this.router.post(
       this.path,
-      //TODO this.authJwt.authenticateJWT,
-      //TODO this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       createCarrier
     );
 
     this.router.put(
       this.path,
-      // TODO this.authJwt.authenticateJWT,
-      // TODO this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       updateCarrier
     );
 
     this.router.delete(
       this.path + '/:id',
-      //TODO this.authJwt.authenticateJWT,
-      //TODO this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       deleteCarrierById
     );
   }

@@ -9,7 +9,8 @@ import {
   DHL_ECOMMERCE,
   errorTypes,
   BILLING_TYPES,
-  PITNEY_BOWES
+  PITNEY_BOWES,
+  USER_ROLES
 } from '../../lib/constants';
 import { createFlatLabel } from '../../lib/carriers/flat/flat.helper';
 
@@ -31,7 +32,7 @@ import {
   IManifestSummaryError
 } from '../../types/shipping.types';
 import { IBilling, IShipping } from '../../types/record.types';
-import { IAccount, IUser } from '../../types/user.types';
+import { IAccount } from '../../types/user.types';
 import {
   validateMassUnit,
   validateCarrier,
@@ -56,38 +57,38 @@ class ShippingController implements IControllerBase {
     this.router.get(
       this.path + '/admin/rules',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin_super'),
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       this.rules
     );
     this.router.post(
       this.path + '/admin/products',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin_super'),
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       this.products
     );
     this.router.post(
       this.path + '/label',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('customer'),
+      this.authJwt.checkRole(USER_ROLES.API_USER),
       this.label
     );
     this.router.get(
       this.path + '/label/:shippingId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('customer'),
+      this.authJwt.checkRole(USER_ROLES.API_USER),
       this.getLabel
     );
     //this.router.get(this.path + "/label/:carrierAccount/:carrier/:shippingId", this.authJwt.authenticateJWT, this.authJwt.checkRole("customer"), this.getLabel);
     this.router.post(
       this.path + '/manifest',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('customer'),
+      this.authJwt.checkRole(USER_ROLES.API_USER),
       this.manifest
     );
     this.router.get(
       this.path + '/manifest/:carrierAccount/:requestId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('customer'),
+      this.authJwt.checkRole(USER_ROLES.API_USER),
       this.getManifest
     );
   }

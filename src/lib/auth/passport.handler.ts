@@ -3,6 +3,7 @@ import passportLocal from 'passport-local';
 import passportJwt from 'passport-jwt';
 import User from '../../models/user.model';
 import '../env';
+import { USER_ROLES } from '../constants';
 // import passportApiKey from "passport-headerapikey";
 
 const LocalStrategy = passportLocal.Strategy;
@@ -19,9 +20,11 @@ passport.use(
       try {
         const user = await User.findOne({
           email: email.toLowerCase(),
+          role: { $in: [USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER] },
           isActive: true
         });
-        if (!user) return done({ message: `User ${email} not found.` }, false);
+        if (!user)
+          return done({ message: `Invalid username or password.` }, false);
         // @ts-expect-error: ignore
         const isMatch = await user.comparePassword(password);
         if (!isMatch)

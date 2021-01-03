@@ -7,9 +7,12 @@ import {
   deleteUser,
   getUserById,
   updateUserPassword,
-  uploadUserImage
+  uploadUserImage,
+  login,
+  logout
 } from '../controllers/users/users.controller';
 import fileUpload from '../middleware/file-upload';
+import { USER_ROLES } from '../lib/constants';
 
 class UserRoute {
   public path = '/users';
@@ -24,25 +27,26 @@ class UserRoute {
     //Create User
     this.router.post(
       this.path,
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       createUser
     );
 
-    // // User Login
-    // this.router.post(this.path + '/login', this.login);
-    // // User Logout
-    // this.router.get(
-    //   this.path + '/logout',
-    //   this.authJwt.authenticateJWT,
-    //   this.logout
-    // );
+    // User Login
+    this.router.post(this.path + '/login', login);
+
+    // User Logout
+    this.router.get(
+      this.path + '/logout',
+      this.authJwt.authenticateJWT,
+      logout
+    );
 
     // Get User by ID
     this.router.get(
       this.path + '/:id',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getUserById
     );
 
@@ -50,56 +54,53 @@ class UserRoute {
     // this.router.get(
     //   this.path,
     //   this.authJwt.authenticateJWT,
-    //   this.authJwt.checkRole('admin_super'),
+    //   this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
     //   this.readGet
     // );
 
     // Get Users by Role
     this.router.get(
       this.path + '/list/:role',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getUsersByRole
     );
 
     // Update User
     this.router.put(
       this.path,
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       updateUser
     );
 
     // Update User Password
     this.router.put(
       this.path + '/password',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       updateUserPassword
     );
 
     // Delete User by ID
     this.router.delete(
       this.path + '/:id',
-      //TODO   this.authJwt.authenticateJWT,
-      // TODO  this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       deleteUser
     );
 
     // Update User Logo Image
     this.router.post(
       this.path + '/logo/:id',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       fileUpload.single('image'),
       uploadUserImage,
       (error: Error | null, req: express.Request, res: express.Response) => {
         res.status(400).json({ title: error?.message });
       }
     );
-
-    // TODO: enable user
-    // TODO: disable user
   }
 }
 

@@ -4,6 +4,7 @@ import {
   getUserBillingRecords,
   createBillingRecord
 } from '../controllers/users/billing.controller';
+import { USER_ROLES } from '../lib/constants';
 
 class BillingRoute {
   public path = '/billings';
@@ -18,16 +19,16 @@ class BillingRoute {
     // Get Billing Records by User
     this.router.get(
       this.path + '/:userId',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getUserBillingRecords
     );
 
     // Create Billing Record
     this.router.post(
       this.path + '/:userId',
-      //TODO   this.authJwt.authenticateJWT,
-      //TODO   this.authJwt.checkRole('admin_super'),
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       createBillingRecord
     );
   }

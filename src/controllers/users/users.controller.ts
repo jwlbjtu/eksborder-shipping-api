@@ -26,57 +26,57 @@ export const createUser = async (
   }
 };
 
-// public login: any = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     if (
-//       !req.body.user.hasOwnProperty('email') ||
-//       !req.body.user.hasOwnProperty('password')
-//     ) {
-//       return LRes.resErr(res, 400, {
-//         message: 'Invalid username or password'
-//       });
-//     }
-//     await passport.authenticate(
-//       'local',
-//       { session: true },
-//       async (err: Error, user: IUserLogin, info: any) => {
-//         if (err) return LRes.resErr(res, 400, err);
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (
+      !req.body.user.hasOwnProperty('email') ||
+      !req.body.user.hasOwnProperty('password')
+    ) {
+      return LRes.resErr(res, 401, {
+        message: 'Invalid username or password'
+      });
+    }
+    await passport.authenticate(
+      'local',
+      { session: true },
+      async (err: Error, user: IUserLogin, info: any) => {
+        if (err) return LRes.resErr(res, 401, err);
 
-//         // @ts-expect-error: ignore
-//         const authJson = await user.toAuthJSON();
+        // @ts-expect-error: ignore
+        const authJson = await user.toAuthJSON();
 
-//         LRes.resOk(res, authJson);
-//       }
-//     )(req, res, next);
-//   } catch (err) {
-//     LRes.resErr(res, 500, err);
-//   }
-// };
+        LRes.resOk(res, authJson);
+      }
+    )(req, res, next);
+  } catch (err) {
+    LRes.resErr(res, 500, err);
+  }
+};
 
-// public logout: any = async (req: Request, res: Response) => {
-//   try {
-//     // @ts-expect-error: ignore
-//     req.user.tokens = req.user.tokens.filter((token: { token: string }) => {
-//       // @ts-expect-error: ignore
-//       return token.token != req.token;
-//     });
-//     // @ts-expect-error: ignore
-//     await req.user.save();
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // @ts-expect-error: ignore
+    req.user.tokens = req.user.tokens.filter((token: { token: string }) => {
+      // @ts-expect-error: ignore
+      return token.token != req.token;
+    });
+    // @ts-expect-error: ignore
+    await req.user.save();
 
-//     req.logout();
-//     delete req.user;
-//     // @ts-expect-error: ignore
-//     delete req.session;
+    req.logout();
+    delete req.user;
+    // @ts-expect-error: ignore
+    delete req.session;
 
-//     LRes.resOk(res, { message: 'Logout' });
-//   } catch (error) {
-//     LRes.resErr(res, 500, error);
-//   }
-// };
+    LRes.resOk(res, { message: 'Logout' });
+  } catch (error) {
+    LRes.resErr(res, 500, error);
+  }
+};
 
 export const getUserById = async (
   req: Request,

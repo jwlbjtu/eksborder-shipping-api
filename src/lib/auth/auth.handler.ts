@@ -6,7 +6,11 @@ import { UserRoleList } from '../../lib/constants';
 import User from '../../models/user.model';
 
 class AuthHandler {
-  public authenticateJWT(req: Request, res: Response, next: NextFunction) {
+  public authenticateJWT(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void {
     passport.authenticate('jwt', async function (err, user, jwtToken) {
       if (err) {
         console.log(err);
@@ -20,7 +24,7 @@ class AuthHandler {
         }
         const token = req.header('Authorization')?.replace('Bearer ', '');
         const user = await User.findOne({
-          email: jwtToken.email,
+          _id: jwtToken.id,
           'tokens.token': token,
           isActive: true
         });
@@ -31,7 +35,7 @@ class AuthHandler {
         }
 
         req.user = user;
-        // @ts-ignore
+        // @ts-expect-error: ignore
         req.token = token;
         return next();
       } catch (error) {
@@ -41,9 +45,9 @@ class AuthHandler {
   }
 
   public checkRole(role: string) {
-    return (req: Request, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction): any => {
       const userPrevillege: Array<string> = UserRoleList;
-      // @ts-ignore
+      // @ts-expect-error: ignore
       const _urole: string = req.user.role;
 
       if (userPrevillege.includes(_urole)) {
@@ -58,9 +62,7 @@ class AuthHandler {
           return next();
         }
       }
-      return res
-        .status(401)
-        .json({ status: 'error', code: 'unauthorized or bed role type' });
+      return res.status(401).json({ status: 'error', code: 'unauthorized' });
     };
   }
 }

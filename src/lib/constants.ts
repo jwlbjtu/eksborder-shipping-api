@@ -47,6 +47,8 @@ export const USER_ROLES = {
   API_USER: 'customer'
 };
 
+// !!! The ordor of the roles matters here
+// index 0 is the highest permission !!!
 export const UserRoleList: Array<string> = [
   USER_ROLES.ADMIN_SUPER,
   USER_ROLES.ADMIN,

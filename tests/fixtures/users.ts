@@ -2,6 +2,7 @@ import { IUser } from '../../src/types/user.types';
 import User from '../../src/models/user.model';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { USER_ROLES } from '../../src/lib/constants';
 
 const adminUserId = mongoose.Types.ObjectId();
 // @ts-expect-error: ignore
@@ -11,7 +12,7 @@ export const adminUser: IUser = {
   lastName: 'Admin_Last',
   userName: 'AdminUser',
   password: 'AdminPass',
-  role: 'admin_super',
+  role: USER_ROLES.ADMIN_SUPER,
   email: 'admin@test.com',
   phone: '6171113333',
   companyName: 'Test Inc',
@@ -33,7 +34,7 @@ export const customerUser: IUser = {
   lastName: 'Customer_Last',
   userName: 'CustomerUser',
   password: 'CustomerPass',
-  role: 'customer',
+  role: USER_ROLES.API_USER,
   email: 'customer@test.com',
   phone: '6171112233',
   companyName: 'Customer Test Inc',
@@ -54,7 +55,7 @@ export const createUser: IUser = {
   lastName: 'Create_Last',
   userName: 'Create_User',
   password: 'CreatePass',
-  role: 'customer',
+  role: USER_ROLES.API_USER,
   email: 'create@test.com',
   phone: '6171112222',
   companyName: 'Created Test Inc',

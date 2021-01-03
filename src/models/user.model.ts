@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { UserRoleList } from '../lib/constants';
+import { UserRoleList, USER_ROLES } from '../lib/constants';
 import Account from '../models/account.model';
 import Billing from '../models/billing.model';
 import Shipping from '../models/shipping.model';
@@ -46,7 +46,7 @@ const UserSchema: Schema = new Schema(
       type: String,
       required: true,
       enum: UserRoleList,
-      default: 'customer',
+      default: USER_ROLES.API_USER,
       index: true
     },
     address: {
@@ -166,7 +166,6 @@ UserSchema.methods.generateJWT = function (expTime?: number) {
   const payload: any = {
     id: this.id,
     fullName: this.fullName,
-    email: this.email,
     role: this.role
   };
 
@@ -187,11 +186,10 @@ UserSchema.methods.toAuthJSON = async function () {
   return {
     id: this.id,
     fullName: this.fullName,
-    email: this.email,
+    image: this.logoImage,
     role: this.role,
     token_type: 'Bearer',
-    token,
-    expire_in: expTime
+    token
   };
 };
 
@@ -219,7 +217,7 @@ UserSchema.methods.apiAuthJSON = async function () {
 
 UserSchema.virtual('fullName').get(function () {
   // @ts-expect-error: ignore
-  return `${this.firstName} ${this.lastName}`;
+  return `${this.lastName}${this.firstName}`;
 });
 
 UserSchema.virtual('accountRef', {
