@@ -1,35 +1,34 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { ILabelResponse, IAddress } from './shipping.types';
 
 export interface ICarrier extends Document {
+  id: Types.ObjectId;
   carrierName: string;
   accountName: string;
+  description: string;
   clientId: string;
   clientSecret: string;
-  isTest: boolean;
+  facilities: IFacility[];
+  services: IService[];
   returnAddress: IAddress;
-  pickupRef: IPickup[];
-  facilityRef: IFacility[];
   shipperId?: string;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface IPickup extends Document {
-  pickupAccount: string;
-  description: string;
-  carrierRef: object;
-  isActive: boolean;
+export interface IFacility {
+  pickup: string;
+  facility: string;
 }
 
-export interface IFacility extends Document {
-  facilityNumber: string;
-  description: string;
-  carrierRef: object;
-  isActive: boolean;
+export interface IService {
+  key: string;
+  name: string;
 }
 
 export interface IBilling extends Document {
-  userRef?: object;
+  userRef?: any;
   description: string;
   account?: string;
   total: number;
@@ -46,25 +45,30 @@ export interface IBilling extends Document {
     fee?: {
       amount: number;
       type: string;
+      base: string;
     };
   };
+  addFund?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface IShipping extends ILabelResponse, Document {
+  accountName: string;
+  rate: number;
   toAddress: IAddress;
   trackingId: string;
   shippingId?: string;
   manifested: boolean = false;
-  userRef: object;
+  userRef: Types.ObjectId;
+  BillingRef: Types.ObjectId;
 }
 
 export interface ILog extends Document {
-  request: object;
-  response: object | any;
+  request: Record<string, unknown>;
+  response: Record<string, unknown>;
   isError: boolean;
   callType: string;
-  accountRef: object;
-  userRef: object;
+  accountRef: Record<string, unknown>;
+  userRef: Record<string, unknown>;
 }

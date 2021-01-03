@@ -57,9 +57,7 @@ class DhlApi implements ICarrierAPI {
     }
 
     this._credential = {
-      // @ts-expect-error: ignore
       client_id: this._props.account.carrierRef.clientId,
-      // @ts-expect-error: ignore
       client_secret: this._props.account.carrierRef.clientSecret
     };
   }
@@ -119,7 +117,6 @@ class DhlApi implements ICarrierAPI {
       orderedProductId: data.service,
       consigneeAddress: this.convertToDHLAddress(data.toAddress),
       returnAddress: this.convertToDHLAddress(
-        // @ts-expect-error: ignore
         this._props.account.carrierRef.returnAddress
       ),
       packageDetail: dhlPackageDetail,
@@ -142,7 +139,6 @@ class DhlApi implements ICarrierAPI {
         prodReqBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
         this._props.account.userRef.id
       );
 
@@ -178,7 +174,6 @@ class DhlApi implements ICarrierAPI {
         prodReqBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
         this._props.account.userRef.id,
         true
       );
@@ -214,7 +209,6 @@ class DhlApi implements ICarrierAPI {
       orderedProductId: data.service,
       consigneeAddress: this.convertToDHLAddress(data.toAddress),
       returnAddress: this.convertToDHLAddress(
-        // @ts-expect-error: ignore
         this._props.account.carrierRef.returnAddress
       ),
       packageDetail: dhlPackageDetail
@@ -239,7 +233,7 @@ class DhlApi implements ICarrierAPI {
         labelReqBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id
       );
 
@@ -281,7 +275,7 @@ class DhlApi implements ICarrierAPI {
         labelReqBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -312,7 +306,7 @@ class DhlApi implements ICarrierAPI {
         { url: _url },
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id
       );
 
@@ -322,7 +316,7 @@ class DhlApi implements ICarrierAPI {
         const labelError: IError = {
           status: response.status,
           title: dhlError.title,
-          // @ts-expect-error: ignore
+
           carrier: this._props.account.carrierRef.carrierName,
           error: dhlError.invalidParams
         };
@@ -332,7 +326,7 @@ class DhlApi implements ICarrierAPI {
       const dhlLabelResponse: IDHLeCommerceLabelResponse = response;
       const labelResponse: ILabelResponse = {
         timestamp: dhlLabelResponse.timestamp,
-        // @ts-expect-error: ignore
+
         carrier: this._props.account.carrierRef.carrierName,
         service: dhlLabelResponse.orderedProductId,
         labels: dhlLabelResponse.labels.map((item: IDHLeCommerceLabel) => {
@@ -356,7 +350,7 @@ class DhlApi implements ICarrierAPI {
         { url: _url },
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -394,7 +388,7 @@ class DhlApi implements ICarrierAPI {
         manifestBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         false
       );
@@ -432,7 +426,7 @@ class DhlApi implements ICarrierAPI {
         manifestBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -460,7 +454,7 @@ class DhlApi implements ICarrierAPI {
         { url: _url },
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         false
       );
@@ -475,7 +469,7 @@ class DhlApi implements ICarrierAPI {
         const manifestError: IError = {
           status: response.status,
           title: dhlError.title,
-          // @ts-expect-error: ignore
+
           carrier: this._props.account.carrierRef.carrierName,
           error: dhlError.invalidParams
         };
@@ -506,7 +500,7 @@ class DhlApi implements ICarrierAPI {
       // @ts-expect-error: ignore
       const manifestResponse: IManifestResponse = {
         timestamp: dhlManifestResponse.timestamp,
-        // @ts-expect-error: ignore
+
         carrier: this._props.account.carrierRef.carrierName,
         requestId: dhlManifestResponse.requestId,
         status: dhlManifestResponse.status,
@@ -535,7 +529,7 @@ class DhlApi implements ICarrierAPI {
         { url: _url },
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );

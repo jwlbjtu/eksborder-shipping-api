@@ -54,9 +54,8 @@ class PbApi implements ICarrierAPI {
     }
 
     this._credential = {
-      // @ts-expect-error: ignore
       client_id: this._props.account.carrierRef.clientId,
-      // @ts-expect-error: ignore
+
       client_secret: this._props.account.carrierRef.clientSecret
     };
   }
@@ -115,7 +114,6 @@ class PbApi implements ICarrierAPI {
   public products: any = async (data: IProductRequest) => {
     const prodReqBody: IPBRatesRequest = {
       fromAddress: this.convertToPBAddress(
-        // @ts-expect-error: ignore
         this._props.account.carrierRef.returnAddress
       ),
       toAddress: this.convertToPBAddress(data.toAddress),
@@ -124,7 +122,7 @@ class PbApi implements ICarrierAPI {
       shipmentOptions: [
         {
           name: 'SHIPPER_ID',
-          // @ts-expect-error: ignore
+
           value: this._props.account.carrierRef.shipperId
         }
       ]
@@ -150,7 +148,7 @@ class PbApi implements ICarrierAPI {
         prodReqBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id
       );
       if (response.hasOwnProperty('status') && response.status > 203) {
@@ -184,7 +182,7 @@ class PbApi implements ICarrierAPI {
         prodReqBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -202,7 +200,6 @@ class PbApi implements ICarrierAPI {
 
     const labelReqBody: IPBShppingRequest = {
       fromAddress: this.convertToPBAddress(
-        // @ts-expect-error: ignore
         this._props.account.carrierRef.returnAddress
       ),
       toAddress: this.convertToPBAddress(data.toAddress),
@@ -220,7 +217,7 @@ class PbApi implements ICarrierAPI {
       shipmentOptions: [
         {
           name: 'SHIPPER_ID',
-          // @ts-expect-error: ignore
+
           value: this._props.account.carrierRef.shipperId
         },
         {
@@ -257,7 +254,7 @@ class PbApi implements ICarrierAPI {
         labelReqBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id
       );
       if (response.hasOwnProperty('status') && response.status > 203) {
@@ -305,7 +302,7 @@ class PbApi implements ICarrierAPI {
         labelReqBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -339,7 +336,7 @@ class PbApi implements ICarrierAPI {
         { url: _url },
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id
       );
 
@@ -349,7 +346,7 @@ class PbApi implements ICarrierAPI {
         const labelError: IError = {
           status: response.status,
           title: pbErrors[0].errorDescription,
-          // @ts-expect-error: ignore
+
           carrier: this._props.account.carrierRef.carrierName,
           error: pbErrors[0].parameters?.map((item: string) => {
             const invalidParam: IParamInfo = {
@@ -365,7 +362,7 @@ class PbApi implements ICarrierAPI {
       const rate = pbLabelResponse.rates[0];
       const labelResponse: ILabelResponse = {
         timestamp: new Date(),
-        // @ts-expect-error: ignore
+
         carrier: this._props.account.carrierRef.carrierName,
         service: rate.carrier.toUpperCase() + '_' + rate.serviceId,
         labels: pbLabelResponse.documents.map((item: IPBDocument) => {
@@ -392,7 +389,7 @@ class PbApi implements ICarrierAPI {
         { url: _url },
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -409,14 +406,13 @@ class PbApi implements ICarrierAPI {
       carrier: data.provider!,
       submissionDate: this.buildSubmitDate(),
       fromAddress: this.convertToPBAddress(
-        // @ts-expect-error: ignore
         this._props.account.carrierRef.returnAddress
       ),
       parcelTrackingNumbers: data.manifests[0].trackingIds,
       parameters: [
         {
           name: 'SHIPPER_ID',
-          // @ts-expect-error: ignore
+
           value: this._props.account.carrierRef.shipperId
         }
       ]
@@ -439,7 +435,7 @@ class PbApi implements ICarrierAPI {
         manifestBody,
         response,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         false
       );
@@ -493,7 +489,7 @@ class PbApi implements ICarrierAPI {
         manifestBody,
         error,
         this._props.account.id,
-        // @ts-expect-error: ignore
+
         this._props.account.userRef.id,
         true
       );
@@ -509,7 +505,7 @@ class PbApi implements ICarrierAPI {
     const manifestError: IError = {
       status: 403,
       title: 'This request is not supported for the given carrier',
-      // @ts-expect-error: ignore
+
       carrier: this._props.account.carrierRef.carrierName
     };
     return manifestError;

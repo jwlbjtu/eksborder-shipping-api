@@ -9,37 +9,43 @@ const AccountSchema: Schema = new Schema(
       unique: true,
       minlength: 2,
       maxlength: 100,
-      trim: true
+      trim: true,
+      index: true
     },
-    carrierRef: {
-      type: Schema.Types.ObjectId,
-      ref: 'Carrier',
-      required: true
+    accountId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      index: true
     },
-    pickupRef: {
-      type: Schema.Types.ObjectId,
-      ref: 'Pickup'
+    carrier: { type: String, required: true },
+    connectedAccount: { type: String, required: true },
+    services: [String],
+    facilities: [String],
+    fee: { type: Number, required: true, min: 0 },
+    feeBase: {
+      type: String,
+      required: true,
+      enum: ['price', 'order', 'weight']
     },
-    facilityRef: {
-      type: Schema.Types.ObjectId,
-      ref: 'Facility'
-    },
-    userRef: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-
     billingType: {
       type: String,
       required: true,
       enum: ['proportions', 'amount'],
       default: 'amount'
     },
-    fee: { type: Number, required: true, min: 0 },
-    apiId: { type: String, required: false, trim: true },
+    carrierRef: {
+      type: Schema.Types.ObjectId,
+      ref: 'Carrier',
+      required: true
+    },
+    userRef: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
     note: { type: String, trim: true },
-    isTest: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true }
   },
   {
@@ -51,5 +57,11 @@ const AccountSchema: Schema = new Schema(
     }
   }
 );
+
+AccountSchema.methods.toJSON = function () {
+  const accountObject = this.toObject();
+  accountObject.id = this._id;
+  return accountObject;
+};
 
 export default mongoose.model<IAccount>('Account', AccountSchema);

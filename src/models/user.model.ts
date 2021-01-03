@@ -23,14 +23,12 @@ const UserSchema: Schema = new Schema(
     firstName: {
       type: String,
       required: true,
-      minlength: 2,
       maxlength: 100,
       trim: true
     },
     lastName: {
       type: String,
       required: true,
-      minlength: 2,
       maxlength: 100,
       trim: true
     },
@@ -48,40 +46,43 @@ const UserSchema: Schema = new Schema(
       type: String,
       required: true,
       enum: UserRoleList,
-      default: 'customer'
+      default: 'customer',
+      index: true
     },
     address: {
-      street1: { type: String, required: true, trim: true },
-      street2: { type: String, trim: true },
-      city: {
-        type: String,
-        required: true,
-        minlength: 3,
-        maxlength: 120,
-        trim: true
-      },
-      state: {
-        type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 3,
-        trim: true
-      },
-      country: {
-        type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 3,
-        default: 'US',
-        trim: true
-      },
-      postalCode: {
-        type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 10,
-        trim: true
+      type: {
+        street1: { type: String, required: true, trim: true },
+        street2: { type: String, trim: true },
+        city: {
+          type: String,
+          required: true,
+          maxlength: 120,
+          trim: true
+        },
+        state: {
+          type: String,
+          required: true,
+          maxlength: 3,
+          trim: true
+        },
+        country: {
+          type: String,
+          required: true,
+          maxlength: 3,
+          default: 'US',
+          trim: true
+        },
+        postalCode: {
+          type: String,
+          required: true,
+          maxlength: 10,
+          trim: true
+        }
       }
+    },
+    countryCode: {
+      type: String,
+      trim: true
     },
     phone: {
       type: String,
@@ -94,11 +95,10 @@ const UserSchema: Schema = new Schema(
     companyName: {
       type: String,
       required: true,
-      minlength: 2,
       maxlength: 100,
       trim: true
     },
-    logoImage: { type: Buffer },
+    logoImage: { type: String },
     balance: { type: Number, min: 0, default: 0 },
     currency: { type: String, default: 'USD' },
     apiToken: { type: String },
@@ -122,8 +122,6 @@ const UserSchema: Schema = new Schema(
 );
 
 UserSchema.pre<IUser>('save', async function save(next) {
-  //const user = this;
-
   if (this.isModified('password')) {
     const salt = await bcrypt.genSalt();
     const hashedPass = await bcrypt.hash(this.password, salt);
@@ -135,7 +133,6 @@ UserSchema.pre<IUser>('save', async function save(next) {
 });
 
 UserSchema.pre('remove', async function (next) {
-  // const user = this;
   await Account.deleteMany({ userRef: this._id });
   await Billing.deleteMany({ userRef: this._id });
   await Shipping.deleteMany({ userRef: this._id });
@@ -152,11 +149,11 @@ UserSchema.methods.comparePassword = async function (
 };
 
 UserSchema.methods.toJSON = function () {
-  // const user = this;
   const userObject = this.toObject();
 
+  userObject.id = this._id;
+
   delete userObject.password;
-  delete userObject.logoImage;
   delete userObject.tokens;
   delete userObject.salt;
 
@@ -181,8 +178,6 @@ UserSchema.methods.generateJWT = function (expTime?: number) {
 };
 
 UserSchema.methods.toAuthJSON = async function () {
-  // const user = this;
-
   const expTime = 3600;
   const token = this.generateJWT(expTime);
 
@@ -201,7 +196,6 @@ UserSchema.methods.toAuthJSON = async function () {
 };
 
 UserSchema.methods.apiAuthJSON = async function () {
-  //const user = this;
   const token = this.generateJWT();
 
   // Remove exist api token to make sure we always have one api token

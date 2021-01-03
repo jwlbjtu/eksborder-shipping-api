@@ -59,7 +59,7 @@ export interface IManifestResponse extends Document {
   manifests?: IManifest[];
   manifestSummary?: IManifestSummary;
   trackingIds?: string[];
-  userRef: object;
+  userRef: any;
 }
 
 export interface IProduct {

@@ -60,7 +60,6 @@ const shippingInfoFromBody = (
   const weight = body.packageDetail.weight;
 
   const shippingInfo: IFlatShippingInfo = {
-    // @ts-expect-error: ignore
     fromAddress: account.carrierRef.returnAddress,
     toAddress: body.toAddress,
     service: `${body.carrier} ${body.service}`,

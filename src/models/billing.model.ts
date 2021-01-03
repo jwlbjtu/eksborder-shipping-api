@@ -14,24 +14,34 @@ const BillingSchema: Schema = new Schema(
     balance: { type: Number, required: true, min: 0 },
     currency: { type: String, required: true },
     details: {
-      shippingCost: {
-        amount: { type: Number, required: true, min: 0 },
-        components: [
-          {
-            description: { type: String, required: true },
-            amount: { type: Number, required: true, min: 0 }
-          }
-        ]
-      },
-      fee: {
-        amount: { type: Number, required: true, min: 0 },
-        type: { type: String }
+      type: {
+        shippingCost: {
+          amount: { type: Number, required: true, min: 0 },
+          components: [
+            {
+              description: { type: String, required: true },
+              amount: { type: Number, required: true, min: 0 }
+            }
+          ]
+        },
+        fee: {
+          amount: { type: Number, required: true, min: 0 },
+          type: { type: String },
+          base: { type: String }
+        }
       }
-    }
+    },
+    addFund: { type: Boolean, default: false }
   },
   {
     timestamps: true
   }
 );
+
+BillingSchema.methods.toJSON = function () {
+  const billingObject = this.toObject();
+  billingObject.id = this._id;
+  return billingObject;
+};
 
 export default mongoose.model<IBilling>('Billing', BillingSchema);

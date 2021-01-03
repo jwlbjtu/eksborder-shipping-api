@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { errorTypes } from './constants';
 import { IFormatDataErr, IParamInfo, IError } from '../types/error.types';
+import { format } from 'prettier';
 
 class LRes {
   public getError = (status: number, title: string) => {
@@ -26,6 +27,7 @@ class LRes {
       error: data,
       status: status
     };
+    console.log(formatData);
     res.status(status).send(formatData);
   };
 

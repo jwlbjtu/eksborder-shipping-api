@@ -215,7 +215,7 @@ class ShippingController implements IControllerBase {
       );
       carrierAccount = checkValues.carrierAccount;
       account = checkValues.account;
-      // @ts-expect-error: ignore
+
       if (account.carrierRef.carrierName !== carrier) {
         return res
           .status(400)
@@ -393,7 +393,8 @@ class ShippingController implements IControllerBase {
           fee: {
             amount: totalFee,
             type:
-              billingType === BILLING_TYPES.PROPORTION ? `${fee}%` : `$${fee}`
+              billingType === BILLING_TYPES.PROPORTION ? `${fee}%` : `$${fee}`,
+            base: '' // TODO: add base from user carrier account
           }
         }
       };

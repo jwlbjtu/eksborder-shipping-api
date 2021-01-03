@@ -1,4 +1,5 @@
 import { Document } from 'mongoose';
+import { IFacility, IService } from './record.types';
 
 export interface IUserLogin extends Document {
   email: string;
@@ -7,14 +8,14 @@ export interface IUserLogin extends Document {
 }
 
 export interface IUser extends Document {
-  id: object;
+  id: Types.ObjectId;
   salt: string;
   email: string;
   firstName: string;
   lastName: string;
   userName: string;
   password: string;
-  role: 'admin_super' | 'admin' | 'customer';
+  role: string;
   address?: {
     street1: string;
     street2?: string;
@@ -23,13 +24,13 @@ export interface IUser extends Document {
     country: string;
     postalCode: string;
   };
+  countryCode: string;
   phone: string;
   isActive: boolean;
   companyName: string;
-  logoImage?: Buffer;
+  logoImage?: string;
   balance: number;
   currency: string;
-  accountRef: {};
   apiToken?: string;
   tokens?: [
     {
@@ -39,16 +40,18 @@ export interface IUser extends Document {
 }
 
 export interface IAccount extends Document {
-  id: object;
+  id: Types.ObjectId;
   accountName: string;
-  carrierRef: object;
-  pickupRef?: object;
-  userRef: object;
-  facilityRef?: object;
-  billingType: 'proportions' | 'amount';
+  accountId: string;
+  carrier: string;
+  connectedAccount: string;
+  services: string[];
+  facilities: string[];
   fee: number;
-  apiId?: string;
+  feeBase: 'price' | 'order' | 'weight';
+  billingType: 'proportions' | 'amount';
+  carrierRef: any;
+  userRef: any;
   note?: string;
-  isTest: boolean;
   isActive: boolean;
 }

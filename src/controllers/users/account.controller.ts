@@ -1,120 +1,119 @@
-import * as express from 'express';
-import { NextFunction, Request, Response } from 'express';
-
-import AuthController from '../../lib/auth/auth.handler';
-import ICRUDControllerBase from '../../interfaces/ICRUDControllerBase.interface';
+import { Request, Response } from 'express';
 import LRes from '../../lib/lresponse.lib';
+import User from '../../models/user.model';
 import Account from '../../models/account.model';
 import { IAccount } from '../../types/user.types';
+import { Types } from 'mongoose';
+import uniqid from 'uniqid';
 
-class AccountController implements ICRUDControllerBase {
-  public path = '/account';
-  public router = express.Router();
-  private authJwt: AuthController = new AuthController();
-
-  constructor() {
-    this.initRoutes();
+export const getAllClientCarrierAccounts = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const accounts = await Account.find()
+      .populate({ path: 'carrierRef' })
+      .populate({ path: 'pickupRef' })
+      .populate({ path: 'facilityRef' })
+      .populate({ path: 'userRef' });
+    return LRes.resOk(res, accounts);
+  } catch (error) {
+    return LRes.resErr(res, 500, error);
   }
+};
 
-  public initRoutes() {
-    this.router.get(
-      this.path,
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin'),
-      this.readGet
-    );
-    this.router.get(
-      this.path + '/:accountName',
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin'),
-      this.readOneGet
-    );
-    this.router.post(
-      this.path,
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin'),
-      this.createPost
-    );
-    this.router.put(
-      this.path + '/:accountName',
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin'),
-      this.updatePut
-    );
-    this.router.delete(
-      this.path + '/:accountName',
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole('admin'),
-      this.delDelete
-    );
+export const getClientCarrierAccountsByUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const user = User.findOne({ _id: Types.ObjectId(userId) });
+    if (!user) return LRes.resErr(res, 404, { title: 'No user found' });
+    const accounts = await Account.find({ userRef: Types.ObjectId(userId) });
+    return LRes.resOk(res, accounts);
+  } catch (error) {
+    return LRes.resErr(res, 500, error);
   }
+};
 
-  public readGet: any = async (req: Request, res: Response) => {
-    try {
-      const accounts = await Account.find()
-        .populate({ path: 'carrierRef' })
-        .populate({ path: 'pickupRef' })
-        .populate({ path: 'facilityRef' })
-        .populate({ path: 'userRef' });
-      return LRes.resOk(res, accounts);
-    } catch (error) {
-      return LRes.resErr(res, 500, error);
-    }
-  };
+export const getClientCarrierAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const accountName: string = req.params.accountName;
+  try {
+    const account = await Account.findOne({ accountName: accountName })
+      .populate({ path: 'carrierRef' })
+      .populate({ path: 'pickupRef' })
+      .populate({ path: 'facilityRef' })
+      .populate({ path: 'userRef' });
+    return LRes.resOk(res, account);
+  } catch (error) {
+    return LRes.resErr(res, 500, error);
+  }
+};
 
-  public readOneGet: any = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const accountName: string = req.params.accountName;
-    try {
-      const account = await Account.findOne({ accountName: accountName })
-        .populate({ path: 'carrierRef' })
-        .populate({ path: 'pickupRef' })
-        .populate({ path: 'facilityRef' })
-        .populate({ path: 'userRef' });
-      return LRes.resOk(res, account);
-    } catch (error) {
-      return LRes.resErr(res, 500, error);
-    }
-  };
+export const createClientCarrierAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const account: IAccount = req.body;
+  try {
+    account.accountId = uniqid();
+    const createdAccount: IAccount = new Account(account);
+    await createdAccount.save();
+    return LRes.resOk(res, createdAccount);
+  } catch (error) {
+    return LRes.resErr(res, 500, error);
+  }
+};
 
-  public createPost: any = async (req: Request, res: Response) => {
-    const account: IAccount = req.body;
-    try {
-      const createdAccount: IAccount = new Account(account);
-      await createdAccount.save();
-      return LRes.resOk(res, createdAccount);
-    } catch (error) {
-      return LRes.resErr(res, 500, error);
-    }
-  };
+export const updateClientCarrierAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const data: IAccount = req.body;
+  const updateFields = [
+    'carrier',
+    'connectedAccount',
+    'services',
+    'facilities',
+    'fee',
+    'feeBase',
+    'billingType',
+    'carrierRef',
+    'note',
+    'isActive'
+  ];
+  try {
+    const updatedAccount = await Account.findById(data.id);
+    if (!updatedAccount)
+      return LRes.resErr(res, 404, { title: 'No user found' });
 
-  public updatePut: any = async (req: Request, res: Response) => {
-    const accountName: string = req.params.accountName;
-    const accountOne: IAccount = req.body;
-    try {
-      const updatedAccount = await Account.findOneAndUpdate(
-        { accountName: accountName },
-        accountOne,
-        { new: true }
-      );
-      return LRes.resOk(res, updatedAccount);
-    } catch (error) {
-      return LRes.resErr(res, 500, error);
-    }
-  };
+    Object.keys(data).forEach((key) => {
+      if (updateFields.includes(key)) {
+        // @ts-expect-error: ignore
+        updatedAccount[key] = data[key];
+      }
+    });
 
-  public delDelete: any = async (req: Request, res: Response) => {
-    const accountName: string = req.params.accountName;
-    try {
-      await Account.findOneAndDelete({ accountName: accountName });
-      return res.send();
-    } catch (error) {
-      return LRes.resErr(res, 500, error);
-    }
-  };
-}
+    await updatedAccount.save();
+    LRes.resOk(res, updatedAccount);
+  } catch (error) {
+    LRes.resErr(res, 500, error);
+  }
+};
 
-export default AccountController;
+export const deleteClientCarrierAccount = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const id = req.params.id;
+  try {
+    await Account.findOneAndDelete({ _id: Types.ObjectId(id) });
+    return res.send();
+  } catch (error) {
+    return LRes.resErr(res, 500, error);
+  }
+};

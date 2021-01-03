@@ -1,12 +1,13 @@
 import express, { Application } from 'express';
 import IIterateParams from './interfaces/IIterateParams.interface';
 import mongoose from 'mongoose';
+import path from 'path';
 
 mongoose.Promise = global.Promise;
 
 interface IAppInit {
   middleWares: any;
-  controllers: any;
+  routes: any;
 }
 
 interface DBOptions {
@@ -24,8 +25,8 @@ class App {
     this.app = express();
 
     this.middlewares(appInit.middleWares);
-    this.routes(appInit.controllers);
-    // this.assets();
+    this.routes(appInit.routes);
+    this.assets();
     // this.template();
 
     this.connect();
@@ -41,18 +42,20 @@ class App {
     });
   }
 
-  // private assets() {
-  //     this.app.use(express.static('public'))
-  //     this.app.use(express.static('views'))
-  // }
-  //
+  private assets() {
+    this.app.use(
+      '/static/images',
+      express.static(path.join('static', 'images'))
+    );
+  }
+
   // private template() {
   //     this.app.set('view engine', 'pug')
   // }
 
-  private routes(controllers: IIterateParams) {
-    controllers.forEach((controller) => {
-      this.app.use('/', controller.router);
+  private routes(routes: IIterateParams) {
+    routes.forEach((route) => {
+      this.app.use('/', route.router);
     });
   }
 

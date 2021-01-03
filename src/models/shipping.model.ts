@@ -3,7 +3,7 @@ import { IShipping } from '../types/record.types';
 
 const ShippingSchema: Schema = new Schema(
   {
-    timestamp: { type: Date, required: true },
+    accountName: { type: String, required: true },
     carrier: { type: String, required: true },
     provider: { type: String },
     service: { type: String, required: true },
@@ -30,11 +30,17 @@ const ShippingSchema: Schema = new Schema(
       phone: { type: String }
     },
     trackingId: { type: String, required: true, index: true },
+    rate: { type: Number, required: true },
     shippingId: { type: String },
     manifested: { type: Boolean, required: true, default: false },
     userRef: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+      required: true
+    },
+    billingRef: {
+      type: Schema.Types.ObjectId,
+      ref: 'Billing',
       required: true
     }
   },

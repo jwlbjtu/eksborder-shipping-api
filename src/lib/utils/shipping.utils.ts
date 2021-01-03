@@ -16,7 +16,6 @@ class ShippingUtil {
     account: IAccount,
     user: IUser
   ): Promise<ICarrierAPI> => {
-    // @ts-expect-error: ignore
     const api = CarrierFactory.getCarrierAPI(account.carrierRef.carrierName, {
       user,
       account
@@ -117,15 +116,8 @@ class ShippingUtil {
       billingType: 'amount',
       fee: 0,
       carrierRef,
-      pickupRef: {
-        pickupAccount: pickup
-      },
       userRef,
-      facilityRef: {
-        facilityNumber: distributionCenter
-      },
-      isActive: true,
-      isTest: true
+      isActive: true
     };
     return account;
   };

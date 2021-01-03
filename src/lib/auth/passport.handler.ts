@@ -5,11 +5,8 @@ import User from '../../models/user.model';
 import '../env';
 // import passportApiKey from "passport-headerapikey";
 
-// @ts-ignore
 const LocalStrategy = passportLocal.Strategy;
-// @ts-ignore
 const JwtStrategy = passportJwt.Strategy;
-// @ts-ignore
 const ExtractJwt = passportJwt.ExtractJwt;
 
 passport.use(
@@ -25,7 +22,7 @@ passport.use(
           isActive: true
         });
         if (!user) return done({ message: `User ${email} not found.` }, false);
-        // @ts-ignore
+        // @ts-expect-error: ignore
         const isMatch = await user.comparePassword(password);
         if (!isMatch)
           return done({ message: 'Invalid username or password.' }, false);

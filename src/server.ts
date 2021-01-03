@@ -5,23 +5,23 @@ import cors from 'cors';
 import loggerMiddleware from './middleware/logger';
 
 import errorHandler from './middleware/errorHandler';
-import UsersController from './controllers/users/users.controller';
+import UserRoute from './routes/UserRoute';
+import AccountRoute from './routes/AccountRoute';
+import BillingRoute from './routes/BillingRoute';
+import APIRoute from './routes/ApiRoute';
+import RecordRoute from './routes/RecordRoute';
 import ShippingController from './controllers/shipping/shipping.controller';
-import CarrierController from './controllers/carrier/carrier.controller';
-import PickupController from './controllers/carrier/pickup.controller';
-import FacilityController from './controllers/carrier/facility.controller';
-import AccountController from './controllers/users/account.controller';
-import APIController from './controllers/api/api.controller';
+import CarrierRoute from './routes/CarrierRoute';
 
 const app = new App({
-  controllers: [
-    new UsersController(),
+  routes: [
+    new UserRoute(),
+    new AccountRoute(),
+    new BillingRoute(),
+    new APIRoute(),
+    new RecordRoute(),
     new ShippingController(),
-    new CarrierController(),
-    new PickupController(),
-    new FacilityController(),
-    new AccountController(),
-    new APIController()
+    new CarrierRoute()
   ],
   middleWares: [
     bodyParser.json(),
