@@ -14,3 +14,4 @@ package-lock.json
 .env.test
 
 .eslintcache
+static/images/**
