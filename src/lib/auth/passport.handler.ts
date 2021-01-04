@@ -20,7 +20,7 @@ passport.use(
       try {
         const user = await User.findOne({
           email: email.toLowerCase(),
-          role: { $in: [USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER] },
+          role: USER_ROLES.ADMIN_SUPER,
           isActive: true
         });
         if (!user)
