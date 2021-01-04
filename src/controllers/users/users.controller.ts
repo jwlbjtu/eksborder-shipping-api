@@ -2,8 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import passport from 'passport';
 import fs from 'fs';
 
-import sharp from 'sharp';
-
 import User from '../../models/user.model';
 import LRes from '../../lib/lresponse.lib';
 
@@ -43,7 +41,7 @@ export const login = async (
     await passport.authenticate(
       'local',
       { session: true },
-      async (err: Error, user: IUserLogin, info: any) => {
+      async (err: Error, user: IUserLogin) => {
         if (err) return LRes.resErr(res, 401, err);
 
         // @ts-expect-error: ignore
@@ -95,14 +93,42 @@ export const getUserById = async (
   }
 };
 
-// public readGet: any = async (req: Request, res: Response) => {
-//   try {
-//     const users = await User.find({});
-//     LRes.resOk(res, users);
-//   } catch (error) {
-//     LRes.resErr(res, 500, error);
-//   }
-// };
+export const getUserSelf = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = req.user;
+    LRes.resOk(res, user);
+  } catch (error) {
+    LRes.resErr(res, 500, error);
+  }
+};
+
+export const updateSelfPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const user = req.user;
+  const data = req.body;
+  try {
+    // @ts-expect-error: ignore
+    const isMatch = await user.comparePassword(data.password);
+    if (isMatch) {
+      // @ts-expect-error: ignore
+      user.password = data['new-password'];
+      // @ts-expect-error: ignore
+      await user.save();
+      LRes.resOk(res, user);
+    } else {
+      LRes.resErr(res, 401, {
+        message: 'Wrong password'
+      });
+    }
+  } catch (error) {
+    LRes.resErr(res, 500, error);
+  }
+};
 
 export const getUsersByRole = async (
   req: Request,
@@ -117,8 +143,11 @@ export const getUsersByRole = async (
     }
     let query: any = { role: role };
     if (role === 'admins') {
-      // TODO: do not retreive self
-      query = { role: { $in: [USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER] } };
+      query = {
+        // @ts-expect-error: ignore
+        _id: { $ne: req.user.id },
+        role: { $in: [USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER] }
+      };
     }
     const users = await User.find(query);
     LRes.resOk(res, users);

@@ -6,7 +6,9 @@ import {
   updateUser,
   deleteUser,
   getUserById,
+  getUserSelf,
   updateUserPassword,
+  updateSelfPassword,
   uploadUserImage,
   login,
   logout
@@ -42,21 +44,21 @@ class UserRoute {
       logout
     );
 
-    // Get User by ID
+    // Get user self
     this.router.get(
-      this.path + '/:id',
+      this.path + '/self',
       this.authJwt.authenticateJWT,
       this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
-      getUserById
+      getUserSelf
     );
 
-    // // Get All Users
-    // this.router.get(
-    //   this.path,
-    //   this.authJwt.authenticateJWT,
-    //   this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
-    //   this.readGet
-    // );
+    // Update self password
+    this.router.put(
+      this.path + '/selfPassword',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      updateSelfPassword
+    );
 
     // Get Users by Role
     this.router.get(
@@ -64,6 +66,14 @@ class UserRoute {
       this.authJwt.authenticateJWT,
       this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       getUsersByRole
+    );
+
+    // Get User by ID
+    this.router.get(
+      this.path + '/:id',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      getUserById
     );
 
     // Update User
