@@ -1,41 +1,42 @@
-import Loggind from "../models/log.model";
-import { ILog } from "../types/record.types";
+import Loggind from '../models/log.model';
+import { ILog } from '../types/record.types';
 
-export const saveLog = async (call: string, req: object, res: object, account: object, user: object, isErr: boolean = false) => {
-    // @ts-ignore
-    const logData: ILog = {
-        request: req,
-        response: res,
-        callType: call,
-        isError: isErr,
-        // @ts-ignore
-        accountRef: account,
-        // @ts-ignore
-        userRef: user
+export const saveLog = async (
+  call: string,
+  req: any,
+  res: any,
+  account: any,
+  user: any,
+  isErr = false
+) => {
+  // @ts-expect-error: ignore
+  const logData: ILog = {
+    request: req,
+    response: res,
+    callType: call,
+    isError: isErr,
+    accountRef: account,
+    userRef: user
+  };
+
+  if (
+    isErr == true ||
+    (res.hasOwnProperty('status') && typeof res.status != 'string')
+  ) {
+    logData.response = {
+      status: res.status,
+      statusText: res.statusText,
+      data: res.data,
+      messages: res.data.title
     };
+    logData.isError = true;
+  }
 
-    // @ts-ignore
-    if (isErr == true || (res.hasOwnProperty('status') && typeof res.status != "string")) {
-        // @ts-ignore
-        logData.response = {
-            // @ts-ignore
-            status: res.status,
-            // @ts-ignore
-            statusText: res.statusText,
-            // @ts-ignore
-            data: res.data,
-            // @ts-ignore
-            messages: res.data.title
-        };
-        // @ts-ignore
-        logData.isError = true;
-    }
+  const logging = new Loggind(logData);
 
-    const logging = new Loggind(logData);
-
-    try {
-        return await logging.save();
-    } catch (error) {
-        return error;
-    }
-}
+  try {
+    return await logging.save();
+  } catch (error) {
+    return error;
+  }
+};

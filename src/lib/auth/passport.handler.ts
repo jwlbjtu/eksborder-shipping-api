@@ -1,43 +1,51 @@
-// @ts-ignore
-import passport from "passport";
-// @ts-ignore
-import passportLocal from "passport-local";
-// @ts-ignore
-import passportJwt from "passport-jwt";
-// @ts-ignore
-import User from "../../models/user.model";
+import passport from 'passport';
+import passportLocal from 'passport-local';
+import passportJwt from 'passport-jwt';
+import User from '../../models/user.model';
 import '../env';
+import { USER_ROLES } from '../constants';
 // import passportApiKey from "passport-headerapikey";
 
-
-// @ts-ignore
 const LocalStrategy = passportLocal.Strategy;
-// @ts-ignore
 const JwtStrategy = passportJwt.Strategy;
-// @ts-ignore
 const ExtractJwt = passportJwt.ExtractJwt;
 
-passport.use(new LocalStrategy({
-    usernameField: "user[email]",
-    passwordField: 'user[password]'
-}, async (email, password, done) => {
-    try {
-        const user = await User.findOne({email: email.toLowerCase(), isActive: true});
-        if(!user) return done({message: `User ${email} not found.`}, false);
-        // @ts-ignore
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) return done({message: "Invalid username or password."}, false);
-        
-        return done(undefined, user);        
-    } catch (error) {
-        return done(error, false);
-    }
-}));
-
-passport.use(new JwtStrategy(
+passport.use(
+  new LocalStrategy(
     {
-        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-        secretOrKey: process.env.JWT_SECRET
-    }, function (jwtToken, done) {
-        return done(undefined, false, jwtToken);
-}));
+      usernameField: 'user[email]',
+      passwordField: 'user[password]'
+    },
+    async (email, password, done) => {
+      try {
+        const user = await User.findOne({
+          email: email.toLowerCase(),
+          role: USER_ROLES.ADMIN_SUPER,
+          isActive: true
+        });
+        if (!user)
+          return done({ message: `Invalid username or password.` }, false);
+        // @ts-expect-error: ignore
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch)
+          return done({ message: 'Invalid username or password.' }, false);
+
+        return done(undefined, user);
+      } catch (error) {
+        return done(error, false);
+      }
+    }
+  )
+);
+
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_SECRET
+    },
+    function (jwtToken, done) {
+      return done(undefined, false, jwtToken);
+    }
+  )
+);

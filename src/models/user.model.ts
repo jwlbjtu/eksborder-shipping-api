@@ -1,183 +1,242 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
-import * as jwt from "jsonwebtoken";
-import { UserRoleList } from "../lib/constants";
-import Account from "../models/account.model";
-import Billing from "../models/billing.model";
-import Shipping from "../models/shipping.model";
-import Manifest from "../models/manifest.model";
-import Log from "../models/log.model";
+import * as jwt from 'jsonwebtoken';
+import { UserRoleList, USER_ROLES } from '../lib/constants';
+import Account from '../models/account.model';
+import Billing from '../models/billing.model';
+import Shipping from '../models/shipping.model';
+import Manifest from '../models/manifest.model';
+import Log from '../models/log.model';
 import { IUser } from '../types/user.types';
 
-const UserSchema: Schema = new Schema({
+const UserSchema: Schema = new Schema(
+  {
     email: {
-        type: String,
-        lowercase: true,
-        unique: true,
-        required: true,
-        match: [/\S+@\S+\.\S+/],
-        index: true,
-        trim: true
+      type: String,
+      lowercase: true,
+      unique: true,
+      required: true,
+      match: [/\S+@\S+\.\S+/],
+      index: true,
+      trim: true
     },
-    firstName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
-    lastName: { type: String, required: true, minlength:2, maxlength:100, trim: true },
-    userName: {type: String, required: true, unique: true, minlength:2, maxlength:100, trim: true},
+    firstName: {
+      type: String,
+      required: true,
+      maxlength: 100,
+      trim: true
+    },
+    lastName: {
+      type: String,
+      required: true,
+      maxlength: 100,
+      trim: true
+    },
+    userName: {
+      type: String,
+      required: true,
+      unique: true,
+      minlength: 2,
+      maxlength: 100,
+      trim: true
+    },
     salt: String,
-    password: {type: String, required: true, minlength: 8, trim: true},
-    role: {type: String, required: true, enum: UserRoleList, default: 'customer'},
-    address: {
-        street1: {type: String, required: true, trim: true},
-        street2: {type: String, trim: true},
-        city: {type: String, required: true, minlength:3, maxlength:120, trim: true},
-        state: {type: String, required: true, minlength:2, maxlength:3, trim: true},
-        country: {type: String, required: true, minlength:2, maxlength:3, default: "US", trim: true},
-        postalCode: {type: String, required: true, minlength:2, maxlength:10, trim: true},
+    password: { type: String, required: true, minlength: 8, trim: true },
+    role: {
+      type: String,
+      required: true,
+      enum: UserRoleList,
+      default: USER_ROLES.API_USER,
+      index: true
     },
-    phone: {type: String, minlength:5, maxlength:20, trim: true, unique: true},
-    isActive: {type: Boolean, default: true},
-    companyName: {type: String, required: true, minlength:2, maxlength:100, trim: true},
-    logoImage: {type: Buffer},
-    balance: {type: Number, min: 0, default: 0},
-    currency: {type: String, default: "USD"},
-    apiToken: {type: String},
-    tokens: [{
-        token: {
-            type: String,
-            required: true
+    address: {
+      type: {
+        street1: { type: String, required: true, trim: true },
+        street2: { type: String, trim: true },
+        city: {
+          type: String,
+          required: true,
+          maxlength: 120,
+          trim: true
+        },
+        state: {
+          type: String,
+          required: true,
+          maxlength: 3,
+          trim: true
+        },
+        country: {
+          type: String,
+          required: true,
+          maxlength: 3,
+          default: 'US',
+          trim: true
+        },
+        postalCode: {
+          type: String,
+          required: true,
+          maxlength: 10,
+          trim: true
         }
-    }]
-}, {
+      }
+    },
+    countryCode: {
+      type: String,
+      trim: true
+    },
+    phone: {
+      type: String,
+      minlength: 5,
+      maxlength: 20,
+      trim: true,
+      unique: true
+    },
+    isActive: { type: Boolean, default: true },
+    companyName: {
+      type: String,
+      required: true,
+      maxlength: 100,
+      trim: true
+    },
+    logoImage: { type: String },
+    balance: { type: Number, min: 0, default: 0 },
+    minBalance: { type: Number, min: 0, default: 0 },
+    currency: { type: String, default: 'USD' },
+    apiToken: { type: String },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true
+        }
+      }
+    ]
+  },
+  {
     timestamps: true,
     autoIndex: true,
     toJSON: {
-        virtuals: true,
-        getters: true,
-    },
-});
-
-
-UserSchema.pre<IUser>("save", async function save(next) {
-    const user = this;
-
-    if(user.isModified("password")) {
-        const salt = await bcrypt.genSalt();
-        const hashedPass = await bcrypt.hash(user.password, salt);
-        user.salt = salt;
-        user.password = hashedPass;
+      virtuals: true,
+      getters: true
     }
+  }
+);
 
-    next();
+UserSchema.pre<IUser>('save', async function save(next) {
+  if (this.isModified('password')) {
+    const salt = await bcrypt.genSalt();
+    const hashedPass = await bcrypt.hash(this.password, salt);
+    this.salt = salt;
+    this.password = hashedPass;
+  }
+
+  next();
 });
 
-UserSchema.pre("remove", async function (next) {
-    const user = this;
-    await Account.deleteMany({ userRef: user._id });
-    await Billing.deleteMany({ userRef: user._id });
-    await Shipping.deleteMany({ userRef: user._id });
-    await Manifest.deleteMany({ userRef: user._id });
-    await Log.deleteMany({ userRef: user._id });
-    next();
+UserSchema.pre('remove', async function (next) {
+  await Account.deleteMany({ userRef: this._id });
+  await Billing.deleteMany({ userRef: this._id });
+  await Shipping.deleteMany({ userRef: this._id });
+  await Manifest.deleteMany({ userRef: this._id });
+  await Log.deleteMany({ userRef: this._id });
+  next();
 });
 
-UserSchema.methods.comparePassword = async function (candidatePassword: string) {
-    const isMatch = await bcrypt.compare(candidatePassword, this.password);
-    return isMatch;
+UserSchema.methods.comparePassword = async function (
+  candidatePassword: string
+) {
+  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+  return isMatch;
 };
 
 UserSchema.methods.toJSON = function () {
-    const user = this;
-    const userObject = user.toObject();
+  const userObject = this.toObject();
 
-    delete userObject.password;
-    delete userObject.logoImage;
-    delete userObject.tokens;
-    delete userObject.salt;
+  userObject.id = this._id;
 
-    return userObject;
-}
+  delete userObject.password;
+  delete userObject.tokens;
+  delete userObject.salt;
+
+  return userObject;
+};
 
 UserSchema.methods.generateJWT = function (expTime?: number) {
-    // @ts-ignore
-    const secret: string = process.env.JWT_SECRET;
-    let payload: any = {
-        id: this.id,
-        fullName: this.fullName,
-        email: this.email,
-        role: this.role
-    };
+  // @ts-expect-error: ignore
+  const secret: string = process.env.JWT_SECRET;
+  const payload: any = {
+    id: this.id,
+    fullName: this.fullName,
+    role: this.role
+  };
 
-    if(expTime) {
-        payload.exp = Math.floor(Date.now() / 1000) + expTime;
-    }
+  if (expTime) {
+    payload.exp = Math.floor(Date.now() / 1000) + expTime;
+  }
 
-    // @ts-ignore
-    return jwt.sign(payload, secret);
+  return jwt.sign(payload, secret);
 };
 
 UserSchema.methods.toAuthJSON = async function () {
-    const user = this;
+  const expTime = 3600;
+  const token = this.generateJWT(expTime);
 
-    let expTime = 3600;
-    const token = this.generateJWT(expTime);
+  this.tokens = this.tokens.concat({ token });
+  await this.save();
 
-    user.tokens = user.tokens.concat({ token });
-    await user.save();
-
-    return {
-        id: this.id,
-        fullName: this.fullName,
-        email: this.email,
-        role: this.role,
-        token_type: "Bearer",
-        token,
-        expire_in: expTime
-    };
+  return {
+    id: this.id,
+    fullName: this.fullName,
+    image: this.logoImage,
+    role: this.role,
+    token_type: 'Bearer',
+    token
+  };
 };
 
 UserSchema.methods.apiAuthJSON = async function () {
-    const user = this;
-    const token = this.generateJWT();
+  const token = this.generateJWT();
 
-    // Remove exist api token to make sure we always have one api token
-    if(user.apiToken) {
-        const oldToken = user.apiToken;
-        user.tokens = user.tokens.filter((item: {token: string}) => {
-            return item.token !== oldToken;
-        })
-    }
+  // Remove exist api token to make sure we always have one api token
+  if (this.apiToken) {
+    const oldToken = this.apiToken;
+    this.tokens = this.tokens.filter((item: { token: string }) => {
+      return item.token !== oldToken;
+    });
+  }
 
-    user.apiToken = token;
-    user.tokens = user.tokens.concat({ token });
-    await user.save();
+  this.apiToken = token;
+  this.tokens = this.tokens.concat({ token });
+  await this.save();
 
-    return {
-        email: this.email,
-        token,
-        token_type: "Bearer"
-    }
-}
+  return {
+    email: this.email,
+    token,
+    token_type: 'Bearer'
+  };
+};
 
 UserSchema.virtual('fullName').get(function () {
-    // @ts-ignore
-    return `${this.firstName} ${this.lastName}`;
+  // @ts-expect-error: ignore
+  return `${this.lastName}${this.firstName}`;
 });
 
 UserSchema.virtual('accountRef', {
-    ref: 'Account', // The model to use
-    localField: '_id', // Find people where `localField`
-    foreignField: 'userRef', // is equal to `foreignField`
-    // If `justOne` is true, 'members' will be a single doc as opposed to
-    // an array. `justOne` is false by default.
-    justOne: false
+  ref: 'Account', // The model to use
+  localField: '_id', // Find people where `localField`
+  foreignField: 'userRef', // is equal to `foreignField`
+  // If `justOne` is true, 'members' will be a single doc as opposed to
+  // an array. `justOne` is false by default.
+  justOne: false
 });
 
 UserSchema.virtual('shippingRef', {
-    ref: 'Shipping', // The model to use
-    localField: '_id', // Find people where `localField`
-    foreignField: 'userRef', // is equal to `foreignField`
-    // If `justOne` is true, 'members' will be a single doc as opposed to
-    // an array. `justOne` is false by default.
-    justOne: false
+  ref: 'Shipping', // The model to use
+  localField: '_id', // Find people where `localField`
+  foreignField: 'userRef', // is equal to `foreignField`
+  // If `justOne` is true, 'members' will be a single doc as opposed to
+  // an array. `justOne` is false by default.
+  justOne: false
 });
 
 // Export the model and return your IUser interface
