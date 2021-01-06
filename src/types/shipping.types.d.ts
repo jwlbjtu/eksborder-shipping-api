@@ -7,6 +7,7 @@ export interface IProductRequest {
   carrierAccount: string;
   merchantId?: string;
   service?: string;
+  facility?: string;
   toAddress: IAddress;
   fromAddress?: IAddress;
   packageDetail: IPackageDetail;
@@ -24,6 +25,7 @@ export interface ILabelRequest {
   carrierAccount: string;
   merchantId?: string;
   service: string;
+  facility?: string;
   toAddress: IAddress;
   fromAddress?: IAddress;
   packageDetail: IPackageDetail;
@@ -35,6 +37,7 @@ export interface ILabelResponse {
   carrier: string;
   provider?: string;
   service: string;
+  facility?: string;
   labels: ILabel[];
   shippingId?: string;
 }

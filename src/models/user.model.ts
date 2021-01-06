@@ -100,6 +100,7 @@ const UserSchema: Schema = new Schema(
     },
     logoImage: { type: String },
     balance: { type: Number, min: 0, default: 0 },
+    minBalance: { type: Number, min: 0, default: 0 },
     currency: { type: String, default: 'USD' },
     apiToken: { type: String },
     tokens: [

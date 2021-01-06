@@ -12,7 +12,7 @@ export const createFlatLabel = async (
   body: ILabelRequest,
   account: IAccount,
   user?: IUser
-) => {
+): Promise<ILabelResponse | undefined> => {
   // Generate tracking number
   const trackingNumber = trackingNumberGenerator();
   // Genereate bardcode based on the tracking number
@@ -38,6 +38,7 @@ const generateResponse = (
     timestamp: new Date(),
     carrier: body.carrier,
     service: body.service,
+    facility: body.facility,
     labels: [
       {
         createdOn,

@@ -27,7 +27,7 @@ const AccountSchema: Schema = new Schema(
     feeBase: {
       type: String,
       required: true,
-      enum: ['price', 'order', 'weight']
+      enum: ['order', 'weight']
     },
     billingType: {
       type: String,

@@ -7,16 +7,7 @@ const ShippingSchema: Schema = new Schema(
     carrier: { type: String, required: true },
     provider: { type: String },
     service: { type: String, required: true },
-    labels: [
-      {
-        createdOn: { type: Date },
-        trackingId: { type: String },
-        labelData: { type: String },
-        encodeType: { type: String },
-        parcelType: { type: String },
-        format: { type: String }
-      }
-    ],
+    facility: { type: String },
     toAddress: {
       name: { type: String },
       company: { type: String },
@@ -29,10 +20,35 @@ const ShippingSchema: Schema = new Schema(
       email: { type: String },
       phone: { type: String }
     },
+    shippingId: { type: String },
     trackingId: { type: String, required: true, index: true },
     rate: { type: Number, required: true },
-    shippingId: { type: String },
     manifested: { type: Boolean, required: true, default: false },
+    labels: [
+      {
+        createdOn: { type: Date },
+        trackingId: { type: String },
+        labelData: { type: String },
+        encodeType: { type: String },
+        parcelType: { type: String },
+        format: { type: String }
+      }
+    ],
+    packageInfo: {
+      weight: {
+        value: { type: Number },
+        unitOfMeasure: { type: String, enum: ['BL', 'OZ', 'KG', 'G'] }
+      },
+      dimension: {
+        type: {
+          length: { type: Number, required: true },
+          width: { type: Number, required: true },
+          height: { type: Number, required: true },
+          unitOfMeasure: { type: String, enum: ['IN', 'CM'] }
+        },
+        required: false
+      }
+    },
     userRef: {
       type: Schema.Types.ObjectId,
       ref: 'User',

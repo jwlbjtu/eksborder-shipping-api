@@ -183,6 +183,7 @@ export const updateUser = async (
       'companyName',
       'address',
       'balance',
+      'minBalance',
       'currency',
       'email',
       'firstName',

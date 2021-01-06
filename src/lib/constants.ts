@@ -41,6 +41,11 @@ export const BILLING_TYPES = {
   PROPORTION: 'proportions'
 };
 
+export const FEE_BASES = {
+  ORDER_BASED: 'order',
+  WEIGHT_BASED: 'weight'
+};
+
 export const USER_ROLES = {
   ADMIN_SUPER: 'admin_super',
   ADMIN: 'admin',

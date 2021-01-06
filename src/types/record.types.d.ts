@@ -1,5 +1,10 @@
 import { Document, Types } from 'mongoose';
-import { ILabelResponse, IAddress } from './shipping.types';
+import {
+  ILabelResponse,
+  IAddress,
+  IWeight,
+  IDimension
+} from './shipping.types';
 
 export interface ICarrier extends Document {
   id: Types.ObjectId;
@@ -60,6 +65,10 @@ export interface IShipping extends ILabelResponse, Document {
   trackingId: string;
   shippingId?: string;
   manifested: boolean = false;
+  packageInfo: {
+    weight: IWeight;
+    dimension?: IDimension;
+  };
   userRef: Types.ObjectId;
   BillingRef: Types.ObjectId;
 }

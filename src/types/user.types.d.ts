@@ -30,6 +30,7 @@ export interface IUser extends Document {
   companyName: string;
   logoImage?: string;
   balance: number;
+  minBalance: number;
   currency: string;
   apiToken?: string;
   tokens?: [
@@ -48,7 +49,7 @@ export interface IAccount extends Document {
   services: string[];
   facilities: string[];
   fee: number;
-  feeBase: 'price' | 'order' | 'weight';
+  feeBase: 'order' | 'weight';
   billingType: 'proportions' | 'amount';
   carrierRef: any;
   userRef: any;

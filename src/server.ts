@@ -10,7 +10,7 @@ import AccountRoute from './routes/AccountRoute';
 import BillingRoute from './routes/BillingRoute';
 import APIRoute from './routes/ApiRoute';
 import RecordRoute from './routes/RecordRoute';
-import ShippingController from './controllers/shipping/shipping.controller';
+import ShippingRoute from './routes/ShippingRoute';
 import CarrierRoute from './routes/CarrierRoute';
 
 const app = new App({
@@ -20,7 +20,7 @@ const app = new App({
     new BillingRoute(),
     new APIRoute(),
     new RecordRoute(),
-    new ShippingController(),
+    new ShippingRoute(),
     new CarrierRoute()
   ],
   middleWares: [

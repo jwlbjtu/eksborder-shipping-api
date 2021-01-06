@@ -1,6 +1,7 @@
 import ICarrierAPI from '../ICarrierAPI.interface';
 import AxiosapiLib from '../../axiosapi.lib';
 import qs from 'qs';
+import uniqid from 'uniqid';
 import { saveLog } from '../../../lib/log.handler';
 import {
   IManifestRequest,
@@ -32,6 +33,7 @@ import {
 } from '../../../types/carriers/dhl.ecommerce';
 import { IDHLeCommerceError, IError } from '../../../types/error.types';
 import { IAccount, IUser } from '../../../types/user.types';
+import { IFacility } from '../../../types/record.types';
 
 class DhlApi implements ICarrierAPI {
   private _props: { account: IAccount; user: IUser };
@@ -39,6 +41,7 @@ class DhlApi implements ICarrierAPI {
     client_id: string;
     client_secret: string;
   };
+  private _facilities: IFacility[];
   private api_url = '';
   private accesstoken = '';
 
@@ -60,12 +63,21 @@ class DhlApi implements ICarrierAPI {
       client_id: this._props.account.carrierRef.clientId,
       client_secret: this._props.account.carrierRef.clientSecret
     };
+
+    this._facilities = this._props.account.carrierRef.facilities;
   }
+
+  private findFacility = (name: string | undefined) => {
+    const facility = this._facilities.find(
+      (value: IFacility) => value.facility === name
+    );
+    return facility;
+  };
 
   /**
    * auth user
    */
-  public auth: any = async () => {
+  public auth = async () => {
     const data = qs.stringify({
       grant_type: 'client_credentials'
     });
@@ -109,11 +121,13 @@ class DhlApi implements ICarrierAPI {
       billingReference2: data.packageDetail.billingReference2
     };
 
+    const facilityObj = this.findFacility(data.facility);
+
     const prodReqBody: IDHLeCommerceProductRequest = {
       // @ts-expect-error: ignore
-      pickup: this._props.account.pickupRef.pickupAccount,
+      pickup: facilityObj?.pickup,
       // @ts-expect-error: ignore
-      distributionCenter: this._props.account.facilityRef.facilityNumber,
+      distributionCenter: facilityObj?.facility,
       orderedProductId: data.service,
       consigneeAddress: this.convertToDHLAddress(data.toAddress),
       returnAddress: this.convertToDHLAddress(
@@ -191,9 +205,7 @@ class DhlApi implements ICarrierAPI {
     format: 'ZPL' | 'PNG' = 'PNG'
   ) => {
     const dhlPackageDetail: IDHLeCommercePackageDetail = {
-      packageId:
-        data.packageDetail.packageId ||
-        'EK-' + Date.now() + Math.round(Math.random() * 1000000).toString(),
+      packageId: data.packageDetail.packageId || uniqid('EK'),
       packageDescription: data.packageDetail.packageDescription,
       weight: data.packageDetail.weight,
       dimension: data.packageDetail.dimension,
@@ -201,11 +213,13 @@ class DhlApi implements ICarrierAPI {
       billingReference2: data.packageDetail.billingReference2
     };
 
+    const facilityObj = this.findFacility(data.facility);
+
     const labelReqBody: IDHLeCommerceLabelRequest = {
       // @ts-expect-error: ignore
-      pickup: this._props.account.pickupRef.pickupAccount,
+      pickup: facilityObj?.pickup,
       // @ts-expect-error: ignore
-      distributionCenter: this._props.account.facilityRef.facilityNumber,
+      distributionCenter: facilityObj?.facility,
       orderedProductId: data.service,
       consigneeAddress: this.convertToDHLAddress(data.toAddress),
       returnAddress: this.convertToDHLAddress(
@@ -364,8 +378,7 @@ class DhlApi implements ICarrierAPI {
    */
   public manifest: any = async (data: IManifestRequest) => {
     const manifestBody: IDHLeCommerceManifestRequest = {
-      // @ts-expect-error: ignore
-      pickup: this._props.account.pickupRef.pickupAccount,
+      pickup: this._props.account.carrierRef.facilities[0].pickup,
       manifests: [
         {
           dhlPackageIds: data.manifests[0].trackingIds
@@ -439,8 +452,7 @@ class DhlApi implements ICarrierAPI {
    * @param requestId
    */
   public getManifest: any = async (requestId: string) => {
-    // @ts-expect-error: ignore
-    const pickup = this._props.account.pickupRef.pickupAccount;
+    const pickup = this._props.account.carrierRef.facilities[0].pickup;
 
     const _url: string =
       this.api_url + '/shipping/v4/manifest/' + `${pickup}/${requestId}`;
