@@ -13,8 +13,6 @@ export const getAllClientCarrierAccounts = async (
   try {
     const accounts = await Account.find()
       .populate({ path: 'carrierRef' })
-      .populate({ path: 'pickupRef' })
-      .populate({ path: 'facilityRef' })
       .populate({ path: 'userRef' });
     return LRes.resOk(res, accounts);
   } catch (error) {
@@ -45,8 +43,6 @@ export const getClientCarrierAccount = async (
   try {
     const account = await Account.findOne({ accountName: accountName })
       .populate({ path: 'carrierRef' })
-      .populate({ path: 'pickupRef' })
-      .populate({ path: 'facilityRef' })
       .populate({ path: 'userRef' });
     return LRes.resOk(res, account);
   } catch (error) {

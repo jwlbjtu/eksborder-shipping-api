@@ -36,13 +36,13 @@ class AccountRoute {
       getClientCarrierAccountsByUser
     );
 
-    // Get a Client Account
-    this.router.get(
-      this.path + '/:accountName',
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
-      getClientCarrierAccount
-    );
+    // // Get a Client Account
+    // this.router.get(
+    //   this.path + '/:accountName',
+    //   this.authJwt.authenticateJWT,
+    //   this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+    //   getClientCarrierAccount
+    // );
 
     // Create Client Carrier Account
     this.router.post(

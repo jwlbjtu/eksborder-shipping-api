@@ -1,14 +1,10 @@
-import mongoose, { mongo } from 'mongoose';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import User from '../../src/models/user.model';
 import Carrier from '../../src/models/carrier.model';
-import Pickup from '../../src/models/pickup.model';
-import Facility from '../../src/models/facility.model';
 import Account from '../../src/models/account.model';
 import { adminUser, customerUser, createUser } from './users';
-import { dhlCarrier, pbCarrier } from './carriers';
-import { dhlFacility } from './facilities';
-import { dhlPickup } from './pickup';
+import { dhlCarrier } from './carriers';
 import { IAccount } from '../../src/types/user.types';
 
 const testAccountId = mongoose.Types.ObjectId();
@@ -16,69 +12,62 @@ const testAccountId = mongoose.Types.ObjectId();
 export const testAccount: IAccount = {
   _id: testAccountId,
   accountName: 'testAccount',
-  billingType: 'amount',
+  accountId: 'jkfkdialjfdiw',
+  carrier: 'DHL eCommerce',
+  connectedAccount: 'Test-DHL-eCommerce',
+  services: ['GND'],
+  facilities: ['USRDU1'],
   fee: 2,
+  feeBase: 'order',
+  billingType: 'amount',
   note: 'Unit test account',
-  isTest: true,
   userRef: customerUser._id,
   carrierRef: dhlCarrier._id,
-  pickupRef: dhlPickup._id,
-  facilityRef: dhlFacility._id
+  isActive: true
 };
 
 const dhlAccountId = mongoose.Types.ObjectId();
-// @ts-expect-error: ignore
+// @ts-expect-error:ignore
 export const dhlAccount: IAccount = {
   _id: dhlAccountId,
   accountName: 'dhlAccount',
-  billingType: 'proportions',
+  accountId: 'iklciklsjfidpcl',
+  carrier: 'DHL eCommerce',
+  connectedAccount: 'Test-DHL-eCommerce',
+  services: ['GND', 'FLAT'],
+  facilities: ['USRDU1'],
   fee: 2,
+  feeBase: 'order',
+  billingType: 'proportions',
   note: 'Unit test dhl account',
-  isTest: true,
   userRef: customerUser._id,
   carrierRef: dhlCarrier._id,
-  pickupRef: dhlPickup._id,
-  facilityRef: dhlFacility._id
+  isActive: true
 };
 
 const dhlAccountId2 = mongoose.Types.ObjectId();
-// @ts-expect-error: ignore
+// @ts-expect-error:ignore
 export const dhlAccount2: IAccount = {
   _id: dhlAccountId2,
   accountName: 'dhlAccount2',
-  billingType: 'proportions',
+  accountId: 'iklcioelkxkjidpcl2',
+  carrier: 'DHL eCommerce',
+  connectedAccount: 'Test-DHL-eCommerce',
+  services: ['GND'],
+  facilities: ['USRDU1'],
   fee: 2,
+  feeBase: 'order',
+  billingType: 'proportions',
   note: 'Unit test dhl account 2',
-  isTest: true,
   userRef: createUser._id,
   carrierRef: dhlCarrier._id,
-  pickupRef: dhlPickup._id,
-  facilityRef: dhlFacility._id
+  isActive: true
 };
 
-const pbAccountId = mongoose.Types.ObjectId();
-// @ts-expect-error: ignore
-export const pbAccount: IAccount = {
-  _id: pbAccountId,
-  accountName: 'pbAccount',
-  billingType: 'amount',
-  fee: 2,
-  note: 'Unit test pb account',
-  isTest: true,
-  userRef: customerUser._id,
-  carrierRef: pbCarrier._id
-};
-
-export const setupDB = async () => {
+export const setupDB = async (): Promise<void> => {
   await User.deleteMany({});
   await Carrier.deleteMany({});
-  await Facility.deleteMany({});
-  await Pickup.deleteMany({});
   await Account.deleteMany({});
-
-  await User.deleteMany({});
-  await Carrier.deleteMany({});
-  await Facility.deleteMany({});
 
   // Create Admin User in DB
   const adminPayload = {
@@ -107,10 +96,8 @@ export const setupDB = async () => {
       token: jwt.sign(customerPayload, 'test_secret')
     }
   ];
-  await new User(customerUser).save();
 
+  await new User(customerUser).save();
   await new Carrier(dhlCarrier).save();
-  await new Facility(dhlFacility).save();
-  await new Pickup(dhlPickup).save();
   await new Account(testAccount).save();
 };

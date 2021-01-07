@@ -5,14 +5,48 @@ import mongoose from 'mongoose';
 import { ICarrier } from '../../src/types/record.types';
 import { adminUser } from './users';
 
+const dhlCarrierId2 = mongoose.Types.ObjectId();
+// @ts-expect-error: ignore
+export const dhlCarrier2: ICarrier = {
+  _id: dhlCarrierId2,
+  carrierName: 'DHL eCommerce 2',
+  accountName: 'Test-DHL-eCommerce2',
+  description: 'Test DHL eCommerce2',
+  clientId: 'RaEafduuLOTpFKXQ4M0LPtcwpiaWNu2m',
+  clientSecret: 'kgEG3LTXRa2dVJXo',
+  facilities: [{ pickup: '5351244', facility: 'USRDU1' }],
+  services: [
+    { key: 'FLAT', name: 'DHL Smartmail Flats' },
+    { key: 'EXP', name: 'DHL Parcel Expedited' },
+    { key: 'GND', name: 'DHL Parcel Ground' }
+  ],
+  returnAddress: {
+    company: 'Eksborder Inc',
+    street1: '59 Apsley Street',
+    street2: 'Suite 11A',
+    city: 'Hudson',
+    state: 'MA',
+    country: 'US',
+    postalCode: '01749'
+  },
+  isActive: true
+};
+
 const dhlCarrierId = mongoose.Types.ObjectId();
 // @ts-expect-error: ignore
 export const dhlCarrier: ICarrier = {
   _id: dhlCarrierId,
   carrierName: 'DHL eCommerce',
-  accountName: 'DHL eCommerce Test Account',
+  accountName: 'Test-DHL-eCommerce',
+  description: 'Test DHL eCommerce',
   clientId: 'RaEafduuLOTpFKXQ4M0LPtcwpiaWNu2m',
   clientSecret: 'kgEG3LTXRa2dVJXo',
+  facilities: [{ pickup: '5351244', facility: 'USRDU1' }],
+  services: [
+    { key: 'FLAT', name: 'DHL Smartmail Flats' },
+    { key: 'EXP', name: 'DHL Parcel Expedited' },
+    { key: 'GND', name: 'DHL Parcel Ground' }
+  ],
   returnAddress: {
     company: 'Eksborder Inc',
     street1: '59 Apsley Street',
@@ -22,31 +56,10 @@ export const dhlCarrier: ICarrier = {
     country: 'US',
     postalCode: '01749'
   },
-  isTest: true
+  isActive: true
 };
 
-const pbCarrierId = mongoose.Types.ObjectId();
-// @ts-expect-error: ignore
-export const pbCarrier: ICarrier = {
-  _id: pbCarrierId,
-  carrierName: 'Pitney Bowes',
-  accountName: 'Pitney Bowes Test Account',
-  clientId: 'NaGclZXRH8pRCM2WzE4wTZpUgKNrMcO7',
-  clientSecret: 'eaSZ3eYDtz7V32R2',
-  shipperId: '3001087260',
-  returnAddress: {
-    company: 'Eksborder Inc',
-    street1: '59 Apsley Street',
-    street2: 'Suite 11A',
-    city: 'Hudson',
-    state: 'MA',
-    country: 'US',
-    postalCode: '01749'
-  },
-  isTest: true
-};
-
-export const setupDB = async () => {
+export const setupDB = async (): Promise<void> => {
   await User.deleteMany({});
   await Carrier.deleteMany({});
 
@@ -63,6 +76,5 @@ export const setupDB = async () => {
     }
   ];
   await new User(adminUser).save();
-
   await new Carrier(dhlCarrier).save();
 };

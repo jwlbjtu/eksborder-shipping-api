@@ -13,6 +13,11 @@
     "lint:prettier": "prettier --write src/**/*.ts"
   },
   "jest": {
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false
+      }
+    },
     "moduleFileExtensions": [
       "ts",
       "tsx",

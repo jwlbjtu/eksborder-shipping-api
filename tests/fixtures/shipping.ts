@@ -1,18 +1,13 @@
 import jwt from 'jsonwebtoken';
 import User from '../../src/models/user.model';
 import Carrier from '../../src/models/carrier.model';
-import Facility from '../../src/models/facility.model';
-import Pickup from '../../src/models/pickup.model';
 import Account from '../../src/models/account.model';
 import Manifest from '../../src/models/manifest.model';
 
 import { adminUser, customerUser, createUser } from './users';
-import { dhlCarrier, pbCarrier } from './carriers';
-import { testFacility } from './facilities';
-import { testPickup } from './pickup';
-import { dhlAccount, pbAccount, dhlAccount2 } from './account';
+import { dhlCarrier } from './carriers';
+import { dhlAccount, dhlAccount2 } from './account';
 import { IAdminProductRequest } from '../../src/types/admin.types';
-import { ILabelRequest } from '../../src/types/shipping.types';
 
 // product request - DHL eCommerce all products
 export const allDHLeCommerceProductRequest: IAdminProductRequest = {
@@ -184,8 +179,9 @@ export const allPBPMProductsRequest: IAdminProductRequest = {
 // label request - DHL ecommerce GND
 export const dhlEcommerceGNDLabel = {
   carrier: 'DHL eCommerce',
-  carrierAccount: 'dhlAccount',
+  carrierAccount: 'iklciklsjfidpcl',
   service: 'GND',
+  facility: 'USRDU1',
   toAddress: {
     name: 'John Doe',
     companyName: 'Doe Inc.',
@@ -209,8 +205,9 @@ export const dhlEcommerceGNDLabel = {
 // label request - DHL ecommerce FLAT
 export const dhlEcommerceFlatLabel = {
   carrier: 'DHL eCommerce',
-  carrierAccount: 'dhlAccount',
+  carrierAccount: 'iklciklsjfidpcl',
   service: 'FLAT',
+  facility: 'USRDU1',
   toAddress: {
     name: 'John Doe',
     companyName: 'Doe Inc.',
@@ -343,11 +340,12 @@ export const pbUspsPmPkgLabelRequest = {
     billingReference1: 'test bill ref 2'
   }
 };
-// label request - PB USPS PM PKG
+
 export const insufficientBalanceRequest = {
   carrier: 'DHL eCommerce',
-  carrierAccount: 'dhlAccount2',
+  carrierAccount: 'iklcioelkxkjidpcl2',
   service: 'GND',
+  distributionCenter: 'USRDU1',
   toAddress: {
     name: 'John Doe',
     companyName: 'Doe Inc.',
@@ -372,7 +370,7 @@ export const insufficientBalanceRequest = {
 // DHL Manifest Request
 export const dhlManifestRequest = {
   carrier: 'DHL eCommerce',
-  carrierAccount: 'dhlAccount',
+  carrierAccount: 'iklciklsjfidpcl',
   manifests: [
     {
       trackingIds: []
@@ -391,7 +389,7 @@ export const pbManifestRequest = {
   ]
 };
 
-export const setupDB = async () => {
+export const setupDB = async (): Promise<void> => {
   await User.deleteMany({});
 
   // Create Admin User in DB
@@ -442,27 +440,11 @@ export const setupDB = async () => {
   await Carrier.deleteMany({});
   // dhlCarrier
   await new Carrier(dhlCarrier).save();
-  // pbCarrier
-  await new Carrier(pbCarrier).save();
-
-  await Facility.deleteMany({});
-  // dhlfacility
-  await new Facility(testFacility).save();
-
-  await Pickup.deleteMany({});
-  // dhlpickup
-  await new Pickup(testPickup).save();
 
   await Account.deleteMany({});
-  // dhlAccount
-  dhlAccount.pickupRef = testPickup._id;
-  dhlAccount.facilityRef = testFacility._id;
+
   await new Account(dhlAccount).save();
-  // pbAccount
-  await new Account(pbAccount).save();
   // dhlAccount for third user
-  dhlAccount2.pickupRef = testPickup._id;
-  dhlAccount2.facilityRef = testFacility._id;
   await new Account(dhlAccount2).save();
 
   await Manifest.deleteMany({});

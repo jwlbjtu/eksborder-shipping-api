@@ -12,10 +12,12 @@ export const adminUser: IUser = {
   lastName: 'Admin_Last',
   userName: 'AdminUser',
   password: 'AdminPass',
-  role: USER_ROLES.ADMIN_SUPER,
-  email: 'admin@test.com',
+  countryCode: '1',
   phone: '6171113333',
   companyName: 'Test Inc',
+  role: USER_ROLES.ADMIN_SUPER,
+  email: 'admin@test.com',
+  minBalance: 0,
   address: {
     street1: '590 Rich St',
     street2: 'Suit 2',
@@ -36,6 +38,8 @@ export const customerUser: IUser = {
   password: 'CustomerPass',
   role: USER_ROLES.API_USER,
   email: 'customer@test.com',
+  countryCode: '1',
+  minBalance: 0,
   phone: '6171112233',
   companyName: 'Customer Test Inc',
   address: {
@@ -57,6 +61,8 @@ export const createUser: IUser = {
   password: 'CreatePass',
   role: USER_ROLES.API_USER,
   email: 'create@test.com',
+  countryCode: '1',
+  minBalance: 0,
   phone: '6171112222',
   companyName: 'Created Test Inc',
   address: {
@@ -68,7 +74,7 @@ export const createUser: IUser = {
   }
 };
 
-export const setupDB = async () => {
+export const setupDB = async (): Promise<void> => {
   await User.deleteMany({});
 
   // Create Admin User in DB
@@ -101,7 +107,7 @@ export const setupDB = async () => {
   await new User(customerUser).save();
 };
 
-export const setupDBAPI = async () => {
+export const setupDBAPI = async (): Promise<void> => {
   await User.deleteMany({});
 
   // Create Admin User in DB

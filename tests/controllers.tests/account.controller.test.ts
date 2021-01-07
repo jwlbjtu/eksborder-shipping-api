@@ -19,17 +19,6 @@ describe('Account Unit Test', () => {
       });
   });
 
-  it('Should get account by account name for admin user', async () => {
-    await request(app)
-      .get(`/account/${testAccount.accountName}`)
-      .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
-      .send()
-      .expect(200)
-      .expect(async (res) => {
-        res.body.accountName === testAccount.accountName;
-      });
-  });
-
   it('Should get all accounts for admin user', async () => {
     await request(app)
       .get('/account')
@@ -44,9 +33,9 @@ describe('Account Unit Test', () => {
 
   it('Should update account for admin user', async () => {
     await request(app)
-      .put(`/account/${testAccount.accountName}`)
+      .put(`/account`)
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
-      .send({ fee: 125 })
+      .send({ id: testAccount._id, fee: 125 })
       .expect(200)
       .expect(async (res) => {
         const account = await Account.findById(testAccount._id);
@@ -56,7 +45,7 @@ describe('Account Unit Test', () => {
 
   it('Should delete account for admin user', async () => {
     await request(app)
-      .delete(`/account/${testAccount.accountName}`)
+      .delete(`/account/${testAccount._id}`)
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
       .send()
       .expect(200)

@@ -1,4 +1,4 @@
-import { setupDB, dhlCarrier, pbCarrier } from '../fixtures/carriers';
+import { setupDB, dhlCarrier, dhlCarrier2 } from '../fixtures/carriers';
 import { adminUser } from '../fixtures/users';
 import Carrier from '../../src/models/carrier.model';
 import request from 'supertest';
@@ -11,20 +11,20 @@ describe('Carrier Controller Test', () => {
     await request(app)
       .post('/carrier')
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
-      .send(pbCarrier)
+      .send(dhlCarrier2)
       .expect(200)
       .expect(async (res) => {
-        const carrier = await Carrier.findById(pbCarrier._id);
+        const carrier = await Carrier.findById(dhlCarrier2._id);
         expect(carrier).not.toBeNull();
-        expect(carrier.carrierName).toEqual('Pitney Bowes');
+        expect(carrier.carrierName).toEqual('DHL eCommerce 2');
       });
   });
 
   it('Should update carrier for admin user', async () => {
     await request(app)
-      .put(`/carrier/${dhlCarrier.carrierName}`)
+      .put(`/carrier`)
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
-      .send({ accountName: 'Updated by Unit Test' })
+      .send({ id: dhlCarrier._id, accountName: 'Updated by Unit Test' })
       .expect(200)
       .expect(async (res) => {
         const carrier = await Carrier.findById(dhlCarrier._id);
@@ -44,9 +44,9 @@ describe('Carrier Controller Test', () => {
       });
   });
 
-  it('Should get carrier by name for admin user', async () => {
+  it('Should get carrier by id for admin user', async () => {
     await request(app)
-      .get(`/carrier/${dhlCarrier.carrierName}`)
+      .get(`/carrier/${dhlCarrier._id}`)
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
       .send()
       .expect(200)
@@ -57,7 +57,7 @@ describe('Carrier Controller Test', () => {
 
   it('Should delete carrier for admin user', async () => {
     await request(app)
-      .delete(`/carrier/${dhlCarrier.carrierName}`)
+      .delete(`/carrier/${dhlCarrier._id}`)
       .set('Authorization', `Bearer ${adminUser.tokens![0].token}`)
       .send()
       .expect(200)
