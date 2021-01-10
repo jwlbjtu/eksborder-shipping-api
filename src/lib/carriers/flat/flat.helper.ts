@@ -39,6 +39,7 @@ const generateResponse = (
     carrier: body.carrier,
     service: body.service,
     facility: body.facility,
+    carrierAccount: body.carrierAccount,
     labels: [
       {
         createdOn,

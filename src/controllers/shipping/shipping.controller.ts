@@ -256,6 +256,7 @@ export const createShippingLabel = async (
     console.log('7. Create shipping record');
     const shippingRecord: IShipping = {
       accountName: account.accountName,
+      carrierAccount: account.accountId,
       carrier: labelResponse.carrier,
       provider: labelResponse.provider,
       service: labelResponse.service,
@@ -315,6 +316,8 @@ export const GetLabelByShippingId = async (
         carrier: shipping.carrier,
         provider: shipping.provider,
         service: shipping.service,
+        facility: shipping.facility,
+        carrierAccount: shipping.carrierAccount,
         labels: shipping.labels,
         shippingId: shipping.shippingId
       };
@@ -346,6 +349,7 @@ export const createManifest = async (
   let carrier: string | undefined = body.carrier || undefined;
   let provider: string | undefined = body.provider || undefined;
   let carrierAccount: string | undefined = body.carrierAccount || undefined;
+  let facility: string | undefined = body.facility || undefined;
   let account: IAccount | undefined | null = undefined;
   const manifests: [{ trackingIds: string[] }] = body.manifests;
 
@@ -362,6 +366,8 @@ export const createManifest = async (
     const checkedCarrier = validateCarrier(account, carrier, provider);
     carrier = checkedCarrier.carrier;
     provider = checkedCarrier.provider;
+    // * Validate Facility Name is Supported
+    facility = validateFacility(account, facility);
   } catch (error) {
     console.log(error);
     return res.status(400).json(error);
