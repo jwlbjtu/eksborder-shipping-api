@@ -280,6 +280,7 @@ class PbApi implements ICarrierAPI {
         carrier: data.carrier,
         provider: data.provider,
         service: data.service,
+        carrierAccount: data.carrierAccount,
         labels: pbLabelResponse.documents.map((item: IPBDocument) => {
           const result: ILabel = {
             createdOn: new Date(),
@@ -362,9 +363,9 @@ class PbApi implements ICarrierAPI {
       const rate = pbLabelResponse.rates[0];
       const labelResponse: ILabelResponse = {
         timestamp: new Date(),
-
         carrier: this._props.account.carrierRef.carrierName,
         service: rate.carrier.toUpperCase() + '_' + rate.serviceId,
+        carrierAccount: 'carrierAccount passed in from url',
         labels: pbLabelResponse.documents.map((item: IPBDocument) => {
           const result: ILabel = {
             createdOn: new Date(),

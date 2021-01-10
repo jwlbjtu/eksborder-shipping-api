@@ -4,6 +4,7 @@ import { IShipping } from '../types/record.types';
 const ShippingSchema: Schema = new Schema(
   {
     accountName: { type: String, required: true },
+    carrierAccount: { type: String, required: true, index: true },
     carrier: { type: String, required: true },
     provider: { type: String },
     service: { type: String, required: true },

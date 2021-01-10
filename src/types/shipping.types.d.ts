@@ -38,6 +38,7 @@ export interface ILabelResponse {
   provider?: string;
   service: string;
   facility?: string;
+  carrierAccount: string;
   labels: ILabel[];
   shippingId?: string;
 }
@@ -46,6 +47,7 @@ export interface IManifestRequest {
   carrier: string;
   provider?: string;
   carrierAccount: string;
+  facility?: string;
   manifests: [
     {
       trackingIds: string[];
@@ -57,6 +59,8 @@ export interface IManifestResponse extends Document {
   timestamp: Date;
   carrier: string;
   provider?: string;
+  carrierAccount: string;
+  facility?: string;
   requestId: string;
   status?: 'CREATED' | 'IN PROGRESS' | 'COMPLETED';
   manifests?: IManifest[];

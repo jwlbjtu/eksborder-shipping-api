@@ -5,6 +5,9 @@ const ManifestSchema: Schema = new Schema(
   {
     timestamp: { type: Date, required: true },
     carrier: { type: String, required: true },
+    provider: { trye: String },
+    carrierAccount: { type: String, required: true },
+    facility: { type: String },
     requestId: { type: String, required: true, index: true },
     status: {
       type: String,
