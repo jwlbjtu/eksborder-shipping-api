@@ -12,7 +12,7 @@ interface ICarrierAPI {
   label(data: ILabelRequest): TResType;
   getLabel(): TResType;
   manifest(data: IManifestRequest): TResType;
-  getManifest(id: string): TResType;
+  getManifest(id: string, facility: string | undefined): TResType;
 }
 
 export default ICarrierAPI;
