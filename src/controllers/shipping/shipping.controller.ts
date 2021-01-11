@@ -476,6 +476,7 @@ export const downloadManifest = async (
   let carrierAccount: string | undefined =
     req.params.carrierAccount || undefined;
   let account: IAccount | undefined | null = undefined;
+  let facility: string | undefined = req.params.facility || undefined;
 
   if (!requestId) {
     return res
@@ -483,6 +484,7 @@ export const downloadManifest = async (
       .json(LRes.fieldErr('requestId', '/', errorTypes.MISSING));
   }
   try {
+    // * Validate Client Carrier Account
     const checkValues = await validateCarrierAccount(
       carrierAccount,
       // @ts-expect-error: ignore
@@ -490,6 +492,8 @@ export const downloadManifest = async (
     );
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
+    // * Validate facility
+    facility = await validateFacility(account, facility);
   } catch (error) {
     console.log(error);
     return res.status(400).send(error);
@@ -512,7 +516,7 @@ export const downloadManifest = async (
     // request latest manifest data from carrier
     // @ts-expect-error: ignore
     const api = await ShippingUtil.initCF(account, req.user);
-    const response = await api.getManifest(requestId);
+    const response = await api.getManifest(requestId, facility);
     if (
       response.hasOwnProperty('status') &&
       typeof response.status !== 'string' &&

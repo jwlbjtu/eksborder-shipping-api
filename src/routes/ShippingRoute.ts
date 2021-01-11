@@ -44,7 +44,7 @@ class ShippingRoute {
 
     // Get Manifest
     this.router.get(
-      this.path + '/manifest/:carrierAccount/:requestId',
+      this.path + '/manifest/:carrierAccount/:facility/:requestId',
       this.authJwt.authenticateJWT,
       this.authJwt.checkRole(USER_ROLES.API_USER),
       downloadManifest

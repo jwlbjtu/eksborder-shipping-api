@@ -195,8 +195,12 @@ class DhlApi implements ICarrierAPI {
    * Get Manifest from DHl
    * @param requestId
    */
-  public getManifest: any = async (requestId: string) => {
-    const pickup = this._props.account.carrierRef.facilities[0].pickup;
+  public getManifest: any = async (
+    requestId: string,
+    facility: string | undefined
+  ) => {
+    const facilityObj = this.findFacility(facility);
+    const pickup = facilityObj?.pickup;
     const _url: string =
       this.api_url + '/shipping/v4/manifest/' + `${pickup}/${requestId}`;
     const headers = await this.getHeaders(false);
