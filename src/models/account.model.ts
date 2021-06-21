@@ -21,20 +21,29 @@ const AccountSchema: Schema = new Schema(
     },
     carrier: { type: String, required: true },
     connectedAccount: { type: String, required: true },
-    services: [String],
+    services: {
+      type: [
+        {
+          key: { type: String, required: true },
+          id: { type: String },
+          name: { type: String, required: true }
+        }
+      ]
+    },
     facilities: [String],
-    fee: { type: Number, required: true, min: 0 },
-    feeBase: {
-      type: String,
-      required: true,
-      enum: ['order', 'weight']
+    rates: {
+      type: [
+        {
+          ratebase: { type: String, required: true },
+          weightUnit: { type: String },
+          currency: { type: String, required: true },
+          rate: { type: Number, required: true },
+          ratetype: { type: String, required: true }
+        }
+      ],
+      default: []
     },
-    billingType: {
-      type: String,
-      required: true,
-      enum: ['proportions', 'amount'],
-      default: 'amount'
-    },
+    thirdpartyPrice: { type: Boolean, default: false },
     carrierRef: {
       type: Schema.Types.ObjectId,
       ref: 'Carrier',

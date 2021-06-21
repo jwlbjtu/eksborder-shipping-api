@@ -31,7 +31,8 @@ const BillingSchema: Schema = new Schema(
         }
       }
     },
-    addFund: { type: Boolean, default: false }
+    addFund: { type: Boolean, default: false },
+    invoice: { type: String }
   },
   {
     timestamps: true

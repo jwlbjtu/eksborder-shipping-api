@@ -1,3 +1,6 @@
+import { Types } from 'mongoose';
+import { PrintFormatData } from '../types/client/printformat';
+
 export const DHL_ECOMMERCE = 'DHL eCommerce';
 export const PITNEY_BOWES = 'Pitney Bowes';
 export const USPS = 'USPS';
@@ -109,3 +112,86 @@ export const DHL_ECOMMERCE_MANIFEST_STATUS = {
   IN_PROGRESS: 'IN PROGRESS',
   COMPLETED: 'COMPLETED'
 };
+
+export enum CarrierRateType {
+  FLAT = 'flat',
+  PERSENTAGE = 'persentage'
+}
+
+export const RATE_BASES = {
+  ORDER: '每票',
+  PACKAGE: '每件',
+  WEIGHT: '重量'
+};
+
+export enum WeightUnit {
+  G = 'g',
+  KG = 'kg',
+  OZ = 'oz',
+  LB = 'lb'
+}
+
+export const WEIGHT_UNIT_LIST = [
+  WeightUnit.G,
+  WeightUnit.KG,
+  WeightUnit.OZ,
+  WeightUnit.LB
+];
+
+export enum DistanceUnit {
+  IN = 'in',
+  CM = 'cm'
+}
+
+export const DISTANCE_UNIT_LIST = [DistanceUnit.IN, DistanceUnit.CM];
+
+export const FILE_FORMATS = {
+  a4: 'a4',
+  standard: 'standard',
+  thermal: 'thermal'
+};
+
+export const FILE_FORMAT_LIST = [
+  FILE_FORMATS.a4,
+  FILE_FORMATS.standard,
+  FILE_FORMATS.thermal
+];
+
+export const FILE_TYPES = {
+  pdf: 'PDF',
+  png: 'PNG',
+  csv: 'CSV'
+};
+
+export const FILE_TYPE_LIST = [FILE_TYPES.pdf, FILE_TYPES.png, FILE_TYPES.csv];
+
+export enum Country {
+  USA = 'US',
+  CHINA = 'CN'
+}
+
+export const COUNTRIES_LIST = [Country.USA, Country.CHINA];
+
+//*************************************//
+//*********** Default Data ************//
+//*************************************//
+
+export const defaultPrintFormat: PrintFormatData = {
+  labelFormat: {
+    format: FILE_FORMATS.thermal,
+    type: FILE_TYPES.pdf
+  },
+  packSlipFormat: {
+    format: FILE_FORMATS.standard,
+    type: FILE_TYPES.pdf
+  },
+  userRef: Types.ObjectId('000000000000')
+};
+
+export enum REST_ERROR_CODE {
+  EMAIL_IN_USE = 'EMAIL_IN_USE',
+  EMAIL_NOT_FOUND = 'EMAIL_NOT_FOUND',
+  PASSWORD_MISMATCH = 'PASSWORD_MISMATCH',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED'
+}

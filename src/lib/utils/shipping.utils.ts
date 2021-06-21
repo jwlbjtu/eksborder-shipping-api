@@ -104,23 +104,21 @@ class ShippingUtil {
     return productResponse;
   };
 
-  static buildIAccountForAdmin = (
-    carrierRef: ICarrier,
-    userRef: IUser,
-    pickup?: string,
-    distributionCenter?: string
-  ) => {
-    // @ts-expect-error: ignore
-    const account: IAccount = {
-      accountName: 'admin_account',
-      billingType: 'amount',
-      fee: 0,
-      carrierRef,
-      userRef,
-      isActive: true
-    };
-    return account;
-  };
+  // TODO!!!
+  // static buildIAccountForAdmin = (
+  //   carrierRef: ICarrier,
+  //   userRef: IUser,
+  //   pickup?: string,
+  //   distributionCenter?: string
+  // ) => {
+  //   const account: IAccount = {
+  //     accountName: 'admin_account',
+  //     carrierRef,
+  //     userRef,
+  //     isActive: true
+  //   };
+  //   return account;
+  // };
 
   static buildIProductRequestForAdmin = (data: IAdminProductRequest) => {
     const result: IProductRequest = {

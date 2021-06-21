@@ -7,7 +7,8 @@ import {
   errorTypes,
   BILLING_TYPES,
   PITNEY_BOWES,
-  FEE_BASES
+  FEE_BASES,
+  RATE_BASES
 } from '../../lib/constants';
 import { createFlatLabel } from '../../lib/carriers/flat/flat.helper';
 
@@ -40,6 +41,7 @@ import {
 } from '../../lib/validation';
 import ShippingUtil from '../../lib/utils/shipping.utils';
 import { IAdminProductRequest } from '../../types/admin.types';
+import { applyRates } from '../../lib/utils/helpers';
 
 /**
  * Create Shipping Label
@@ -95,10 +97,7 @@ export const createShippingLabel = async (
     console.log(error);
     return res.status(400).json(error);
   }
-  const weightInOZ = convert(weight)
-    // @ts-expect-error: ignore
-    .from(unitOfMeasure.toLowerCase())
-    .to('oz');
+  const weightInOZ = convert(weight).from(unitOfMeasure.toLowerCase()).to('oz');
   // Set packageId and billingReference
   body.packageDetail.packageId = uniqid('EK');
   body.packageDetail.billingReference1 = 'Eksborder Platform';
@@ -160,23 +159,7 @@ export const createShippingLabel = async (
         );
 
     console.log('2. Apply fee on top of the price to get total price');
-    const billingType = account.billingType;
-    const feeBase = account.feeBase;
-    const fee = account.fee;
-
-    let totalFee = fee;
-    if (billingType === BILLING_TYPES.PROPORTION) {
-      totalFee = parseFloat((packagePrice * (fee / 100)).toFixed(2));
-    } else {
-      if (feeBase === FEE_BASES.WEIGHT_BASED) {
-        // Calculate Weight Based Fee by KG
-        const weightInKG = convert(weight)
-          // @ts-expect-error: ignore
-          .from(unitOfMeasure.toLowerCase())
-          .to('kg');
-        totalFee = parseFloat((Math.ceil(weightInKG) * fee).toFixed(2));
-      }
-    }
+    const totalFee = applyRates(packagePrice, 'USD', account.rates);
     const totalCost = parseFloat((packagePrice + totalFee).toFixed(2));
 
     console.log('3. Check total price against user balance');
@@ -241,11 +224,11 @@ export const createShippingLabel = async (
           amount: packagePrice,
           components: product?.rate?.rateComponents
         },
+        // TODO!!! refactor
         fee: {
           amount: totalFee,
-          type:
-            billingType === BILLING_TYPES.PROPORTION ? `${fee}%` : `$${fee}`,
-          base: feeBase
+          type: `$${totalFee}`,
+          base: RATE_BASES.ORDER
         }
       },
       addFund: false

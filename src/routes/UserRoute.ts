@@ -11,10 +11,16 @@ import {
   updateSelfPassword,
   uploadUserImage,
   login,
-  logout
+  logout,
+  sendResetEmail,
+  resetPassword
 } from '../controllers/users/users.controller';
-import fileUpload from '../middleware/file-upload';
+import { fileUpload } from '../middleware/file-upload';
 import { USER_ROLES } from '../lib/constants';
+import {
+  resetPasswordValidator,
+  userPasswordResetValidator
+} from './validators/user.validators';
 
 class UserRoute {
   public path = '/users';
@@ -110,6 +116,20 @@ class UserRoute {
       (error: Error | null, req: express.Request, res: express.Response) => {
         res.status(400).json({ title: error?.message });
       }
+    );
+
+    // Send reset email
+    this.router.post(
+      this.path + '/reset_email',
+      userPasswordResetValidator,
+      sendResetEmail
+    );
+
+    // Reset user password
+    this.router.post(
+      this.path + '/reset',
+      resetPasswordValidator,
+      resetPassword
     );
   }
 }

@@ -7,7 +7,7 @@ const MIMETYPE_TO_EXT: { [key: string]: string } = {
   'image/jpeg': 'jpeg'
 };
 
-const fileUpload = multer({
+export const fileUpload = multer({
   limits: {
     fileSize: 1000000 // 1MB
   },
@@ -33,4 +33,24 @@ const fileUpload = multer({
   }
 });
 
-export default fileUpload;
+export const csvFileUpload = multer({
+  limits: {
+    fileSize: 1000000 // 1MB
+  },
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'static/csv');
+    },
+    filename: (req, file, cb) => {
+      const ext = 'csv';
+      cb(null, uniqid('csv') + '.' + ext);
+    }
+  }),
+  fileFilter(req, file, cb) {
+    if (file.mimetype === 'text/csv') {
+      cb(null, true);
+    } else {
+      return cb(new Error('Only .csv format allowed!'));
+    }
+  }
+});

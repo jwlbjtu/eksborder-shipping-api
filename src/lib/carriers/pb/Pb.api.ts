@@ -556,7 +556,6 @@ class PbApi implements ICarrierAPI {
   private buildPBParcel(packageDetail: IPackageDetail) {
     // For USPS convert weigth to oz
     const weightInOZ = convert(packageDetail.weight.value)
-      // @ts-expect-error: ignore
       .from(packageDetail.weight.unitOfMeasure.toLowerCase())
       .to('oz');
     const pbParcel: IPBParcel = {
@@ -568,15 +567,12 @@ class PbApi implements ICarrierAPI {
     // For USPS convert unit to in
     if (packageDetail.dimension) {
       const widthIn = convert(packageDetail.dimension.width)
-        // @ts-expect-error: ignore
         .from(packageDetail.dimension.unitOfMeasure.toLowerCase())
         .to('in');
       const heightIn = convert(packageDetail.dimension.height)
-        // @ts-expect-error: ignore
         .from(packageDetail.dimension.unitOfMeasure.toLowerCase())
         .to('in');
       const lengthIn = convert(packageDetail.dimension.length)
-        // @ts-expect-error: ignore
         .from(packageDetail.dimension.unitOfMeasure.toLowerCase())
         .to('in');
       pbParcel.dimension = {

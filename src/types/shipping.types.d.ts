@@ -129,6 +129,22 @@ export interface IManifestSummaryError {
   errorDescription: string;
 }
 
+export interface CarrierAddress {
+  name?: string;
+  attentionName?: string;
+  company?: string;
+  taxIdNum?: string;
+  street1: string;
+  street2?: string;
+  city: string;
+  state?: string;
+  country: string;
+  postalCode: string;
+  email?: string;
+  phone?: string;
+  shipperNum?: string;
+}
+
 export interface IAddress {
   name?: string;
   company?: string;
@@ -154,14 +170,14 @@ export interface IPackageDetail {
 
 export interface IWeight {
   value: number;
-  unitOfMeasure: 'BL' | 'OZ' | 'KG' | 'G';
+  unitOfMeasure: WeightUnit;
 }
 
 export interface IDimension {
   length: number;
   width: number;
   height: number;
-  unitOfMeasure: 'IN' | 'CM';
+  unitOfMeasure: DistanceUnit;
 }
 
 export interface IRate {

@@ -68,7 +68,9 @@ export const validateService = (
 ): string => {
   if (!service) throw LRes.fieldErr('service', '/', errorTypes.MISSING);
   const supportedServices = account.services;
-  if (!supportedServices.includes(service))
+  if (
+    !supportedServices.find((ele) => service === ele.id || service === ele.key)
+  )
     throw LRes.fieldErr(
       'carrierAccount',
       '/',

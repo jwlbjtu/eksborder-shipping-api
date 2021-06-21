@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import passport from 'passport';
 
 import './passport.handler';
-import { UserRoleList } from '../../lib/constants';
+import { UserRoleList, USER_ROLES } from '../../lib/constants';
 import User from '../../models/user.model';
 
 class AuthHandler {
@@ -65,5 +65,33 @@ class AuthHandler {
       return res.status(401).json({ status: 'error', code: 'unauthorized' });
     };
   }
+
+  public checkSingleRole = (role: string) => {
+    return (req: Request, res: Response, next: NextFunction): any => {
+      // @ts-expect-error: ignore
+      const _urole = req.user.role;
+
+      if (Object.values(USER_ROLES).includes(_urole) && _urole === role) {
+        return next();
+      }
+      return res.status(401).json({ message: 'unauthorized' });
+    };
+  };
+
+  public checkRoles = (roles: string[]) => {
+    return (req: Request, res: Response, next: NextFunction): any => {
+      // @ts-expect-error: ignore
+      const _urole = req.user.role;
+
+      if (
+        Object.values(USER_ROLES).includes(_urole) &&
+        roles.includes(_urole)
+      ) {
+        return next();
+      }
+      return res.status(401).json({ message: 'unauthorized' });
+    };
+  };
 }
+
 export default AuthHandler;
