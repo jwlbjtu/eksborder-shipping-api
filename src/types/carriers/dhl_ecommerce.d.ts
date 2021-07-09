@@ -5,6 +5,7 @@ export interface IDHLeCommerceProductRequest {
   consigneeAddress: IDHLeCommerceAddress;
   returnAddress: IDHLeCommerceAddress;
   packageDetail: IDHLeCommercePackageDetail;
+  customsDetails?: IDHLeCommerceCustomsDetail[];
   rate: IDHLeCommerceRate;
   estimatedDeliveryDate: IDHLeCommerceEstimatedDeliveryDate;
 }
@@ -12,6 +13,13 @@ export interface IDHLeCommerceProductRequest {
 export interface IDHLeCommerceProductResponse
   extends IDHLeCommerceProductRequest {
   products?: [IDHLeCommerceProduct];
+  invalidParams?: IDHLeCommerceProductError[];
+}
+
+export interface IDHLeCommerceProductError {
+  name: string;
+  path: string;
+  reason: string;
 }
 
 export interface IDHLeCommerceLabelRequest {
@@ -21,6 +29,7 @@ export interface IDHLeCommerceLabelRequest {
   consigneeAddress: IDHLeCommerceAddress;
   returnAddress: IDHLeCommerceAddress;
   packageDetail: IDHLeCommercePackageDetail;
+  customsDetails?: IDHLeCommerceCustomsDetail[];
 }
 
 export interface IDHLeCommerceLabelResponse {
@@ -156,14 +165,14 @@ export interface IDHLeCommercePackageDetail {
 
 export interface IDHLeCommerceWeight {
   value: number;
-  unitOfMeasure: 'BL' | 'OZ' | 'KG' | 'G';
+  unitOfMeasure: string; // 'LB' | 'OZ' | 'KG' | 'G';
 }
 
 export interface IDHLeCommerceDimension {
   length: number;
   width: number;
   height: number;
-  unitOfMeasure: 'IN' | 'CM';
+  unitOfMeasure: string; // 'IN' | 'CM';
 }
 
 export interface IDHLeCommerceShippingCost {
@@ -179,7 +188,7 @@ export interface IDHLeCommerceShippingCost {
 export interface IDHLeCommerceRate {
   calculate: boolean = true;
   currency: string = 'USD';
-  rateDate?: Date;
+  rateDate?: string;
   maxPrice?: number;
 }
 
@@ -188,4 +197,83 @@ export interface IDHLeCommerceEstimatedDeliveryDate {
   deliveryBy?: Date;
   expectedShipDate?: Date;
   expectedTransit?: number;
+}
+
+export interface IDHLeCommerceTrackingResponse {
+  total: number;
+  limit: number;
+  offset: number;
+  timestamp: string;
+  packages: IDHLeComerceTrackingPackage[];
+}
+
+export interface IDHLeComerceTrackingPackage {
+  recipient: IDHLeCommerceAddress;
+  events: IDHLeCommerceTrackingEvent[];
+}
+
+export interface IDHLeCommerceTrackingEvent {
+  location: string;
+  date: string;
+  time: string;
+  timeZone: string;
+  postalCode: string;
+  country: string;
+  primaryEventId: number;
+  primaryEventDescription: string;
+}
+
+export interface IDHLeCommerceCustomsDetail {
+  itemDescription: string;
+  countryOfOrigin: string;
+  hsCode?: string;
+  packagedQuantity: number;
+  itemValue: number;
+  currency: string;
+  skuNumber: string;
+  productUrl?: string;
+}
+
+export interface ManifestData {
+  carrier: string;
+  timestamp?: Date;
+  facility?: string;
+  pickup?: string;
+  requestId?: string;
+  status?: string;
+  link?: string;
+  manifests: ManifestObj[];
+  manifestErrors: string[];
+  userRef?: Types.ObjectId;
+  carrierRef: Types.ObjectId;
+}
+
+export interface IManifest extends Document {
+  id: string;
+  carrier: string;
+  timestamp?: Date;
+  facility?: string;
+  pickup?: string;
+  requestId?: string;
+  status?: string;
+  link?: string;
+  manifests: ManifestObj[];
+  manifestErrors: string[];
+  userRef: Types.ObjectId;
+  carrierRef: Types.ObjectId;
+}
+
+export interface ManifestObj {
+  createdOn?: Date;
+  manifestId: string;
+  distributionCenter?: string;
+  manifestData: string;
+  encodeType: string;
+  format: string;
+}
+
+export interface TrackingInfo {
+  timestamp: string;
+  location: string;
+  event: string;
 }

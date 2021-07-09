@@ -38,7 +38,7 @@ export const createThirdPartyAccount = async (
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      logger.error('Create carrier validation error');
+      logger.error('Create thirdparty validation error');
       logger.error(util.inspect(result.array(), true, null));
       res.status(400).json({ messages: result.array() });
     } else {
@@ -146,7 +146,7 @@ export const uploadThirdpartyPrice = async (
             const dataArray = dataList[i];
             const tmpData: Record<string, string> = {};
             for (let j = 0; j < dataArray.length; j += 1) {
-              tmpData[firstRow[j].toString()] = dataArray[j];
+              tmpData[firstRow[j].toString().trim()] = dataArray[j];
             }
             priceData.push(tmpData);
           }

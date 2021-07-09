@@ -10,7 +10,7 @@ class HelperLib {
       accountId: carrierAccount,
       userRef: user._id,
       isActive: true
-    }).populate({ path: 'carrierRef', match: { isActive: true } });
+    });
 
     return account;
   };

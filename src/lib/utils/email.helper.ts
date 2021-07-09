@@ -3,7 +3,8 @@ import util from 'util';
 import { logger } from '../logger';
 
 export const sendCsvImportEmail = async (
-  name: string,
+  firstName: string,
+  lastName: string,
   email: string,
   total: number,
   success: number
@@ -13,19 +14,18 @@ export const sendCsvImportEmail = async (
     const msg = {
       to: email, // Change to your recipient
       from: 'support@eksborder.com', // Change to your verified sender
-      subject: 'CSV Import notification',
-      text: 'CSV Import notification',
+      subject: '物流订单上传通知',
+      text: '物流订单上传通知',
       html: createEmailBody(`         
-            <h3>CSV Import Notification</h3>              
-            <p>Hi ${name},</p>
-            <p>We have just completed your import process!</p>
-            <p>Result:</p>
+            <h3>物流订单上传通知</h3>              
+            <p>${lastName}${firstName},</p>
+            <p>您上传的订单文件已处理完毕!</p>
+            <p>处理结果:</p>
             <ul>
-                <li>total rows processed: ${total}</li>
-                <li>orders successfully uploaded: ${success}</li>
+                <li>共上传订单: ${total}</li>
+                <li>成功生成面单: ${success}</li>
             </ul>
-            <p>You've successfully imported all of your orders! You'll see them on your Orders page.</p>
-            <p>If you encounter any problems or have any questions, please contact us at <a href="mailto:support@eksborder.com">support@eksborder.com</a></p>
+            <p>如果您有任何问题请与我们联系 <a href="mailto:support@eksborder.com">support@eksborder.com</a></p>
         `)
     };
     sgMail

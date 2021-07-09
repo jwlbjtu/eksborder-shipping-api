@@ -105,8 +105,8 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       trim: true
     },
     logoImage: { type: String },
-    balance: { type: Number, min: 0, default: 0 },
-    minBalance: { type: Number, min: 0, default: 0 },
+    balance: { type: Number, min: 0, default: 0, required: true },
+    minBalance: { type: Number, min: 0, default: 0, required: true },
     currency: { type: String, default: 'USD' },
     apiToken: { type: String },
     tokens: [
@@ -118,7 +118,8 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       }
     ],
     resetToken: { type: String },
-    resetTokenExpiration: { type: Number }
+    resetTokenExpiration: { type: Number },
+    uploading: { type: Boolean, default: false }
   },
   {
     timestamps: true,

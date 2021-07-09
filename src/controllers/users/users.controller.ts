@@ -29,7 +29,6 @@ export const createUser = async (
 ): Promise<void> => {
   try {
     const user: IUser = req.body;
-    // TODO: later need to add limits about fields can be created, others should be default
     const createdUser = new User(user);
     await createdUser.save();
     // If user is customer create default printFormat and packageUnits

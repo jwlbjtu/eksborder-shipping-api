@@ -85,6 +85,7 @@ export interface IUser extends Document {
   }[];
   resetToken?: string;
   resetTokenExpiration?: number;
+  uploading: boolean;
   printFormat?: PrintFormat;
   packageUnits?: PackageUnits;
   accountRef?: IAccount[];

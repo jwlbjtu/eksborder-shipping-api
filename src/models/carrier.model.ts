@@ -89,6 +89,20 @@ const CarrierSchema: Schema = new Schema(
           }
         }
       ]
+    },
+    priceTable: {
+      type: [
+        {
+          priceRef: { type: String },
+          condition: {
+            type: {
+              minWeight: { type: Number },
+              maxWeight: { type: Number },
+              weightUnit: { type: String }
+            }
+          }
+        }
+      ]
     }
   },
   {

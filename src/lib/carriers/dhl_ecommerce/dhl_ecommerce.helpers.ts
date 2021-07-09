@@ -1,4 +1,4 @@
-import { IDHLeCommerceAddress } from '../../../types/carriers/dhl.ecommerce';
+import { IDHLeCommerceAddress } from '../../../types/carriers/dhl_ecommerce';
 import { IAddress } from '../../../types/shipping.types';
 
 const convertToDHLAddress = (address: IAddress): IDHLeCommerceAddress => {
@@ -10,7 +10,7 @@ const convertToDHLAddress = (address: IAddress): IDHLeCommerceAddress => {
     city: address.city,
     state: address.state,
     country: address.country,
-    postalCode: address.postalCode,
+    postalCode: address.zip!,
     email: address.email,
     phone: address.phone
   };

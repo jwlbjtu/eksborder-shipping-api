@@ -55,7 +55,7 @@ export interface IManifestRequest {
   ];
 }
 
-export interface IManifestResponse extends Document {
+export interface IManifestResponse {
   timestamp: Date;
   carrier: string;
   provider?: string;
@@ -63,10 +63,9 @@ export interface IManifestResponse extends Document {
   facility?: string;
   requestId: string;
   status?: 'CREATED' | 'IN PROGRESS' | 'COMPLETED';
-  manifests?: IManifest[];
+  manifests?: IManifestObj[];
   manifestSummary?: IManifestSummary;
   trackingIds?: string[];
-  userRef: any;
 }
 
 export interface IProduct {
@@ -106,7 +105,7 @@ export interface ILabel {
   parcelType?: string;
 }
 
-export interface IManifest {
+export interface IManifestObj {
   createdOn: Date;
   manifestId?: string;
   total: number;
@@ -139,23 +138,24 @@ export interface CarrierAddress {
   city: string;
   state?: string;
   country: string;
-  postalCode: string;
+  zip: string;
   email?: string;
   phone?: string;
   shipperNum?: string;
 }
 
-export interface IAddress {
+export interface IAddress extends Record<string, any> {
+  id?: string;
   name?: string;
   company?: string;
+  email?: string;
+  phone?: string;
+  country: string;
   street1: string;
   street2?: string;
   city: string;
   state?: string;
-  country: string;
-  postalCode: string;
-  email?: string;
-  phone?: string;
+  zip: string;
 }
 
 export interface IPackageDetail {

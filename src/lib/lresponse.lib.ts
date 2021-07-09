@@ -27,7 +27,6 @@ class LRes {
       error: data,
       status: status
     };
-    console.log(formatData);
     res.status(status).send(formatData);
   };
 

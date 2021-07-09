@@ -1,0 +1,78 @@
+import express from 'express';
+import { USER_ROLES } from '../../lib/constants';
+import AuthHandler from '../../lib/auth/auth.handler';
+import {
+  createShipment,
+  getShipmentsForUser,
+  importCsvData,
+  preloadCsvFile,
+  purchaseLabel,
+  updateShipments
+} from '../../controllers/client/shipment.controller';
+import {
+  createShipmentValidator,
+  csvImportValidator,
+  shipmentRequestValidator
+} from '../validators/client/shipment.validators';
+import { csvFileUpload } from '../../middleware/file-upload';
+
+class ClientShipmentRoute {
+  public path = '/clientShipment';
+  public router = express.Router();
+  private authJwt: AuthHandler = new AuthHandler();
+
+  constructor() {
+    this.initRoutes();
+  }
+
+  public initRoutes(): void {
+    this.router.get(
+      this.path,
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      getShipmentsForUser
+    );
+
+    this.router.post(
+      this.path,
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      createShipmentValidator,
+      createShipment
+    );
+
+    this.router.put(
+      this.path,
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      shipmentRequestValidator,
+      updateShipments
+    );
+
+    this.router.post(
+      this.path + '/label',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      shipmentRequestValidator,
+      purchaseLabel
+    );
+
+    this.router.post(
+      this.path + '/preload',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      csvFileUpload.single('csv_file'),
+      preloadCsvFile
+    );
+
+    this.router.post(
+      this.path + '/csv',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      csvImportValidator,
+      importCsvData
+    );
+  }
+}
+
+export default ClientShipmentRoute;

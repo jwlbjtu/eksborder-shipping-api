@@ -21,6 +21,10 @@ import PackageUnitsRoute from './routes/client/PackageUnitsRoute';
 import ClientAddressRoute from './routes/client/ClientAddressRoute';
 import ClientAccountsRoute from './routes/client/ClientCarrierRoute';
 import ClientBillingRoute from './routes/client/ClientBillingRoute';
+import ClientShipmentRoute from './routes/client/ClientShipmentRoute';
+import ItemRoute from './routes/ItemRoute';
+import PriceTableRoute from './routes/PriceTableRoute';
+import ManifestRoute from './routes/ManifestRoute';
 
 const app = new App({
   routes: [
@@ -37,7 +41,11 @@ const app = new App({
     new PackageUnitsRoute(),
     new ClientAddressRoute(),
     new ClientAccountsRoute(),
-    new ClientBillingRoute()
+    new ClientBillingRoute(),
+    new ClientShipmentRoute(),
+    new ItemRoute(),
+    new PriceTableRoute(),
+    new ManifestRoute()
   ],
   middleWares: [
     morgan('combined', { stream: logStream }),
