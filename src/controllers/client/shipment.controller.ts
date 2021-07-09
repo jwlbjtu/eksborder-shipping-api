@@ -550,7 +550,7 @@ export const importCsvData = async (
                 user.firstName,
                 user.lastName,
                 user.email,
-                count - 1,
+                count,
                 success
               );
             })
