@@ -10,7 +10,6 @@ export const generateApiToken = async (
     const id = req.params.id;
     const user = await User.findOne({ _id: id, isActive: true });
     if (!user) return LRes.resErr(res, 404, { title: 'No user found' });
-    // @ts-expect-error: ignore
     const authJson = await user.apiAuthJSON();
     LRes.resOk(res, authJson);
   } catch (error) {

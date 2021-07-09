@@ -22,7 +22,7 @@ class ShippingRoute {
     this.router.post(
       this.path + '/label',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.API_USER),
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
       createShippingLabel
     );
 
@@ -30,7 +30,7 @@ class ShippingRoute {
     this.router.get(
       this.path + '/label/:shippingId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.API_USER),
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
       GetLabelByShippingId
     );
 
@@ -38,7 +38,7 @@ class ShippingRoute {
     this.router.post(
       this.path + '/manifest',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.API_USER),
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
       createManifest
     );
 
@@ -46,7 +46,7 @@ class ShippingRoute {
     this.router.get(
       this.path + '/manifest/:carrierAccount/:facility/:requestId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.API_USER),
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
       downloadManifest
     );
 

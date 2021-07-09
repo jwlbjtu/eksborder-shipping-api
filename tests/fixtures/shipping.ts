@@ -22,7 +22,7 @@ export const allDHLeCommerceProductRequest: IAdminProductRequest = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },
@@ -56,7 +56,7 @@ export const allDHLeCommerceGNDRequest: IAdminProductRequest = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },
@@ -90,7 +90,7 @@ export const allDHLeCommerceFLATRequest: IAdminProductRequest = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },
@@ -122,7 +122,7 @@ export const allPBProductsRequest: IAdminProductRequest = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },
@@ -155,7 +155,7 @@ export const allPBPMProductsRequest: IAdminProductRequest = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },
@@ -190,7 +190,7 @@ export const dhlEcommerceGNDLabel = {
     city: 'Norcross',
     state: 'GA',
     country: 'US',
-    postalCode: '30024',
+    zip: '30024',
     email: '2@y.com',
     phone: '44423440348'
   },

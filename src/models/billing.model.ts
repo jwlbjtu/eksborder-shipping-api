@@ -1,7 +1,8 @@
 import mongoose, { Schema, Types } from 'mongoose';
+import { Currency } from '../lib/constants';
 import { IBilling } from '../types/record.types';
 
-const BillingSchema: Schema = new Schema(
+const BillingSchema: Schema<IBilling> = new Schema<IBilling>(
   {
     userRef: {
       type: Schema.Types.ObjectId,
@@ -17,21 +18,16 @@ const BillingSchema: Schema = new Schema(
       type: {
         shippingCost: {
           amount: { type: Number, required: true, min: 0 },
-          components: [
-            {
-              description: { type: String, required: true },
-              amount: { type: Number, required: true, min: 0 }
-            }
-          ]
+          currency: { type: String, required: true, default: Currency.USD }
         },
         fee: {
           amount: { type: Number, required: true, min: 0 },
-          type: { type: String },
-          base: { type: String }
+          currency: { type: String, required: true, default: Currency.USD }
         }
       }
     },
-    addFund: { type: Boolean, default: false }
+    addFund: { type: Boolean, default: false },
+    invoice: { type: String }
   },
   {
     timestamps: true

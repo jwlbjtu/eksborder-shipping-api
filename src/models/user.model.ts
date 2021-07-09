@@ -7,9 +7,15 @@ import Billing from '../models/billing.model';
 import Shipping from '../models/shipping.model';
 import Manifest from '../models/manifest.model';
 import Log from '../models/log.model';
-import { IUser } from '../types/user.types';
+import {
+  ClientInfo,
+  IUser,
+  UserData,
+  ClientAccount
+} from '../types/user.types';
+import _ from 'lodash';
 
-const UserSchema: Schema = new Schema(
+const UserSchema: Schema<IUser> = new Schema<IUser>(
   {
     email: {
       type: String,
@@ -99,8 +105,8 @@ const UserSchema: Schema = new Schema(
       trim: true
     },
     logoImage: { type: String },
-    balance: { type: Number, min: 0, default: 0 },
-    minBalance: { type: Number, min: 0, default: 0 },
+    balance: { type: Number, min: 0, default: 0, required: true },
+    minBalance: { type: Number, min: 0, default: 0, required: true },
     currency: { type: String, default: 'USD' },
     apiToken: { type: String },
     tokens: [
@@ -110,7 +116,10 @@ const UserSchema: Schema = new Schema(
           required: true
         }
       }
-    ]
+    ],
+    resetToken: { type: String },
+    resetTokenExpiration: { type: Number },
+    uploading: { type: Boolean, default: false }
   },
   {
     timestamps: true,
@@ -181,24 +190,84 @@ UserSchema.methods.toAuthJSON = async function () {
   const expTime = 3600;
   const token = this.generateJWT(expTime);
 
-  this.tokens = this.tokens.concat({ token });
+  this.tokens = this.tokens ? this.tokens.concat({ token }) : [{ token }];
   await this.save();
 
-  return {
+  const result: UserData = {
     id: this.id,
     fullName: this.fullName,
-    image: this.logoImage,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    userName: this.userName,
     role: this.role,
+    email: this.email,
+    countryCode: this.countryCode,
+    phone: this.phone,
+    companyName: this.companyName,
+    logoImage: this.logoImage,
+    balance: this.balance,
+    currency: this.currency,
+    isActive: this.isActive,
     token_type: 'Bearer',
-    token
+    token,
+    tokenExpire: Date.now() + 60 * 60 * 1000
   };
+  return result;
+};
+
+UserSchema.methods.toClientInfo = async function () {
+  const expTime = 3600;
+  const token = this.generateJWT(expTime);
+
+  this.tokens = this.tokens ? this.tokens.concat({ token }) : [{ token }];
+  await this.save();
+
+  const result: ClientInfo = {
+    id: this.id,
+    fullName: this.fullName,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    userName: this.userName,
+    role: this.role,
+    email: this.email,
+    countryCode: this.countryCode,
+    phone: this.phone,
+    companyName: this.companyName,
+    logoImage: this.logoImage,
+    balance: this.balance,
+    currency: this.currency,
+    isActive: this.isActive,
+    token_type: 'Bearer',
+    token,
+    tokenExpire: Date.now() + 60 * 60 * 1000,
+    printFormat: this.printFormat,
+    packageUnits: this.packageUnits,
+    clientAddresses: this.addresses,
+    clientAccounts: this.accountRef?.map((ele) => {
+      const accountData: ClientAccount = {
+        id: ele.id,
+        accountName: ele.accountName,
+        accountId: ele.accountId,
+        carrier: ele.carrier,
+        connectedAccount: ele.connectedAccount,
+        services: ele.services,
+        facilities: ele.facilities,
+        carrierRef: ele.carrierRef,
+        userRef: ele.userRef,
+        note: ele.note,
+        isActive: ele.isActive
+      };
+      return accountData;
+    })
+  };
+  return result;
 };
 
 UserSchema.methods.apiAuthJSON = async function () {
   const token = this.generateJWT();
 
   // Remove exist api token to make sure we always have one api token
-  if (this.apiToken) {
+  if (this.apiToken && this.tokens) {
     const oldToken = this.apiToken;
     this.tokens = this.tokens.filter((item: { token: string }) => {
       return item.token !== oldToken;
@@ -206,7 +275,7 @@ UserSchema.methods.apiAuthJSON = async function () {
   }
 
   this.apiToken = token;
-  this.tokens = this.tokens.concat({ token });
+  this.tokens = this.tokens ? this.tokens.concat({ token }) : [{ token }];
   await this.save();
 
   return {
@@ -232,6 +301,33 @@ UserSchema.virtual('accountRef', {
 
 UserSchema.virtual('shippingRef', {
   ref: 'Shipping', // The model to use
+  localField: '_id', // Find people where `localField`
+  foreignField: 'userRef', // is equal to `foreignField`
+  // If `justOne` is true, 'members' will be a single doc as opposed to
+  // an array. `justOne` is false by default.
+  justOne: false
+});
+
+UserSchema.virtual('printFormat', {
+  ref: 'PrintFormat', // The model to use
+  localField: '_id', // Find people where `localField`
+  foreignField: 'userRef', // is equal to `foreignField`
+  // If `justOne` is true, 'members' will be a single doc as opposed to
+  // an array. `justOne` is false by default.
+  justOne: true
+});
+
+UserSchema.virtual('packageUnits', {
+  ref: 'PackageUnits', // The model to use
+  localField: '_id', // Find people where `localField`
+  foreignField: 'userRef', // is equal to `foreignField`
+  // If `justOne` is true, 'members' will be a single doc as opposed to
+  // an array. `justOne` is false by default.
+  justOne: true
+});
+
+UserSchema.virtual('addresses', {
+  ref: 'Address', // The model to use
   localField: '_id', // Find people where `localField`
   foreignField: 'userRef', // is equal to `foreignField`
   // If `justOne` is true, 'members' will be a single doc as opposed to

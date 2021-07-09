@@ -1,45 +1,43 @@
 import { Request, Response } from 'express';
 import convert from 'convert-units';
-import uniqid from 'uniqid';
 import LRes from '../../lib/lresponse.lib';
 import {
-  DHL_ECOMMERCE,
+  CARRIERS,
+  Currency,
+  DistanceUnit,
   errorTypes,
-  BILLING_TYPES,
-  PITNEY_BOWES,
-  FEE_BASES
+  ShipmentStatus,
+  WeightUnit
 } from '../../lib/constants';
-import { createFlatLabel } from '../../lib/carriers/flat/flat.helper';
-
-import Billing from '../../models/billing.model';
-import Shipping from '../../models/shipping.model';
-import Manifest from '../../models/manifest.model';
-import User from '../../models/user.model';
-import Carrier from '../../models/carrier.model';
-
+import BillingSchema from '../../models/billing.model';
+import ShipmentSchema from '../../models/shipping.model';
+import ManifestSchema from '../../models/manifest.model';
+import ClientCarrierSchema from '../../models/account.model';
 import {
   IManifestRequest,
-  IProduct,
   ILabelRequest,
-  IProductResponse,
-  IProductRequest,
   ILabelResponse,
-  IManifestResponse,
-  IManifestSummary,
-  IManifestSummaryError
+  IManifestResponse
 } from '../../types/shipping.types';
-import { IBilling, IShipping } from '../../types/record.types';
-import { IAccount } from '../../types/user.types';
+import { IBilling, IShipping, ShipmentData } from '../../types/record.types';
+import { IAccount, IUser } from '../../types/user.types';
 import {
-  validateMassUnit,
+  validateWeight,
   validateCarrier,
   validateCarrierAccount,
   validateService,
-  validateParcelType,
-  validateFacility
+  validateFacility,
+  validateDimensions
 } from '../../lib/validation';
-import ShippingUtil from '../../lib/utils/shipping.utils';
-import { IAdminProductRequest } from '../../types/admin.types';
+import { logger } from '../../lib/logger';
+import IdGenerator from '../../lib/utils/IdGenerator';
+import {
+  isShipmentInternational,
+  validateShipment
+} from '../../lib/carriers/carrier.helper';
+import CarrierFactory from '../../lib/carriers/carrier.factory';
+import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
+import { IManifestObj } from '../../types/shipping.types';
 
 /**
  * Create Shipping Label
@@ -55,11 +53,12 @@ export const createShippingLabel = async (
   let provider: string | undefined = body.provider || undefined;
   let service: string | undefined = body.service || undefined;
   let facility: string | undefined = body.facility || undefined;
-  let parcelType: string | undefined = body.packageDetail.parcelType;
+  //const parcelType: string | undefined = body.packageDetail.parcelType;
   let carrierAccount: string | undefined = body.carrierAccount || undefined;
   let account: IAccount | undefined | null = undefined;
   const weight = body.packageDetail.weight.value;
   const unitOfMeasure = body.packageDetail.weight.unitOfMeasure;
+  const dimension = body.packageDetail.dimension;
 
   try {
     // * Validate Client Carrier Account
@@ -68,6 +67,7 @@ export const createShippingLabel = async (
       // @ts-expect-error: ignore
       req.user
     );
+    console.log(checkValues);
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
     // * Validate Carrier Name is Supported
@@ -79,9 +79,10 @@ export const createShippingLabel = async (
     // * Validate Facility Name is Supported
     facility = validateFacility(account, facility);
     // * Validate ParcelType is Supported
-    parcelType = validateParcelType(carrier, service, parcelType);
+    // parcelType = validateParcelType(carrier, service, parcelType);
     // * Validate Weight Unit of Measure if Supported
-    validateMassUnit(unitOfMeasure, carrier);
+    validateWeight(weight, unitOfMeasure, carrier);
+    validateDimensions(dimension, carrier);
     // * Validate User Balance is above the minimum required
     // @ts-expect-error: ignore
     if (req.user.balance <= req.user.minBalance) {
@@ -95,191 +96,199 @@ export const createShippingLabel = async (
     console.log(error);
     return res.status(400).json(error);
   }
-  const weightInOZ = convert(weight)
-    // @ts-expect-error: ignore
-    .from(unitOfMeasure.toLowerCase())
-    .to('oz');
-  // Set packageId and billingReference
-  body.packageDetail.packageId = uniqid('EK');
-  body.packageDetail.billingReference1 = 'Eksborder Platform';
-  // @ts-expect-error: ignore
-  body.packageDetail.billingReference2 = req.user.company;
 
   try {
-    console.log('1. Check Package Price');
-    let packagePrice: number | undefined = undefined;
-    let priceCurrency = 'USD';
-    let product: IProduct | undefined = undefined;
-
-    const prodRequest: IProductRequest = req.body;
-    prodRequest.rate = {
-      calculate: true,
-      currency: 'USD'
-    };
-    prodRequest.estimatedDeliveryDate = {
-      calculate: true
-    };
-    const pResponse = await ShippingUtil.getProducts(
-      account,
-      // @ts-expect-error: ignore
-      req.user,
-      prodRequest,
-      weightInOZ,
-      carrier,
-      service
-    );
-    if (!pResponse)
-      return res
-        .status(500)
-        .json(
-          LRes.invalidParamsErr(500, 'Failed to compute package price', carrier)
-        );
-    if (pResponse.hasOwnProperty('status') && pResponse.status > 203) {
-      return res.status(pResponse.status).json(pResponse);
+    const user = req.user as IUser;
+    logger.info('1. Create Shipment');
+    const fromAddress = body.fromAddress;
+    const toAddress = body.toAddress;
+    if (!fromAddress) {
+      throw LRes.invalidParamsErr(400, 'fromAddress is required.', carrier);
     }
-    const productResponse: IProductResponse = pResponse;
-    if (productResponse.products && productResponse.products.length > 0) {
-      const productBody: IProduct = productResponse.products[0];
-
-      if (productBody && productBody.rate) {
-        const rate = productBody.rate;
-        packagePrice = rate.amount;
-        priceCurrency = rate.currency;
-        product = productBody;
-      } else {
-        return LRes.resErr(res, 404, productBody.messages);
-      }
-    }
-
-    console.log(`Package price is ${packagePrice} ${priceCurrency}`);
-    if (!packagePrice)
-      return res
-        .status(500)
-        .json(
-          LRes.invalidParamsErr(500, 'Failed to compute package price', carrier)
-        );
-
-    console.log('2. Apply fee on top of the price to get total price');
-    const billingType = account.billingType;
-    const feeBase = account.feeBase;
-    const fee = account.fee;
-
-    let totalFee = fee;
-    if (billingType === BILLING_TYPES.PROPORTION) {
-      totalFee = parseFloat((packagePrice * (fee / 100)).toFixed(2));
-    } else {
-      if (feeBase === FEE_BASES.WEIGHT_BASED) {
-        // Calculate Weight Based Fee by KG
-        const weightInKG = convert(weight)
-          // @ts-expect-error: ignore
-          .from(unitOfMeasure.toLowerCase())
-          .to('kg');
-        totalFee = parseFloat((Math.ceil(weightInKG) * fee).toFixed(2));
-      }
-    }
-    const totalCost = parseFloat((packagePrice + totalFee).toFixed(2));
-
-    console.log('3. Check total price against user balance');
-    // @ts-expect-error: ignore
-    if (req.user.balance < totalCost) {
-      return res
-        .status(400)
-        .json(
-          LRes.invalidParamsErr(
-            400,
-            'Insufficient balance, please contact the customer service.',
-            carrier
-          )
-        );
-    }
-
-    console.log('4. Create Shipping label and response data');
-    let labelResponse: ILabelResponse | undefined = undefined;
-    if (carrier === DHL_ECOMMERCE && service === 'FLAT') {
-      // Crate FLAT label
-      // @ts-expect-error: ignore
-      labelResponse = await createFlatLabel(body, account, req.user);
-    } else {
-      // @ts-expect-error: ignore
-      const api = await ShippingUtil.initCF(account, req.user); // TODO: refine carrier factory auth logic
-
-      body.rate = { currency: 'USD' };
-
-      const response = await api.label(body);
-      if (response.hasOwnProperty('status') && response.status > 203) {
-        return res.status(response.status).json(response);
-      }
-      labelResponse = response;
-    }
-    if (!labelResponse)
-      return res
-        .status(500)
-        .json(LRes.invalidParamsErr(500, 'Failed to create label', carrier));
-
-    console.log('5. Charge the fee from user balance');
-    // @ts-expect-error: ignore
-    const newBalance = parseFloat((req.user.balance - totalCost).toFixed(2));
-    await User.findByIdAndUpdate(
-      // @ts-expect-error: ignore
-      { _id: req.user._id },
-      { balance: newBalance },
-      { runValidators: true, new: true }
-    );
-
-    console.log('6. Generate billing record');
-    // @ts-expect-error: ignore
-    const billingObj: IBilling = {
-      // @ts-expect-error: ignore
-      userRef: req.user.id,
-      description: `${carrier}, ${service}, ${labelResponse.labels[0].trackingId}`,
-      account: account.accountName,
-      total: totalCost,
-      balance: newBalance,
-      currency: priceCurrency,
-      details: {
-        shippingCost: {
-          amount: packagePrice,
-          components: product?.rate?.rateComponents
-        },
-        fee: {
-          amount: totalFee,
-          type:
-            billingType === BILLING_TYPES.PROPORTION ? `${fee}%` : `$${fee}`,
-          base: feeBase
-        }
-      },
-      addFund: false
-    };
-    const createBilling = new Billing(billingObj);
-    await createBilling.save();
-
-    console.log('7. Create shipping record');
-    const shippingRecord: IShipping = {
+    const shipmentData: ShipmentData = {
+      orderId: `${user.userName
+        .substring(0, 2)
+        .toUpperCase()}${await IdGenerator.generateId(user.userName)}`,
       accountName: account.accountName,
       carrierAccount: account.accountId,
-      carrier: labelResponse.carrier,
-      provider: labelResponse.provider,
-      service: labelResponse.service,
-      facility: labelResponse.facility,
-      toAddress: body.toAddress,
-      shippingId: labelResponse.shippingId,
-      trackingId: labelResponse.labels[0].trackingId,
-      rate: totalCost,
-      manifested: false,
-      labels: labelResponse.labels,
-      packageInfo: {
-        weight: body.packageDetail.weight,
-        dimension: body.packageDetail.dimension
+      carrier: account.carrier,
+      service: account.services.find((ele) => ele.key === service)!,
+      facility: facility,
+      sender: {
+        name: fromAddress.name,
+        company: fromAddress.companyName,
+        street1: fromAddress.street1,
+        street2: fromAddress.street2,
+        city: fromAddress.city,
+        state: fromAddress.state,
+        country: fromAddress.country,
+        zip: fromAddress.postalCode,
+        phone: fromAddress.phone
       },
-      // @ts-expect-error: ignore
-      userRef: req.user.id,
-      // @ts-expect-error: ignore
-      billingRef: createBilling._id
-    };
-    await new Shipping(shippingRecord).save();
+      toAddress: {
+        name: toAddress.name,
+        company: toAddress.companyName,
+        street1: toAddress.street1,
+        street2: toAddress.street2,
+        city: toAddress.city,
+        state: toAddress.state,
+        country: toAddress.country,
+        zip: toAddress.postalCode,
+        phone: toAddress.phone
+      },
+      return: {
+        name: fromAddress.name,
+        company: fromAddress.companyName,
+        street1: fromAddress.street1,
+        street2: fromAddress.street2,
+        city: fromAddress.city,
+        state: fromAddress.state,
+        country: fromAddress.country,
+        zip: fromAddress.postalCode,
+        phone: fromAddress.phone
+      },
 
-    console.log('8. Return Label Data');
-    return LRes.resOk(res, labelResponse);
+      shipmentOptions: {
+        shipmentDate: new Date()
+      },
+      packageInfo: {
+        packageType: 'PKG',
+        weight: {
+          value: convert(weight)
+            .from(unitOfMeasure.toLowerCase())
+            .to(WeightUnit.LB),
+          unitOfMeasure: WeightUnit.LB
+        },
+        dimentions: {
+          length: convert(dimension?.length)
+            .from(dimension?.unitOfMeasure.toLowerCase())
+            .to(DistanceUnit.IN),
+          width: convert(dimension?.width)
+            .from(dimension?.unitOfMeasure.toLowerCase())
+            .to(DistanceUnit.IN),
+          height: convert(dimension?.height)
+            .from(dimension?.unitOfMeasure.toLowerCase())
+            .to(DistanceUnit.IN),
+          unitOfMeasure: DistanceUnit.IN
+        }
+      },
+      morePackages: [],
+      status: ShipmentStatus.PENDING,
+      manifested: false,
+      userRef: user._id
+    };
+    let shipping = new ShipmentSchema(shipmentData);
+    shipping = await shipping.save();
+
+    const valiResult = validateShipment(shipping, account, user);
+    if (valiResult) {
+      res.status(400).json({ message: valiResult });
+    }
+    const api = CarrierFactory.getCarrierAPI(account, false, shipping.facility);
+    if (api) {
+      await api.init();
+      logger.info('2. Check Package Price');
+      const result = await api.products(
+        shipping,
+        isShipmentInternational(shipping)
+      );
+      if (typeof result === 'string') {
+        res.status(400).json({ message: result });
+        return;
+      } else if (result.errors && result.errors.length > 0) {
+        res.status(500).json({ message: result.errors[0] });
+        return;
+      } else {
+        const rate = result.rates[0];
+        if (rate.rate && rate.currency) {
+          logger.info('3. Apply fee on top of the price to get total price');
+          const fee = computeFee(
+            shipping,
+            rate.rate,
+            rate.currency,
+            account.rates
+          );
+          const totalRate = roundToTwoDecimal(rate.rate + fee);
+          logger.info('4. Check total price against user balance');
+          if (user.balance < totalRate) {
+            res.status(400).json({ message: '余额不足' });
+            return;
+          }
+          logger.info('5. Create Shipping label and response data');
+          const labelResponse = await api.label(shipping, rate);
+          const labels = labelResponse.labels;
+          const forms = labelResponse.forms;
+          logger.info('6. Charge the fee from user balance');
+          const newBalance = roundToTwoDecimal(user.balance - totalRate);
+          user.balance = newBalance;
+          await user.save();
+          logger.info('7. Generate billing record');
+          // @ts-expect-error: ignore
+          const billingObj: IBilling = {
+            userRef: user._id,
+            description: `${rate.carrier}, ${rate.service}, ${labels[0].tracking}`,
+            account: account.accountName,
+            total: totalRate,
+            balance: newBalance,
+            currency: rate.currency || Currency.USD,
+            details: {
+              shippingCost: {
+                amount: rate.rate,
+                currency: rate.currency || Currency.USD
+              },
+              fee: {
+                amount: fee,
+                currency: rate.currency || Currency.USD
+              }
+            },
+            addFund: false
+          };
+          await new BillingSchema(billingObj).save();
+          logger.info('8. Update shipment record');
+          if (!shipping.labels) shipping.labels = [];
+          const newLabels = shipping.labels.concat(labels);
+          shipping.labels = newLabels;
+          if (forms) {
+            if (!shipping.forms) shipping.forms = [];
+            const newForms = shipping.forms.concat(forms);
+            shipping.forms = newForms;
+          }
+
+          shipping.status = ShipmentStatus.FULFILLED;
+          shipping.trackingId = labels[0].tracking;
+          shipping.rate = {
+            amount: totalRate,
+            currency: rate.currency || Currency.USD
+          };
+          await shipping.save();
+          logger.info('9. Return Label Data');
+          const labelResult: ILabelResponse = {
+            timestamp: new Date(),
+            carrier: shipping.carrier!,
+            service: shipping.service!.name,
+            facility: shipping.facility,
+            carrierAccount: shipping.carrierAccount!,
+            labels: shipping.labels.map((ele) => {
+              return {
+                createdOn: new Date(),
+                trackingId: ele.tracking,
+                labelData: ele.data,
+                encodeType: ele.encodeType,
+                format: ele.format
+              };
+            }),
+            shippingId: shipping.trackingId
+          };
+          return LRes.resOk(res, labelResult);
+        } else {
+          res.status(400).json({ message: '获取邮寄费失败' });
+          return;
+        }
+      }
+    } else {
+      res.status(500).json({ message: 'Failed to create carrier api' });
+      return;
+    }
   } catch (err) {
     console.log('!!!ERROR!!!' + err);
     console.log(err);
@@ -296,6 +305,7 @@ export const GetLabelByShippingId = async (
   req: Request,
   res: Response
 ): Promise<any> => {
+  const user = req.user as IUser;
   const shippingId: string | undefined = req.params.shippingId || undefined;
 
   if (!shippingId)
@@ -304,25 +314,29 @@ export const GetLabelByShippingId = async (
       .json(LRes.fieldErr('shippingId', '/', errorTypes.MISSING));
 
   try {
-    // @ts-expect-error: ignore
-    const shipping: IShipping = await Shipping.findOne({
-      shippingId,
-      // @ts-expect-error: ignore
-      userRef: req.user._id
+    const shipping = await ShipmentSchema.findOne({
+      trackingId: shippingId,
+      userRef: user._id
     });
-    if (shipping) {
-      const label: ILabelResponse = {
-        timestamp: shipping.timestamp,
-        carrier: shipping.carrier,
-        provider: shipping.provider,
-        service: shipping.service,
+    if (shipping && shipping.labels) {
+      const labelResult: ILabelResponse = {
+        timestamp: new Date(),
+        carrier: shipping.carrier!,
+        service: shipping.service!.name,
         facility: shipping.facility,
-        carrierAccount: shipping.carrierAccount,
-        labels: shipping.labels,
-        shippingId: shipping.shippingId
+        carrierAccount: shipping.carrierAccount!,
+        labels: shipping.labels.map((ele) => {
+          return {
+            createdOn: new Date(),
+            trackingId: ele.tracking,
+            labelData: ele.data,
+            encodeType: ele.encodeType,
+            format: ele.format
+          };
+        }),
+        shippingId: shipping.trackingId
       };
-      console.log('Find local Label Data');
-      return LRes.resOk(res, label);
+      return LRes.resOk(res, labelResult);
     } else {
       return LRes.resErr(
         res,
@@ -345,6 +359,7 @@ export const createManifest = async (
   req: Request,
   res: Response
 ): Promise<any> => {
+  const user = req.user as IUser;
   const body: IManifestRequest = req.body;
   let carrier: string | undefined = body.carrier || undefined;
   let provider: string | undefined = body.provider || undefined;
@@ -355,11 +370,7 @@ export const createManifest = async (
 
   try {
     // * Validate Client Carrier Account
-    const checkValues = await validateCarrierAccount(
-      carrierAccount,
-      // @ts-expect-error: ignore
-      req.user
-    );
+    const checkValues = await validateCarrierAccount(carrierAccount, user);
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
     // * Validate Carrier Name is Supported
@@ -409,11 +420,10 @@ export const createManifest = async (
   }
 
   // make sure all tracking ids belong to the request user
-  const shippings = await Shipping.find(
-    // @ts-expect-error: ignore
-    { trackingId: { $in: manifests[0].trackingIds }, userRef: req.user._id },
-    'trackingId'
-  );
+  const shippings = await ShipmentSchema.find({
+    trackingId: { $in: manifests[0].trackingIds },
+    userRef: user._id
+  });
   if (!shippings || shippings.length < 1) {
     return res
       .status(400)
@@ -427,36 +437,48 @@ export const createManifest = async (
         )
       );
   }
-  console.log(shippings);
-  const newIds = shippings.map((item: IShipping) => {
-    return item.trackingId;
-  });
-  console.log(newIds);
-  body.manifests[0].trackingIds = newIds;
 
   try {
-    // @ts-expect-error: ignore
-    const api = await ShippingUtil.initCF(account, req.user);
-    const response = await api.manifest(body);
-    if (
-      response.hasOwnProperty('status') &&
-      typeof response.status !== 'string' &&
-      response.status > 203
-    ) {
-      return res.status(response.status).json(response);
-    }
+    const api = CarrierFactory.getCarrierAPI(account, false, facility);
+    if (api && api.createManifest) {
+      await api.init();
+      const results = await api.createManifest(shippings, user);
+      results.forEach((ele) => (ele.userRef = user._id));
+      const mSave = results.map((ele) => {
+        const manifest = new ManifestSchema(ele);
+        return manifest.save();
+      });
 
-    const manifestResponse: IManifestResponse = response;
-    // @ts-expect-error: ignore
-    manifestResponse.userRef = req.user._id;
-    manifestResponse.trackingIds = manifests[0].trackingIds;
-    if (carrier === PITNEY_BOWES) {
-      manifestResponse.status = 'COMPLETED';
-    }
-    // save manifest response data into database
-    await new Manifest(manifestResponse).save();
+      await Promise.all(mSave);
+      await ShipmentSchema.updateMany(
+        { trackingId: { $in: manifests[0].trackingIds } },
+        { $set: { manifested: true } }
+      );
 
-    return LRes.resOk(res, manifestResponse);
+      const mData = results[0];
+      const manifestResponse: IManifestResponse = {
+        timestamp: mData.timestamp!,
+        carrier: mData.carrier,
+        carrierAccount: account.accountId,
+        facility: facility,
+        requestId: mData.requestId!,
+        manifests: mData.manifests.map((ele) => {
+          const mObj: IManifestObj = {
+            createdOn: ele.createdOn!,
+            manifestId: ele.manifestId,
+            total: manifests[0].trackingIds.length,
+            manifestData: ele.manifestData,
+            encodeType: ele.encodeType,
+            format: ele.format
+          };
+          return mObj;
+        }),
+        trackingIds: manifests[0].trackingIds
+      };
+      return LRes.resOk(res, manifestResponse);
+    } else {
+      return LRes.resErr(res, 400, 'No carrier api found');
+    }
   } catch (err) {
     console.log(err);
     return LRes.resErr(res, 500, err);
@@ -472,6 +494,7 @@ export const downloadManifest = async (
   req: Request,
   res: Response
 ): Promise<any> => {
+  const user = req.user as IUser;
   const requestId: string | undefined = req.params.requestId || undefined;
   let carrierAccount: string | undefined =
     req.params.carrierAccount || undefined;
@@ -501,10 +524,11 @@ export const downloadManifest = async (
 
   try {
     // check if data is available in the system
-    const manifest = await Manifest.findOne(
-      // @ts-expect-error: ignore
-      { requestId: requestId, userRef: req.user._id }
-    );
+    const manifest = await ManifestSchema.findOne({
+      facility: facility,
+      requestId: requestId,
+      userRef: user._id
+    });
     if (!manifest)
       return LRes.resErr(
         res,
@@ -513,219 +537,58 @@ export const downloadManifest = async (
       );
     if (manifest.status === 'COMPLETED') return LRes.resOk(res, manifest);
 
-    // request latest manifest data from carrier
-    // @ts-expect-error: ignore
-    const api = await ShippingUtil.initCF(account, req.user);
-    const response = await api.getManifest(requestId, facility);
-    if (
-      response.hasOwnProperty('status') &&
-      typeof response.status !== 'string' &&
-      response.status > 203
-    ) {
-      return res.status(response.status).json(response);
-    }
-    // update local manifest data
-    const manifestResponse: IManifestResponse = response;
-    // @ts-expect-error: ignore
-    manifestResponse.userRef = req.user._id;
+    const clientAccount = await ClientCarrierSchema.findOne({
+      _id: manifest.carrierRef
+    });
+    if (clientAccount) {
+      const api = CarrierFactory.getCarrierAPI(
+        clientAccount,
+        false,
+        clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
+          ? clientAccount.facilities![0]
+          : undefined
+      );
+      if (api && api.getManifest) {
+        await api.init();
+        const result = await api.getManifest(manifest);
+        manifest.carrier = result.carrier;
+        manifest.carrierRef = result.carrierRef;
+        manifest.timestamp = result.timestamp;
+        manifest.requestId = result.requestId;
+        manifest.link = result.link;
+        manifest.status = result.status;
+        manifest.userRef = result.userRef;
+        manifest.manifests = result.manifests;
+        manifest.manifestErrors = result.manifestErrors;
+        await manifest.save();
 
-    const updatedManifest = await Manifest.findOneAndUpdate(
-      // @ts-expect-error: ignore
-      { requestId: requestId, userRef: req.user._id },
-      manifestResponse,
-      { new: true }
-    );
-
-    // if the manifest is completed update shipping records
-    if (updatedManifest && updatedManifest.status === 'COMPLETED') {
-      console.log('start to check for tracking ids');
-      let trackingIds: string[] | undefined = updatedManifest.trackingIds;
-      console.log(trackingIds);
-      if (trackingIds) {
-        const summary: IManifestSummary | undefined =
-          updatedManifest.manifestSummary;
-        if (summary) {
-          const invalidTrackingIds: IManifestSummaryError[] | undefined =
-            summary.invalid.trackingIds;
-          if (invalidTrackingIds) {
-            console.log('Find summary');
-            console.log(invalidTrackingIds);
-            const invalidIds = invalidTrackingIds.map(
-              (item: IManifestSummaryError) => {
-                return item.trackingId;
-              }
-            );
-            console.log(invalidIds);
-            trackingIds = trackingIds.filter((item: string) => {
-              return invalidIds.includes(item) === false;
-            });
-            console.log(trackingIds);
-          }
-        }
-        console.log('Updating');
-        console.log(trackingIds);
-        await Shipping.updateMany(
-          { trackingId: { $in: trackingIds } },
-          { $set: { manifested: true } }
-        );
+        const manifestResponse: IManifestResponse = {
+          timestamp: manifest.timestamp!,
+          carrier: manifest.carrier,
+          carrierAccount: account.accountId,
+          facility: manifest.facility,
+          requestId: manifest.requestId!,
+          manifests: manifest.manifests.map((ele) => {
+            const mObj: IManifestObj = {
+              createdOn: ele.createdOn!,
+              manifestId: ele.manifestId,
+              total: 0,
+              manifestData: ele.manifestData,
+              encodeType: ele.encodeType,
+              format: ele.format
+            };
+            return mObj;
+          })
+        };
+        return LRes.resOk(res, manifestResponse);
+      } else {
+        return LRes.resErr(res, 400, 'No carrier api found');
       }
+    } else {
+      return LRes.resErr(res, 400, 'No carrier account found');
     }
-
-    return LRes.resOk(res, updatedManifest);
   } catch (error) {
     console.log(error);
     return LRes.resErr(res, 500, error);
   }
 };
-
-//************************************************************//
-//*************** Get Label From Carrier API *****************//
-//************************************************************//
-// /**
-//  * Get Label (Shipping) data
-//  * @param req
-//  * @param res
-//  */
-// public getLabel: any = async (req: Request, res: Response) => {
-//     const shippingId: string | undefined = req.params.shippingId || undefined;
-//     let carrierAccount: string | undefined = req.params.carrierAccount || undefined;
-//     let account: IAccount | undefined | null = undefined;
-
-//     if(!shippingId) return res.status(400).json(LRes.fieldErr("shippingId", "/", errorTypes.MISSING));
-//     try {
-//         // @ts-expect-error: ignore
-//         const checkValues = await this.validateCarrierAccount(carrierAccount, req.user);
-//         carrierAccount = checkValues.carrierAccount;
-//         account = checkValues.account;
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(400).send(error);
-//     }
-
-//     try {
-//         // first try to find the label data from local
-//         // @ts-expect-error: ignore
-//         const shipping: IShipping = await Shipping.findOne({shippingId, userRef: req.user._id });
-//         if(false) {
-//             const label: ILabelResponse = {
-//                 timestamp: shipping.timestamp,
-//                 carrier: shipping.carrier,
-//                 service: shipping.service,
-//                 labels: shipping.labels
-//             };
-//             console.log("Find local Label Data");
-//             return LRes.resOk(res, label);
-//         } else {
-//             // Get label data from carrier
-//             console.log("Getting Label Data from Carrier");
-//             // @ts-expect-error: ignore
-//             const cf = await this.initCF(account, req.user._id);
-//             // @ts-expect-error: ignore
-//             const response = await cf.getLabel(shippingId, "usps");
-//             if ((response.hasOwnProperty('status') && response.status > 203)) {
-//                 return res.status(response.status).json(response);
-//             }
-
-//             console.log("Return Label Data");
-//             return LRes.resOk(res, response);
-//         }
-//     } catch (error) {
-//         console.log(error);
-//         return LRes.resErr(res, 500, error);
-//     }
-// };
-
-//************************************************************//
-//************** Get USPS Shipping Rules API *****************//
-//************************************************************//
-// public rules: any = async (req: Request, res: Response) => {
-//   // build account for admin
-//   const carrierRef = await Carrier.findOne({ carrierName: PITNEY_BOWES });
-//   // @ts-expect-error: ignore
-//   const account = ShippingUtil.buildIAccountForAdmin(carrierRef!, req.user);
-
-//   try {
-//     // @ts-expect-error: ignore
-//     const api = await ShippingUtil.initCF(account, req.user);
-//     const response = await api.rules('USPS', 'US', 'US');
-//     return LRes.resOk(res, response);
-//   } catch (error) {
-//     console.log(error);
-//     return LRes.resErr(res, 500, error);
-//   }
-// };
-
-//************************************************************//
-//**************** Get Carrier Products API ******************//
-//************************************************************//
-// public products: any = async (req: Request, res: Response) => {
-//   const body: IAdminProductRequest = req.body;
-//   let carrier: string | undefined = body.carrier || undefined;
-//   let provider: string | undefined = body.provider || undefined;
-//   const service: string | undefined = body.service || undefined;
-//   const weight = body.packageDetail.weight.value;
-//   const unitOfMeasure = body.packageDetail.weight.unitOfMeasure;
-
-//   try {
-//     const checkedCarrier = validateCarrier(carrier, provider);
-//     carrier = checkedCarrier.carrier;
-//     provider = checkedCarrier.provider;
-//     validateMassUnit(unitOfMeasure, carrier);
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(400).json(error);
-//   }
-
-//   const weightInOZ = convert(weight)
-//     // @ts-expect-error: ignore
-//     .from(unitOfMeasure.toLowerCase())
-//     .to('oz');
-//   // Set packageId and billingReference
-//   body.packageDetail.packageId =
-//     'EK-' + Date.now() + Math.round(Math.random() * 1000000).toString();
-//   // @ts-expect-error: ignore
-//   body.packageDetail.billingReference1 = req.user.company;
-
-//   // build account for admin
-//   const carrierRef = await Carrier.findOne({ carrierName: carrier });
-
-//   const account = ShippingUtil.buildIAccountForAdmin(
-//     carrierRef!,
-//     // @ts-expect-error: ignore
-//     req.user,
-//     body.pickup,
-//     body.distributionCenter
-//   );
-//   // build IProductRequest
-//   const productRequest = ShippingUtil.buildIProductRequestForAdmin(body);
-
-//   try {
-//     const response = await ShippingUtil.getProducts(
-//       account,
-//       // @ts-expect-error: ignore
-//       req.user,
-//       productRequest,
-//       weightInOZ,
-//       carrier,
-//       service
-//     );
-//     if (!response)
-//       return res
-//         .status(500)
-//         .json(
-//           LRes.invalidParamsErr(
-//             500,
-//             'Failed to compute package price',
-//             carrier
-//           )
-//         );
-//     if (response.hasOwnProperty('status') && response.status > 203) {
-//       return res.status(response.status).json(response);
-//     }
-//     return LRes.resOk(res, response);
-//   } catch (err) {
-//     console.log('!!!PRODUCT ERROR!!!' + err);
-//     console.log(err);
-//     return LRes.resErr(res, 500, err);
-//   }
-// };

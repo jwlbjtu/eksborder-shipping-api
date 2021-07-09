@@ -1,48 +1,31 @@
 import mongoose, { Schema } from 'mongoose';
-import { IManifestResponse } from '../types/shipping.types';
+import { IManifest } from '../types/carriers/dhl_ecommerce';
 
 const ManifestSchema: Schema = new Schema(
   {
-    timestamp: { type: Date, required: true },
     carrier: { type: String, required: true },
-    provider: { trye: String },
-    carrierAccount: { type: String, required: true },
+    timestamp: { type: Date, required: true },
     facility: { type: String },
+    pickup: { type: String },
     requestId: { type: String, required: true, index: true },
-    status: {
-      type: String,
-      enum: ['CREATED', 'IN PROGRESS', 'COMPLETED'],
-      index: true
+    status: { type: String, index: true },
+    link: { type: String },
+    manifests: {
+      type: [
+        {
+          createdOn: { type: Date },
+          manifestId: { type: String, required: true },
+          distributionCenter: { type: String },
+          manifestData: { type: String, required: true },
+          encodeType: { type: String, required: true },
+          format: { type: String, required: true }
+        }
+      ],
+      default: []
     },
-    manifests: [
-      {
-        createdOn: { type: Date, required: true },
-        manifestId: { type: String, required: true },
-        total: { type: Number, required: true },
-        manifestData: { type: String, required: true },
-        encodeType: { type: String, required: true },
-        format: { type: String, required: true }
-      }
-    ],
-    manifestSummary: {
-      total: { type: Number },
-      invalid: {
-        total: { type: Number },
-        trackingIds: [
-          {
-            trackingId: { type: String, required: true },
-            errorCode: { type: String, required: true },
-            errorDescription: { type: String, required: true }
-          }
-        ]
-      }
-    },
-    trackingIds: [String],
-    userRef: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    }
+    manifestErrors: { type: [String], default: [] },
+    userRef: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    carrierRef: { type: Schema.Types.ObjectId, ref: 'Account', required: true }
   },
   {
     timestamps: true,
@@ -54,4 +37,10 @@ const ManifestSchema: Schema = new Schema(
   }
 );
 
-export default mongoose.model<IManifestResponse>('Manifest', ManifestSchema);
+ManifestSchema.methods.toJSON = function () {
+  const manifestObject = this.toObject();
+  manifestObject.id = this._id;
+  return manifestObject;
+};
+
+export default mongoose.model<IManifest>('Manifest', ManifestSchema);

@@ -2,6 +2,9 @@ import express, { Application } from 'express';
 import IIterateParams from './interfaces/IIterateParams.interface';
 import mongoose from 'mongoose';
 import path from 'path';
+import { logger } from './lib/logger';
+import ItemSchema from './models/item.model';
+import CustomerItemSchema from './models/customItem.model';
 
 mongoose.Promise = global.Promise;
 
@@ -43,6 +46,7 @@ class App {
   }
 
   private assets() {
+    this.app.use('/static', express.static(path.join('static')));
     this.app.use(
       '/static/images',
       express.static(path.join('static', 'images'))
@@ -76,6 +80,8 @@ class App {
     try {
       // @ts-expect-error: ignore
       await mongoose.connect(process.env.DB_CONNECTION, options);
+      logger.info(await ItemSchema.countDocuments({}));
+      logger.info(await CustomerItemSchema.countDocuments({}));
       console.log('Connect to Database!');
     } catch (error) {
       console.log(

@@ -11,7 +11,7 @@ export const getAllCarriers = async (
   res: Response
 ): Promise<void> => {
   try {
-    const carrierList = await Carrier.find({}, '-clientId -clientSecret');
+    const carrierList = await Carrier.find({});
     return LRes.resOk(res, carrierList);
   } catch (error) {
     return LRes.resErr(res, 404, error);

@@ -3,7 +3,6 @@ import AuthController from '../lib/auth/auth.handler';
 import {
   getAllClientCarrierAccounts,
   getClientCarrierAccountsByUser,
-  getClientCarrierAccount,
   createClientCarrierAccount,
   updateClientCarrierAccount,
   deleteClientCarrierAccount

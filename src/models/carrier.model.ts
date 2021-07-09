@@ -23,54 +23,87 @@ const CarrierSchema: Schema = new Schema(
     },
     clientId: { type: String, required: true, minlength: 3, trim: true },
     clientSecret: { type: String, required: true, minlength: 3, trim: true },
-    facilities: [
-      {
-        pickup: { type: String, required: true, trim: true },
-        facility: { type: String, required: true, trim: true }
-      }
-    ],
-    services: [
-      {
-        key: { type: String, required: true },
-        name: { type: String, required: true }
-      }
-    ],
+    accessKey: { type: String },
+    accountNum: { type: String },
     returnAddress: {
-      name: { type: String, trim: true },
-      company: { type: String, required: true, trim: true },
-      street1: { type: String, required: true, trim: true },
-      street2: { type: String, trim: true },
-      city: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      state: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      country: {
-        type: String,
-        required: true,
-        default: 'US',
-        trim: true
-      },
-      postalCode: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      email: {
-        type: String,
-        lowercase: true,
-        match: [/\S+@\S+\.\S+/],
-        trim: true
-      },
-      phone: { type: String, trim: true }
+      type: {
+        name: { type: String, trim: true },
+        attentionName: { type: String },
+        company: { type: String, trim: true },
+        taxIdNum: { type: String },
+        street1: { type: String, trim: true },
+        street2: { type: String, trim: true },
+        city: { type: String, trim: true },
+        state: { type: String, trim: true },
+        country: { type: String, default: 'US', trim: true },
+        postalCode: { type: String, trim: true },
+        email: { type: String, match: [/\S+@\S+\.\S+/], trim: true },
+        phone: { type: String, trim: true },
+        shipperNum: { type: String }
+      }
+    },
+    testClientId: { type: String, minlength: 3, trim: true },
+    testClientSecret: {
+      type: String,
+      minlength: 3,
+      trim: true
+    },
+    facilities: {
+      type: [
+        {
+          pickup: { type: String, required: true, trim: true },
+          facility: { type: String, required: true, trim: true }
+        }
+      ]
+    },
+    testFacilities: {
+      type: [
+        {
+          pickup: { type: String, required: true, trim: true },
+          facility: { type: String, required: true, trim: true }
+        }
+      ]
+    },
+    services: {
+      type: [
+        {
+          key: { type: String, required: true },
+          id: { type: String },
+          name: { type: String, required: true }
+        }
+      ]
     },
     shipperId: { type: String },
-    isActive: { type: Boolean, default: true }
+    regions: { type: [String], required: true },
+    isActive: { type: Boolean, default: true },
+    thirdparties: {
+      type: [
+        {
+          thirdpartyRef: { type: String },
+          condition: {
+            type: {
+              minWeight: { type: Number },
+              maxWeight: { type: Number },
+              weightUnit: { type: String }
+            }
+          }
+        }
+      ]
+    },
+    priceTable: {
+      type: [
+        {
+          priceRef: { type: String },
+          condition: {
+            type: {
+              minWeight: { type: Number },
+              maxWeight: { type: Number },
+              weightUnit: { type: String }
+            }
+          }
+        }
+      ]
+    }
   },
   {
     timestamps: true,
@@ -81,5 +114,11 @@ const CarrierSchema: Schema = new Schema(
     }
   }
 );
+
+CarrierSchema.methods.toJSON = function () {
+  const carrierObject = this.toObject();
+  carrierObject.id = this._id;
+  return carrierObject;
+};
 
 export default mongoose.model<ICarrier>('Carrier', CarrierSchema);
