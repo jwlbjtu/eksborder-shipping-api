@@ -3,6 +3,7 @@
 *.map
 !_*.map
 
+logs
 dist
 node_modules
 
@@ -15,3 +16,4 @@ package-lock.json
 
 .eslintcache
 static/images/**
+static/csv/**

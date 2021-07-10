@@ -11,11 +11,8 @@ import convert from 'convert-units';
 
 export const validateShipment = (
   shipmentData: IShipping,
-  carrierAccount: IAccount | undefined,
-  user: IUser
+  carrierAccount: IAccount | undefined
 ): string | undefined => {
-  // - validate user balance is greater than mini requirement
-  if (user.balance <= user.minBalance) return '用户余额低于限定额度';
   if (!carrierAccount) return '账号信息错误';
   // - carrierName matches carrier account
   if (

@@ -136,6 +136,15 @@ export const purchaseLabel = async (
     } else {
       const user = req.user as IUser;
       const data = req.body;
+      if (user.uploading) {
+        res.status(400).json({ message: '订单正在上传, 请稍后再试' });
+        return;
+      }
+      // - validate user balance is greater than mini requirement
+      if (!data.isTest && user.balance <= user.minBalance) {
+        res.status(400).json({ message: '用户余额低于限定额度' });
+        return;
+      }
       const shipmentData = await ShipmentSchema.findOne({
         _id: data.id,
         userRef: user._id
@@ -155,7 +164,7 @@ export const purchaseLabel = async (
           res.status(404).json({ message: '无效账号' });
           return;
         }
-        const valiResult = validateShipment(shipmentData, carrierAccount, user);
+        const valiResult = validateShipment(shipmentData, carrierAccount);
         if (valiResult) {
           res.status(400).json({ message: valiResult });
           return;
@@ -470,7 +479,7 @@ export const importCsvData = async (
                 // call carrierAPI to get label
                 const api = CarrierFactory.getCarrierAPI(
                   carrierAccount,
-                  data.isTest,
+                  false,
                   shipment.facility
                 );
                 if (api) {

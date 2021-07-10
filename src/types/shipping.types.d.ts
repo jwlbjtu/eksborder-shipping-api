@@ -30,6 +30,7 @@ export interface ILabelRequest {
   fromAddress?: IAddress;
   packageDetail: IPackageDetail;
   rate: { currency: string };
+  test: boolean;
 }
 
 export interface ILabelResponse {

@@ -52,7 +52,7 @@ class TransformShipmentToProduct extends stream.Transform {
         userRef: this.user._id
       });
       if (!carrierAccount) return undefined;
-      const valiResult = validateShipment(shipment, carrierAccount, this.user);
+      const valiResult = validateShipment(shipment, carrierAccount);
       if (valiResult) return undefined;
       const api = CarrierFactory.getCarrierAPI(
         carrierAccount,
