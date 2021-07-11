@@ -19,7 +19,7 @@ export interface UserData {
   email: string;
   countryCode: string;
   phone: string;
-  companyName: string;
+  companyName?: string;
   logoImage?: string;
   balance: number;
   currency: string;
@@ -39,7 +39,7 @@ export interface ClientInfo {
   email: string;
   countryCode: string;
   phone: string;
-  companyName: string;
+  companyName?: string;
   logoImage?: string;
   balance: number;
   currency: string;
@@ -74,7 +74,7 @@ export interface IUser extends Document {
   countryCode: string;
   phone: string;
   isActive: boolean;
-  companyName: string;
+  companyName?: string;
   logoImage?: string;
   balance: number;
   minBalance: number;

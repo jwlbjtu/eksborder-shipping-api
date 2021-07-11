@@ -100,7 +100,6 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     isActive: { type: Boolean, default: true },
     companyName: {
       type: String,
-      required: true,
       maxlength: 100,
       trim: true
     },

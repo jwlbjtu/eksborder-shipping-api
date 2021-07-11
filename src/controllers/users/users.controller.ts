@@ -36,14 +36,14 @@ export const createUser = async (
       // Create Default Print Format
       const printFormatData: PrintFormatData = {
         ...defaultPrintFormat,
-        userRef: user._id
+        userRef: createdUser._id
       };
       const printFormat = new PrintFormatSchema(printFormatData);
       // Create Default Package Units
       const defaultPackageUnits: PackageUnitsData = {
         weightUnit: WeightUnit.LB,
         distanceUnit: DistanceUnit.IN,
-        userRef: user._id
+        userRef: createdUser._id
       };
       const packageUnits = new PackageUnitsSchema(defaultPackageUnits);
       await printFormat.save();
@@ -51,6 +51,7 @@ export const createUser = async (
     }
     LRes.resOk(res, createdUser);
   } catch (error) {
+    logger.error(error);
     LRes.resErr(res, 500, error);
   }
 };
