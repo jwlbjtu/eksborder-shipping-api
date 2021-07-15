@@ -54,10 +54,13 @@ export const callDhlEcommerceCreateManifestEndpoint = async (
 export const callDHLeCommerceGetManifestEndpoint = async (
   apiUrl: string,
   manifest: IManifest,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  pickup: string | undefined
 ): Promise<IManifest> => {
   const response = await axios.get(
-    `${apiUrl}/shipping/v4/manifest/${manifest.pickup}/${manifest.requestId!}`,
+    `${apiUrl}/shipping/v4/manifest/${
+      pickup || manifest.pickup
+    }/${manifest.requestId!}`,
     { headers: headers }
   );
 

@@ -80,11 +80,6 @@ export const createShippingLabel = async (
     // * Validate Weight Unit of Measure if Supported
     validateWeight(weight, unitOfMeasure, carrier);
     validateDimensions(dimension, carrier);
-    // TODO!!! Remove after DHL eCommerce Test Account is Recovered
-    // Or after we add logic to add "Sample" on Label Data
-    if (body.test && carrier === CARRIERS.DHL_ECOMMERCE) {
-      throw LRes.invalidParamsErr(400, 'DHL eCommerce 暂不开放测试', carrier);
-    }
     // * Validate User Balance is above the minimum required
     if (!body.test && user.balance <= user.minBalance) {
       throw LRes.invalidParamsErr(400, '用户余额低于限定额度', carrier);
@@ -259,9 +254,9 @@ export const createShippingLabel = async (
             const newForms = shipping.forms.concat(forms);
             shipping.forms = newForms;
           }
+          shipping.trackingId = labels[0].tracking;
           if (!body.test) {
             shipping.status = ShipmentStatus.FULFILLED;
-            shipping.trackingId = labels[0].tracking;
             shipping.rate = {
               amount: totalRate,
               currency: rate.currency || Currency.USD
@@ -327,14 +322,14 @@ export const GetLabelByShippingId = async (
     });
     if (shipping && shipping.labels) {
       const labelResult: ILabelResponse = {
-        timestamp: new Date(),
+        timestamp: shipping.createdAt,
         carrier: shipping.carrier!,
         service: shipping.service!.name,
         facility: shipping.facility,
         carrierAccount: shipping.carrierAccount!,
         labels: shipping.labels.map((ele) => {
           return {
-            createdOn: new Date(),
+            createdOn: shipping.createdAt,
             trackingId: ele.tracking,
             labelData: ele.data,
             encodeType: ele.encodeType,
@@ -429,7 +424,8 @@ export const createManifest = async (
   // make sure all tracking ids belong to the request user
   const shippings = await ShipmentSchema.find({
     trackingId: { $in: manifests[0].trackingIds },
-    userRef: user._id
+    userRef: user._id,
+    manifested: false
   });
   if (!shippings || shippings.length < 1) {
     return res
@@ -446,21 +442,27 @@ export const createManifest = async (
   }
 
   try {
-    const api = CarrierFactory.getCarrierAPI(account, false, facility);
+    const api = CarrierFactory.getCarrierAPI(account, body.test, facility);
     if (api && api.createManifest) {
       await api.init();
       const results = await api.createManifest(shippings, user);
-      results.forEach((ele) => (ele.userRef = user._id));
+      results.forEach((ele) => {
+        ele.userRef = user._id;
+        ele.facility = facility;
+        return ele;
+      });
       const mSave = results.map((ele) => {
         const manifest = new ManifestSchema(ele);
         return manifest.save();
       });
 
       await Promise.all(mSave);
-      await ShipmentSchema.updateMany(
-        { trackingId: { $in: manifests[0].trackingIds } },
-        { $set: { manifested: true } }
-      );
+      if (!body.test) {
+        await ShipmentSchema.updateMany(
+          { trackingId: { $in: manifests[0].trackingIds } },
+          { $set: { manifested: true } }
+        );
+      }
 
       const mData = results[0];
       const manifestResponse: IManifestResponse = {
@@ -507,6 +509,9 @@ export const downloadManifest = async (
     req.params.carrierAccount || undefined;
   let account: IAccount | undefined | null = undefined;
   let facility: string | undefined = req.params.facility || undefined;
+  const test: boolean = req.params.test === 'true';
+  console.log(test);
+  console.log(typeof test);
 
   if (!requestId) {
     return res
@@ -550,7 +555,7 @@ export const downloadManifest = async (
     if (clientAccount) {
       const api = CarrierFactory.getCarrierAPI(
         clientAccount,
-        false,
+        test,
         clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
           ? clientAccount.facilities![0]
           : undefined
