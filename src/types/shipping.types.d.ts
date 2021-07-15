@@ -54,6 +54,7 @@ export interface IManifestRequest {
       trackingIds: string[];
     }
   ];
+  test: boolean;
 }
 
 export interface IManifestResponse {

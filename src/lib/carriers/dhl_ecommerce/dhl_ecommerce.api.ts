@@ -74,8 +74,15 @@ class DhlEcommerceAPI implements ICarrierAPI {
     this.clientCarrier = clientCarrier;
     this.carrierRef = clientCarrier.carrierRef;
     this.facilityName = facilityName;
-    this.apiUrl =
-      process.env.DHL_ECOMMERCE_PROD || DHL_ECOMMERCE_HOSTS.DHL_ECOMMERCE_PROD;
+    if (isTest) {
+      this.apiUrl =
+        process.env.DHL_ECOMMERCE_TEST ||
+        DHL_ECOMMERCE_HOSTS.DHL_ECOMMERCE_TEST;
+    } else {
+      this.apiUrl =
+        process.env.DHL_ECOMMERCE_PROD ||
+        DHL_ECOMMERCE_HOSTS.DHL_ECOMMERCE_PROD;
+    }
   }
 
   public init = async (): Promise<void> => {
@@ -85,22 +92,33 @@ class DhlEcommerceAPI implements ICarrierAPI {
     });
     if (carrierData) {
       this.carrier = carrierData as ICarrier;
-      this.credential.clientId = carrierData.clientId;
-      this.credential.clientSecret = carrierData.clientSecret;
-      const orderFacility = carrierData.facilities!.find(
-        (ele) => ele.facility === this.facilityName
-      );
-      if (orderFacility) {
-        this.facility = orderFacility;
+      if (this.isTest) {
+        this.credential.clientId = carrierData.testClientId!;
+        this.credential.clientSecret = carrierData.testClientSecret!;
+        this.facilityName = carrierData.testFacilities![0].facility;
+        this.facility = carrierData.testFacilities![0];
       } else {
-        throw new Error(`无效分拣中心${this.facilityName}`);
+        this.credential.clientId = carrierData.clientId;
+        this.credential.clientSecret = carrierData.clientSecret;
+        const orderFacility = carrierData.facilities!.find(
+          (ele) => ele.facility === this.facilityName
+        );
+        if (orderFacility) {
+          this.facility = orderFacility;
+        } else {
+          throw new Error(`无效分拣中心${this.facilityName}`);
+        }
       }
 
       try {
         await this.auth();
       } catch (error) {
         logger.error(util.inspect(error.response.data));
-        logger.error(`Failed to authenticate to ${this.carrier.carrierName}`);
+        logger.error(
+          `Failed to authenticate to ${this.carrier.carrierName} ${
+            this.isTest ? 'test' : ''
+          }`
+        );
         throw new Error(
           `${this.carrier.carrierName} ERROR: ${error.response.data.title}`
         );
@@ -266,20 +284,25 @@ class DhlEcommerceAPI implements ICarrierAPI {
     user: IUser
   ): Promise<ManifestData[]> => {
     // Get all facilities
-    const facilities = this.carrier?.facilities;
+    let facilities = this.carrier?.facilities;
+    if (this.isTest) facilities = this.carrier?.testFacilities;
     if (facilities) {
       const data: Record<string, IShipping[]> = {};
-      for (let i = 0; i < facilities.length; i += 1) {
-        const f = facilities[i];
-        const pickup = f.pickup;
-        const list: IShipping[] = [];
-        for (let j = 0; j < shipments.length; j += 1) {
-          const s = shipments[j];
-          if (s.facility === f.facility) {
-            list.push(s);
+      if (this.isTest) {
+        data[facilities[0].pickup] = shipments;
+      } else {
+        for (let i = 0; i < facilities.length; i += 1) {
+          const f = facilities[i];
+          const pickup = f.pickup;
+          const list: IShipping[] = [];
+          for (let j = 0; j < shipments.length; j += 1) {
+            const s = shipments[j];
+            if (s.facility === f.facility) {
+              list.push(s);
+            }
           }
+          if (list && list.length > 0) data[pickup] = list;
         }
-        if (list && list.length > 0) data[pickup] = list;
       }
 
       const manifestRefBodys = Object.keys(data).map((key) =>
@@ -330,7 +353,8 @@ class DhlEcommerceAPI implements ICarrierAPI {
       const response = await callDHLeCommerceGetManifestEndpoint(
         this.apiUrl,
         manifest,
-        headers
+        headers,
+        this.isTest ? this.facility.pickup : manifest.pickup
       );
       return response;
     } catch (error) {

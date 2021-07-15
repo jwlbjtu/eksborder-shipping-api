@@ -147,7 +147,8 @@ export const purchaseLabel = async (
       }
       const shipmentData = await ShipmentSchema.findOne({
         _id: data.id,
-        userRef: user._id
+        userRef: user._id,
+        status: ShipmentStatus.PENDING
       }).populate('customItems');
       if (shipmentData) {
         logger.info(
@@ -245,9 +246,9 @@ export const purchaseLabel = async (
                 shipmentData.forms = newForms;
               }
 
+              shipmentData.trackingId = labels[0].tracking;
               if (!data.isTest) {
                 shipmentData.status = ShipmentStatus.FULFILLED;
-                shipmentData.trackingId = labels[0].tracking;
                 shipmentData.rate = {
                   amount: totalRate,
                   currency: rate.currency || Currency.USD
