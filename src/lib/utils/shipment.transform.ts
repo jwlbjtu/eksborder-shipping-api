@@ -164,13 +164,13 @@ class TransformDataToShipment extends stream.Transform {
           width: data[map.width] ? parseFloat(data[map.width]) : 0,
           height: data[map.height] ? parseFloat(data[map.height]) : 0,
           unitOfMeasure: data[map.dimentionUnit]
-            ? data[map.dimentionUnit].toLowerCase()
+            ? (data[map.dimentionUnit].toLowerCase() as DistanceUnit)
             : DistanceUnit.IN
         },
         weight: {
           value: data[map.weight] ? parseFloat(data[map.weight]) : 0,
           unitOfMeasure: data[map.weightUnit]
-            ? data[map.weightUnit].toLowerCase()
+            ? (data[map.weightUnit].toLowerCase() as WeightUnit)
             : WeightUnit.LB
         }
       };

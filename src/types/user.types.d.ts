@@ -79,6 +79,7 @@ export interface IUser extends Document {
   balance: number;
   minBalance: number;
   currency: string;
+  referalName?: string;
   apiToken?: string;
   tokens?: {
     token: string;

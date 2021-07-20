@@ -125,7 +125,7 @@ class DhlEcommerceAPI implements ICarrierAPI {
       }
     } else {
       logger.error(
-        `Platform Carrier ${CARRIERS.DHL_ECOMMERCE} not found for id ${this.carrierRef}`
+        `Carrier ${CARRIERS.DHL_ECOMMERCE} not found for id ${this.carrierRef}`
       );
       throw new Error(`${CARRIERS.DHL_ECOMMERCE} not supported`);
     }

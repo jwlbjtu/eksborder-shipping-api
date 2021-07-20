@@ -114,13 +114,15 @@ export const buildDhlEcommerceProductReqBody = (
     packageDescription: `${PARCELSELITE_NAME} Order`,
     weight: {
       value: roundToTwoDecimal(shipmentData.packageInfo!.weight.value),
-      unitOfMeasure: shipmentData.packageInfo!.weight.unitOfMeasure.toUpperCase()
+      unitOfMeasure:
+        shipmentData.packageInfo!.weight.unitOfMeasure.toUpperCase()
     },
     dimension: {
       length: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.length),
       width: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.width),
       height: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.height),
-      unitOfMeasure: shipmentData.packageInfo!.dimentions!.unitOfMeasure.toUpperCase()
+      unitOfMeasure:
+        shipmentData.packageInfo!.dimentions!.unitOfMeasure.toUpperCase()
     },
     billingReference1: 'ParcelsPro',
     billingReference2: `User-${shipmentData.userRef}`

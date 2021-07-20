@@ -46,7 +46,8 @@ export const CARRIERS = {
   DHL_ECOMMERCE: 'DHL eCommerce',
   PITNEY_BOWES: 'pitney bowes',
   USPS: 'USPS',
-  UPS: 'UPS'
+  UPS: 'UPS',
+  FEDEX: 'FedEx'
 };
 
 export const SUPPORTED_CARRIERS = [
@@ -147,7 +148,8 @@ export const FILE_TYPE_LIST = [FILE_TYPES.pdf, FILE_TYPES.png, FILE_TYPES.csv];
 
 export enum Country {
   USA = 'US',
-  CHINA = 'CN'
+  CHINA = 'CN',
+  CANADA = 'CA'
 }
 
 export const COUNTRY_NAMES: Record<string, string> = {
@@ -388,6 +390,14 @@ export const UPS_SERVICES = {
     service: 'UPS Surepost',
     eta: '5-7 days'
   }
+};
+
+//*******************************//
+//******** FEDEX Constants *******//
+//*******************************//
+export const FEDEX_HOSTS = {
+  FEDEX_TEST: 'https://wsbeta.fedex.com',
+  FEDEX_PROD: 'https://ws.fedex.com'
 };
 
 export const PARCELSELITE_NAME = 'ParcelsElite';

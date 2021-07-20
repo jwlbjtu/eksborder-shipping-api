@@ -5,7 +5,12 @@ import {
   IWeight,
   IDimension
 } from './shipping.types';
-import { Currency, ShipmentStatus } from '../lib/constants';
+import {
+  Country,
+  Currency,
+  ShipmentStatus,
+  WeightUnit
+} from '../lib/constants';
 
 export interface ICarrier extends Document {
   id: Types.ObjectId;
@@ -16,9 +21,13 @@ export interface ICarrier extends Document {
   clientSecret: string;
   accessKey?: string;
   accountNum?: string;
+  hubId?: string;
   returnAddress?: CarrierAddress;
   testClientId?: string;
   testClientSecret?: string;
+  testAccessKey?: string;
+  testAccountNum?: string;
+  testHubId?: string;
   facilities?: IFacility[];
   testFacilities?: IFacility[];
   services?: IService[];

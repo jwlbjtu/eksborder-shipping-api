@@ -180,7 +180,7 @@ export const generateThirdpartyRates = async (
           service: account.service.name,
           account: account.accountNum,
           rate: thirdpartyRate,
-          currency: Currency.USD, // TODO!!!: comeback to this logic
+          currency: Currency.USD,
           isTest,
           thirdparty: true,
           thirdpartyAcctId: account._id,

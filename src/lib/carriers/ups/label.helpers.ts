@@ -1,7 +1,6 @@
 import axios from 'axios';
 import {
   CARRIERS,
-  CARRIER_REGIONS,
   UPS_SERVICE_IDS,
   UPS_WEIGHT_UNITS,
   UPS_WEIGHT_UNITS_REVERSE,

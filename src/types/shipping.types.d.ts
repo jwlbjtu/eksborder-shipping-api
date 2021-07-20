@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 import { IAddress } from '../lib/carriers/flat/flat.helper';
+import { DistanceUnit, WeightUnit } from '../lib/constants';
 
 export interface IProductRequest {
   carrier: string;
