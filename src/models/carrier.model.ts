@@ -25,6 +25,7 @@ const CarrierSchema: Schema = new Schema(
     clientSecret: { type: String, required: true, minlength: 3, trim: true },
     accessKey: { type: String },
     accountNum: { type: String },
+    hubId: { type: String },
     returnAddress: {
       type: {
         name: { type: String, trim: true },
@@ -48,6 +49,9 @@ const CarrierSchema: Schema = new Schema(
       minlength: 3,
       trim: true
     },
+    testAccessKey: { type: String },
+    testAccountNum: { type: String },
+    testHubId: { type: String },
     facilities: {
       type: [
         {

@@ -222,7 +222,8 @@ export const updateUser = async (
       'countryCode',
       'phone',
       'role',
-      'userName'
+      'userName',
+      'referalName'
     ];
 
     const id = user.id;

@@ -19,7 +19,7 @@ import {
   ILabelResponse,
   IManifestResponse
 } from '../../types/shipping.types';
-import { IBilling, IShipping, ShipmentData } from '../../types/record.types';
+import { IBilling, ShipmentData } from '../../types/record.types';
 import { IAccount, IUser } from '../../types/user.types';
 import {
   validateWeight,
@@ -150,19 +150,19 @@ export const createShippingLabel = async (
         packageType: 'PKG',
         weight: {
           value: convert(weight)
-            .from(unitOfMeasure.toLowerCase())
+            .from(unitOfMeasure.toLowerCase() as WeightUnit)
             .to(WeightUnit.LB),
           unitOfMeasure: WeightUnit.LB
         },
         dimentions: {
           length: convert(dimension?.length)
-            .from(dimension?.unitOfMeasure.toLowerCase())
+            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
             .to(DistanceUnit.IN),
           width: convert(dimension?.width)
-            .from(dimension?.unitOfMeasure.toLowerCase())
+            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
             .to(DistanceUnit.IN),
           height: convert(dimension?.height)
-            .from(dimension?.unitOfMeasure.toLowerCase())
+            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
             .to(DistanceUnit.IN),
           unitOfMeasure: DistanceUnit.IN
         }

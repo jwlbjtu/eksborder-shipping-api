@@ -107,6 +107,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     balance: { type: Number, min: 0, default: 0, required: true },
     minBalance: { type: Number, min: 0, default: 0, required: true },
     currency: { type: String, default: 'USD' },
+    referalName: { type: String },
     apiToken: { type: String },
     tokens: [
       {
