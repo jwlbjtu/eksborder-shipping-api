@@ -28,7 +28,10 @@ import {
   roundToTwoDecimal
 } from '../../utils/helpers';
 
-const wsdl = path.join(__dirname, './wsdl/ShipService_v26.wsdl');
+const wsdl = path.join(
+  __dirname,
+  '../../../../static/wsdl/ShipService_v26.wsdl'
+);
 const endpointPath = '/web-services';
 const version = {
   ServiceId: 'ship',

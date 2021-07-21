@@ -24,7 +24,10 @@ const version: Version = {
   Minor: 0
 };
 
-const wsdl = path.join(__dirname, './wsdl/RateService_v28.wsdl');
+const wsdl = path.join(
+  __dirname,
+  '../../../../static/wsdl/RateService_v28.wsdl'
+);
 const endpointPath = '/web-services';
 
 export const buildFedexProductReqBody = (
