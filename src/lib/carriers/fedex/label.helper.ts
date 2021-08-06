@@ -32,6 +32,11 @@ const wsdl = path.join(
   __dirname,
   '../../../../static/wsdl/ShipService_v26.wsdl'
 );
+const wsdlPro = path.join(
+  __dirname,
+  '../../../../static/wsdl/production/ShipService_v26.wsdl'
+);
+
 const endpointPath = '/web-services';
 const version = {
   ServiceId: 'ship',
@@ -202,7 +207,7 @@ export const callFedExLanelEndpoint = async (
   const options = {
     endpoint: `${apiUrl}${endpointPath}`
   };
-  const client = await createClientAsync(wsdl, options);
+  const client = await createClientAsync(isTest ? wsdl : wsdlPro, options);
   const response = await client.processShipmentAsync(reqBody);
   logger.info(util.inspect(response[0], true, null));
   const processedResponse = processFedexLabelResponse(response[0], isTest);

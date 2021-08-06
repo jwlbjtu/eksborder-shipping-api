@@ -28,6 +28,11 @@ const wsdl = path.join(
   __dirname,
   '../../../../static/wsdl/RateService_v28.wsdl'
 );
+const wsdlPro = path.join(
+  __dirname,
+  '../../../../static/wsdl/production/RateService_v28.wsdl'
+);
+
 const endpointPath = '/web-services';
 
 export const buildFedexProductReqBody = (
@@ -110,7 +115,7 @@ export const callFedexProductsEndpoint = async (
     endpoint: `${apiUrl}${endpointPath}`
   };
 
-  const client = await createClientAsync(wsdl, options);
+  const client = await createClientAsync(isTest ? wsdl : wsdlPro, options);
   const response = await client.getRatesAsync(prodReqBody);
   logger.info(
     `FedEx response for User ${shipment.userRef} with Order ${shipment._id}`
