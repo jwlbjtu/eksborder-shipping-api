@@ -8,6 +8,10 @@ import {
   downloadManifest
 } from '../controllers/shipping/shipping.controller';
 
+/**
+ * @class ShippingRoute
+ * @description Routes for shipping API serivces
+ */
 class ShippingRoute {
   public path = '/shipping';
   public router = express.Router();
@@ -34,7 +38,7 @@ class ShippingRoute {
       GetLabelByShippingId
     );
 
-    // Create
+    // Create Manifest
     this.router.post(
       this.path + '/manifest',
       this.authJwt.authenticateJWT,

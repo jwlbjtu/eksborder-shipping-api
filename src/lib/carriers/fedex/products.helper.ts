@@ -50,7 +50,7 @@ export const buildFedexProductReqBody = (
       ServiceType: shipment.service?.key,
       PackagingType: 'YOUR_PACKAGING',
       Shipper: ceateFedexShipper(shipment.sender),
-      Recipient: ceateFedexShipper(shipment.toAddress),
+      Recipient: ceateFedexShipper(shipment.toAddress, shipment.service?.key),
       ShippingChargesPayment: {
         PaymentType: 'SENDER'
       }
@@ -140,11 +140,13 @@ export const processFedexProductsResponse = (
   let rates: Rate[] = [];
   let errors: string[] = [];
 
-  if (severity === 'ERROR') {
+  if (severity === 'ERROR' || severity === 'FAILURE') {
     const notifications = response.Notifications;
     const eList = notifications.map((ele) => ele.Message);
     errors = errors.concat(eList);
   } else {
+    console.log('Fedex service response...');
+    console.log(response);
     const rList = response.RateReplyDetails.map((ele) => {
       const serviceDescription = ele.ServiceDescription;
       const shipmentRateDetail = ele.RatedShipmentDetails[0].ShipmentRateDetail;

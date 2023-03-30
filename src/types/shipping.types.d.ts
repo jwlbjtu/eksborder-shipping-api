@@ -32,6 +32,7 @@ export interface ILabelRequest {
   packageDetail: IPackageDetail;
   rate: { currency: string };
   test: boolean;
+  ref?: string;
 }
 
 export interface ILabelResponse {
@@ -43,6 +44,7 @@ export interface ILabelResponse {
   carrierAccount: string;
   labels: ILabel[];
   shippingId?: string;
+  ref?: string;
 }
 
 export interface IManifestRequest {

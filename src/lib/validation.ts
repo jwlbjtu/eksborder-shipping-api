@@ -28,41 +28,41 @@ export const validateCarrierAccount = async (
   return { carrierAccount, account };
 };
 
-export const validateCarrier = (
-  account: IAccount,
-  carrier?: string,
-  provider?: string
-): { carrier: string; provider: string | undefined } => {
-  if (!carrier) throw LRes.fieldErr('carrier', '/', errorTypes.MISSING);
-  if (account.carrier !== carrier)
-    throw LRes.fieldErr(
-      'carrierAccount',
-      '/',
-      errorTypes.ACCOUNT_ERROR,
-      account.accountId,
-      carrier
-    );
+// export const validateCarrier = (
+//   account: IAccount,
+//   carrier?: string,
+//   provider?: string
+// ): { carrier: string; provider: string | undefined } => {
+//   if (!carrier) throw LRes.fieldErr('carrier', '/', errorTypes.MISSING);
+//   if (account.carrier !== carrier)
+//     throw LRes.fieldErr(
+//       'carrierAccount',
+//       '/',
+//       errorTypes.ACCOUNT_ERROR,
+//       account.accountId,
+//       carrier
+//     );
 
-  //START !!! TODO: need to remove these PB related logics
-  if (carrier === CARRIERS.PITNEY_BOWES && !provider)
-    throw LRes.fieldErr('provider', '/', errorTypes.MISSING);
-  if (
-    carrier === CARRIERS.PITNEY_BOWES &&
-    provider &&
-    !SUPPORTED_PROVIDERS[carrier].includes(provider)
-  ) {
-    throw LRes.fieldErr(
-      'provider',
-      '/',
-      errorTypes.UNSUPPORTED,
-      provider,
-      carrier
-    );
-  }
-  //END !!! TODO: need to remove these PB related logics
+//   //START !!! TODO: need to remove these PB related logics
+//   if (carrier === CARRIERS.PITNEY_BOWES && !provider)
+//     throw LRes.fieldErr('provider', '/', errorTypes.MISSING);
+//   if (
+//     carrier === CARRIERS.PITNEY_BOWES &&
+//     provider &&
+//     !SUPPORTED_PROVIDERS[carrier].includes(provider)
+//   ) {
+//     throw LRes.fieldErr(
+//       'provider',
+//       '/',
+//       errorTypes.UNSUPPORTED,
+//       provider,
+//       carrier
+//     );
+//   }
+//   //END !!! TODO: need to remove these PB related logics
 
-  return { carrier, provider };
-};
+//   return { carrier, provider };
+// };
 
 export const validateService = (
   account: IAccount,
@@ -70,7 +70,7 @@ export const validateService = (
 ): string => {
   if (!service) throw LRes.fieldErr('service', '/', errorTypes.MISSING);
   const supportedServices = account.services;
-  if (!supportedServices.find((ele) => service === ele.key))
+  if (!supportedServices.find((ele) => service === ele.name))
     throw LRes.fieldErr(
       'carrierAccount',
       '/',

@@ -71,8 +71,8 @@ export const buildFedexLabelReqBody = (
         Units: totalWeight.unitOfMeasure.toUpperCase(),
         Value: roundToTwoDecimal(totalWeight.value)
       },
-      Shipper: ceateFedexShipper(shipmentData.sender),
-      Recipient: ceateFedexShipper(shipmentData.toAddress),
+      Shipper: ceateFedexShipper(shipmentData.sender, undefined),
+      Recipient: ceateFedexShipper(shipmentData.toAddress, rate.serviceId),
       ShippingChargesPayment: {
         PaymentType: 'SENDER',
         Payor: {
@@ -254,7 +254,10 @@ export const processFedexLabelResponse = (
   return { label: labelData, form: formData };
 };
 
-export const ceateFedexShipper = (address: IAddress): FedexShipper => {
+export const ceateFedexShipper = (
+  address: IAddress,
+  service?: string
+): FedexShipper => {
   const contact: FedexContact = {
     PersonName: address.name!,
     CompanyName: address.company,
@@ -269,8 +272,7 @@ export const ceateFedexShipper = (address: IAddress): FedexShipper => {
         : 'XX',
     PostalCode: address.zip,
     CountryCode: address.country,
-    Residential: false
+    Residential: service === 'GROUND_HOME_DELIVERY' ? true : false
   };
-
   return { Contact: contact, Address: fAddress };
 };

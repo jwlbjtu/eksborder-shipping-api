@@ -8,6 +8,89 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 import convert from 'convert-units';
+import customServiceSchema from '../../models/customService.model';
+
+export const checkCustomService = async (
+  shipmentData: IShipping,
+  carrierAccount: IAccount
+) => {
+  if (shipmentData.service && shipmentData.service.key === 'CUSTOM') {
+    const customServiceName = shipmentData.service.name;
+    const customService = await customServiceSchema.findOne({
+      name: customServiceName,
+      carrierId: carrierAccount.carrierRef,
+      active: true
+    });
+    if (!customService) {
+      return '自定义服务不存在';
+    }
+    // validate conditions for all  the carrier services in the custom service
+    // and find the suitable one
+    let suitableService = customService.services
+      .filter((service) => service.isBackup === false)
+      .find((service) => {
+        const serviceConditions = service.conditions;
+        let isSuitable = true;
+        for (const condition of serviceConditions) {
+          const { type, fields } = condition;
+          switch (type) {
+            case 'weight':
+              const weight = shipmentData.packageInfo!.weight;
+              if (fields.get('min')) {
+                const minWeight = convert(fields.get('min'))
+                  .from(fields.get('unit'))
+                  .to(weight.unitOfMeasure);
+                if (weight.value < minWeight) {
+                  isSuitable = false;
+                  break;
+                }
+              }
+              if (fields.get('max')) {
+                const maxWeight = convert(fields.get('max'))
+                  .from(fields.get('unit'))
+                  .to(weight.unitOfMeasure);
+                if (weight.value > maxWeight) {
+                  isSuitable = false;
+                  break;
+                }
+              }
+              break;
+            case 'zipCode':
+              const zipCode = shipmentData.toAddress.zip;
+              console.log(fields);
+              const zipStartChars = fields.get('value').split(',');
+              let isMatch = false;
+              for (const startChar of zipStartChars) {
+                if (zipCode.startsWith(startChar)) {
+                  isMatch = true;
+                  break;
+                }
+              }
+              if (!isMatch) {
+                isSuitable = false;
+              }
+              break;
+            default:
+              break;
+          }
+        }
+        return isSuitable;
+      });
+    if (suitableService) {
+      return suitableService;
+    } else {
+      suitableService = customService.services.find(
+        (service) => service.isBackup === true
+      );
+      if (suitableService) {
+        return suitableService;
+      } else {
+        return '邮寄信息无匹配服务';
+      }
+    }
+  }
+  return;
+};
 
 export const validateShipment = (
   shipmentData: IShipping,

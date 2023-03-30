@@ -14,6 +14,7 @@ import {
   SHIPMENT_UPDATE_FIELDS
 } from '../../lib/constants';
 import {
+  checkCustomService,
   isShipmentInternational,
   validateShipment
 } from '../../lib/carriers/carrier.helper';
@@ -141,6 +142,7 @@ export const purchaseLabel = async (
         return;
       }
       // - validate user balance is greater than mini requirement
+      // TODO: 2023 add flag to skip this validation
       if (!data.isTest && user.balance <= user.minBalance) {
         res.status(400).json({ message: '用户余额低于限定额度' });
         return;
@@ -165,6 +167,21 @@ export const purchaseLabel = async (
           res.status(404).json({ message: '无效账号' });
           return;
         }
+
+        // Check if Custom Service is Used
+        const checkResult = await checkCustomService(
+          shipmentData,
+          carrierAccount
+        );
+        if (checkResult) {
+          if (typeof checkResult === 'string') {
+            res.status(400).json({ message: checkResult });
+            return;
+          }
+          shipmentData.service!.name = checkResult.name;
+          shipmentData.service!.key = checkResult.code;
+        }
+
         const valiResult = validateShipment(shipmentData, carrierAccount);
         if (valiResult) {
           res.status(400).json({ message: valiResult });
@@ -179,6 +196,7 @@ export const purchaseLabel = async (
         if (api) {
           await api.init();
           // call carrierAPI to get price
+          //***** TODO: 2023 START-1 add flag to skip search price *****/
           const result = await api.products(
             shipmentData,
             isShipmentInternational(shipmentData)
@@ -204,15 +222,18 @@ export const purchaseLabel = async (
                 res.status(400).json({ message: '余额不足' });
                 return;
               }
+              //***** TODO: 2023 END-1 add flag to skip search price *****/
               // call carrierAPI to get label
               const labelResponse = await api.label(shipmentData, rate);
               const labels = labelResponse.labels;
               const forms = labelResponse.forms;
               // charge fee from user balance
+              //***** TODO: 2023 START-2 add flag to skip charge fee *****/
               if (!rate.isTest) {
                 const newBalance = roundToTwoDecimal(user.balance - totalRate);
                 user.balance = newBalance;
                 await user.save();
+                //***** TODO: 2023 END-2 add flag to skip charge fee *****/
                 // generate billing record
                 // @ts-expect-error: ignore
                 const billingObj: IBilling = {

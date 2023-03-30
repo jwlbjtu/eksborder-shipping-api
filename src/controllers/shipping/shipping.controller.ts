@@ -23,7 +23,6 @@ import { IBilling, ShipmentData } from '../../types/record.types';
 import { IAccount, IUser } from '../../types/user.types';
 import {
   validateWeight,
-  validateCarrier,
   validateCarrierAccount,
   validateService,
   validateFacility,
@@ -32,6 +31,7 @@ import {
 import { logger } from '../../lib/logger';
 import IdGenerator from '../../lib/utils/IdGenerator';
 import {
+  checkCustomService,
   isShipmentInternational,
   validateShipment
 } from '../../lib/carriers/carrier.helper';
@@ -40,7 +40,7 @@ import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
 import { IManifestObj } from '../../types/shipping.types';
 
 /**
- * Create Shipping Label
+ * Create Shipping Label API
  * @param req
  * @param res
  */
@@ -49,9 +49,10 @@ export const createShippingLabel = async (
   res: Response
 ): Promise<any> => {
   const body = req.body as ILabelRequest;
+  console.log(body);
   const user = req.user as IUser;
-  let carrier: string | undefined = body.carrier || undefined;
-  let provider: string | undefined = body.provider || undefined;
+  let carrier: string | undefined = undefined;
+  const provider: string | undefined = body.provider || undefined;
   let service: string | undefined = body.service || undefined;
   let facility: string | undefined = body.facility || undefined;
   //const parcelType: string | undefined = body.packageDetail.parcelType;
@@ -64,23 +65,20 @@ export const createShippingLabel = async (
   try {
     // * Validate Client Carrier Account
     const checkValues = await validateCarrierAccount(carrierAccount, user);
-    console.log(checkValues);
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
-    // * Validate Carrier Name is Supported
-    const checkedCarrier = validateCarrier(account, carrier, provider);
-    carrier = checkedCarrier.carrier;
-    provider = checkedCarrier.provider;
+    carrier = account.carrier;
     // * Validate Service Name is Supported
     service = validateService(account, service);
     // * Validate Facility Name is Supported
     facility = validateFacility(account, facility);
     // * Validate ParcelType is Supported
     // parcelType = validateParcelType(carrier, service, parcelType);
-    // * Validate Weight Unit of Measure if Supported
+    // * Validate Weight Unit of Measure is Supported
     validateWeight(weight, unitOfMeasure, carrier);
     validateDimensions(dimension, carrier);
     // * Validate User Balance is above the minimum required
+    // TODO: 2023 add flag to skip this validation
     if (!body.test && user.balance <= user.minBalance) {
       throw LRes.invalidParamsErr(400, '用户余额低于限定额度', carrier);
     }
@@ -107,7 +105,7 @@ export const createShippingLabel = async (
       accountName: account.accountName,
       carrierAccount: account.accountId,
       carrier: account.carrier,
-      service: account.services.find((ele) => ele.key === service)!,
+      service: account.services.find((ele) => ele.name === service)!,
       facility: facility,
       sender: {
         name: fromAddress.name,
@@ -142,7 +140,6 @@ export const createShippingLabel = async (
         zip: fromAddress.postalCode,
         phone: fromAddress.phone
       },
-
       shipmentOptions: {
         shipmentDate: new Date()
       },
@@ -175,6 +172,17 @@ export const createShippingLabel = async (
     let shipping = new ShipmentSchema(shipmentData);
     shipping = await shipping.save();
 
+    // Check if Custom Service is Used
+    const checkResult = await checkCustomService(shipping, account);
+    if (checkResult) {
+      if (typeof checkResult === 'string') {
+        res.status(400).json({ message: checkResult });
+        return;
+      }
+      shipping.service!.name = checkResult.name;
+      shipping.service!.key = checkResult.code;
+    }
+
     const valiResult = validateShipment(shipping, account);
     if (valiResult) {
       res.status(400).json({ message: valiResult });
@@ -186,6 +194,7 @@ export const createShippingLabel = async (
     );
     if (api) {
       await api.init();
+      //***** TODO: 2023 START-1 add flag to skip search price *****/
       logger.info('2. Check Package Price');
       const result = await api.products(
         shipping,
@@ -213,15 +222,18 @@ export const createShippingLabel = async (
             res.status(400).json({ message: '余额不足' });
             return;
           }
+          //***** TODO: 2023 END-1 add flag to skip search price *****/
           logger.info('5. Create Shipping label and response data');
           const labelResponse = await api.label(shipping, rate);
           const labels = labelResponse.labels;
           const forms = labelResponse.forms;
           if (!rate.isTest) {
             logger.info('6. Charge the fee from user balance');
+            //***** TODO: 2023 START-2 add flag to skip charge fee *****/
             const newBalance = roundToTwoDecimal(user.balance - totalRate);
             user.balance = newBalance;
             await user.save();
+            //***** TODO: 2023 END-2 add flag to skip charge fee *****/
             logger.info('7. Generate billing record');
             // @ts-expect-error: ignore
             const billingObj: IBilling = {
@@ -279,7 +291,8 @@ export const createShippingLabel = async (
                 format: ele.format
               };
             }),
-            shippingId: shipping.trackingId
+            shippingId: shipping.trackingId,
+            ref: body.ref
           };
           return LRes.resOk(res, labelResult);
         } else {
@@ -364,7 +377,7 @@ export const createManifest = async (
   const user = req.user as IUser;
   const body: IManifestRequest = req.body;
   let carrier: string | undefined = body.carrier || undefined;
-  let provider: string | undefined = body.provider || undefined;
+  const provider: string | undefined = body.provider || undefined;
   let carrierAccount: string | undefined = body.carrierAccount || undefined;
   let facility: string | undefined = body.facility || undefined;
   let account: IAccount | undefined | null = undefined;
@@ -375,10 +388,7 @@ export const createManifest = async (
     const checkValues = await validateCarrierAccount(carrierAccount, user);
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
-    // * Validate Carrier Name is Supported
-    const checkedCarrier = validateCarrier(account, carrier, provider);
-    carrier = checkedCarrier.carrier;
-    provider = checkedCarrier.provider;
+    carrier = account.carrier;
     // * Validate Facility Name is Supported
     facility = validateFacility(account, facility);
   } catch (error) {
