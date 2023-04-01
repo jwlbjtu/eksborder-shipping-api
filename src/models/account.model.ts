@@ -55,7 +55,8 @@ const AccountSchema: Schema = new Schema(
       required: true
     },
     note: { type: String, trim: true },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    payOffline: { type: Boolean, default: false }
   },
   {
     timestamps: true,

@@ -5,6 +5,7 @@ import AccountSchema from '../../models/account.model';
 import { IAccount, IUser } from '../../types/user.types';
 import { logger } from '../logger';
 import {
+  checkCustomService,
   isShipmentInternational,
   validateShipment
 } from '../carriers/carrier.helper';
@@ -52,7 +53,24 @@ class TransformShipmentToProduct extends stream.Transform {
         userRef: this.user._id
       });
       if (!carrierAccount) return undefined;
-      const valiResult = validateShipment(shipment, carrierAccount);
+
+      // Check if Custom Service is Used
+      let isCustomService = false;
+      const checkResult = await checkCustomService(shipment, carrierAccount);
+      if (checkResult) {
+        if (typeof checkResult === 'string') {
+          return undefined;
+        }
+        shipment.service!.name = checkResult.name;
+        shipment.service!.key = checkResult.code;
+        isCustomService = true;
+      }
+
+      const valiResult = validateShipment(
+        shipment,
+        carrierAccount,
+        isCustomService
+      );
       if (valiResult) return undefined;
       const api = CarrierFactory.getCarrierAPI(
         carrierAccount,

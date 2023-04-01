@@ -3,7 +3,8 @@ import {
   FormData,
   ICarrier,
   IShipping,
-  LabelData
+  LabelData,
+  ShippingRate
 } from '../../../types/record.types';
 import { IAccount } from '../../../types/user.types';
 import { CARRIERS, FEDEX_HOSTS } from '../../constants';
@@ -109,7 +110,11 @@ class FedexAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+  ): Promise<{
+    labels: LabelData[];
+    forms: FormData[] | undefined;
+    shippingRate: ShippingRate[];
+  }> => {
     const packageCount = shipmentData.morePackages
       ? shipmentData.morePackages.length + 1
       : 1;
@@ -136,6 +141,7 @@ class FedexAPI implements ICarrierAPI {
       if (shipmentData.morePackages && shipmentData.morePackages.length > 0) {
         let labels = response.labels;
         let forms = response.forms;
+        let shippingCharges = response.shippingRate;
         const tmpList = [];
         for (let i = 0; i < shipmentData.morePackages.length; i += 1) {
           const pack = shipmentData.morePackages[i];
@@ -160,9 +166,10 @@ class FedexAPI implements ICarrierAPI {
             if (!forms) forms = [];
             forms = forms.concat(ele.forms);
           }
+          shippingCharges = shippingCharges.concat(ele.shippingRate);
         });
 
-        return { labels, forms };
+        return { labels, forms, shippingRate: shippingCharges };
       }
 
       return response;

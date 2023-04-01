@@ -13,7 +13,8 @@ import {
   IShipping,
   LabelData,
   PackageInfo,
-  FormData
+  FormData,
+  ShippingRate
 } from '../../../types/record.types';
 import { generateAuthentication } from './fedex.helpers';
 import path from 'path';
@@ -203,7 +204,11 @@ export const callFedExLanelEndpoint = async (
   apiUrl: string,
   reqBody: FedexLabelReqBody,
   isTest: boolean
-): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+): Promise<{
+  labels: LabelData[];
+  forms: FormData[] | undefined;
+  shippingRate: ShippingRate[];
+}> => {
   const options = {
     endpoint: `${apiUrl}${endpointPath}`
   };
@@ -213,14 +218,19 @@ export const callFedExLanelEndpoint = async (
   const processedResponse = processFedexLabelResponse(response[0], isTest);
   return {
     labels: [processedResponse.label],
-    forms: processedResponse.form ? [processedResponse.form] : undefined
+    forms: processedResponse.form ? [processedResponse.form] : undefined,
+    shippingRate: [processedResponse.shippingRate]
   };
 };
 
 export const processFedexLabelResponse = (
   response: FedexLabelResponse,
   isTest: boolean
-): { label: LabelData; form: FormData | undefined } => {
+): {
+  label: LabelData;
+  form: FormData | undefined;
+  shippingRate: ShippingRate;
+} => {
   const severity = response.HighestSeverity;
   if (severity === 'ERROR') {
     const notifications = response.Notifications;
@@ -251,7 +261,15 @@ export const processFedexLabelResponse = (
     };
   }
 
-  return { label: labelData, form: formData };
+  const chargeAmount =
+    response.CompletedShipmentDetail.ShipmentRating.ShipmentRateDetails[0]
+      .TotalNetCharge;
+  const shippingRate = {
+    rate: chargeAmount.Amount,
+    currency: chargeAmount.Currency
+  };
+
+  return { label: labelData, form: formData, shippingRate };
 };
 
 export const ceateFedexShipper = (

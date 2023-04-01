@@ -217,17 +217,19 @@ export interface UspsDomesticResponseObj {
   RDC: string;
   Postage: number;
   ExtraServices?: {
-    ExtraService: {
-      ServiceID: string;
-      ServiceName: string;
-      Price: number;
-    };
+    ExtraService: ExtraService | ExtraService[];
   };
   Zone: string;
   CarrierRoute: string;
   PermitHolderName: string;
   InductionType: string;
   LogMessage: string;
+}
+
+export interface ExtraService {
+  ServiceID: string;
+  ServiceName: string;
+  Price: number;
 }
 
 export interface USPSIntlPMExpressLabelReqBody {

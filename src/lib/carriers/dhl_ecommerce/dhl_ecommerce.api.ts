@@ -28,7 +28,8 @@ import {
   ICarrier,
   IFacility,
   IShipping,
-  LabelData
+  LabelData,
+  ShippingRate
 } from '../../../types/record.types';
 import { IAccount, IUser } from '../../../types/user.types';
 import CarrierSchema from '../../../models/carrier.model';
@@ -226,7 +227,11 @@ class DhlEcommerceAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+  ): Promise<{
+    labels: LabelData[];
+    forms: FormData[] | undefined;
+    shippingRate: ShippingRate[];
+  }> => {
     if (shipmentData.service?.key === 'FLAT') {
       // Generate tracking number
       const trackingNumber = trackingNumberGenerator();
@@ -249,7 +254,11 @@ class DhlEcommerceAPI implements ICarrierAPI {
         service: rate.service,
         tracking: trackingNumber
       };
-      return { labels: [result], forms: undefined };
+      return {
+        labels: [result],
+        forms: undefined,
+        shippingRate: [{ rate: 0, currency: 'USD' }]
+      };
     } else {
       const isInternational = isShipmentInternational(shipmentData);
       const labelReqBody = buildDhlEcommerceLabelReqBody(
@@ -271,7 +280,11 @@ class DhlEcommerceAPI implements ICarrierAPI {
           shipmentData,
           this.isTest
         );
-        return { labels: response, forms: undefined };
+        return {
+          labels: response,
+          forms: undefined,
+          shippingRate: [{ rate: 0, currency: 'USD' }]
+        };
       } catch (error) {
         logger.error(util.inspect(error.response.data, true, null));
         throw new Error(error.response.data.title);

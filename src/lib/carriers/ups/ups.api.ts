@@ -14,6 +14,7 @@ import {
   ICarrier,
   IShipping,
   LabelData,
+  ShippingRate,
   ThirdPartySummary
 } from '../../../types/record.types';
 import { IAccount } from '../../../types/user.types';
@@ -152,7 +153,11 @@ class UpsAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+  ): Promise<{
+    labels: LabelData[];
+    forms: FormData[] | undefined;
+    shippingRate: ShippingRate[];
+  }> => {
     const labelReqBody = await buildUpsLabelReqBody(
       shipmentData,
       this.credential.accountNum,

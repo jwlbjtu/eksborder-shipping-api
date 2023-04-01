@@ -12,7 +12,8 @@ import {
   FormData,
   ICarrier,
   IShipping,
-  LabelData
+  LabelData,
+  ShippingRate
 } from '../../../types/record.types';
 import CarrierSchema from '../../../models/carrier.model';
 import { logger } from '../../logger';
@@ -99,7 +100,11 @@ class UspsAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+  ): Promise<{
+    labels: LabelData[];
+    forms: FormData[] | undefined;
+    shippingRate: ShippingRate[];
+  }> => {
     const isInternational = isShipmentInternational(shipmentData);
     const labelReqBody = buildUspsLabelReqBody(
       shipmentData,

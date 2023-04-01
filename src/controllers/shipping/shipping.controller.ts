@@ -38,6 +38,7 @@ import {
 import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
 import { IManifestObj } from '../../types/shipping.types';
+import { Rate } from '../../types/carriers/carrier';
 
 /**
  * Create Shipping Label API
@@ -52,6 +53,7 @@ export const createShippingLabel = async (
   console.log(body);
   const user = req.user as IUser;
   let carrier: string | undefined = undefined;
+  let chargeFee = true;
   const provider: string | undefined = body.provider || undefined;
   let service: string | undefined = body.service || undefined;
   let facility: string | undefined = body.facility || undefined;
@@ -68,6 +70,7 @@ export const createShippingLabel = async (
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
     carrier = account.carrier;
+    chargeFee = !account.payOffline;
     // * Validate Service Name is Supported
     service = validateService(account, service);
     // * Validate Facility Name is Supported
@@ -78,8 +81,7 @@ export const createShippingLabel = async (
     validateWeight(weight, unitOfMeasure, carrier);
     validateDimensions(dimension, carrier);
     // * Validate User Balance is above the minimum required
-    // TODO: 2023 add flag to skip this validation
-    if (!body.test && user.balance <= user.minBalance) {
+    if (chargeFee && !body.test && user.balance <= user.minBalance) {
       throw LRes.invalidParamsErr(400, '用户余额低于限定额度', carrier);
     }
     if (user.uploading) {
@@ -105,7 +107,7 @@ export const createShippingLabel = async (
       accountName: account.accountName,
       carrierAccount: account.accountId,
       carrier: account.carrier,
-      service: account.services.find((ele) => ele.name === service)!,
+      service: { ...account.services.find((ele) => ele.name === service)! },
       facility: facility,
       sender: {
         name: fromAddress.name,
@@ -173,6 +175,7 @@ export const createShippingLabel = async (
     shipping = await shipping.save();
 
     // Check if Custom Service is Used
+    let isCustomService = false;
     const checkResult = await checkCustomService(shipping, account);
     if (checkResult) {
       if (typeof checkResult === 'string') {
@@ -181,9 +184,10 @@ export const createShippingLabel = async (
       }
       shipping.service!.name = checkResult.name;
       shipping.service!.key = checkResult.code;
+      isCustomService = true;
     }
 
-    const valiResult = validateShipment(shipping, account);
+    const valiResult = validateShipment(shipping, account, isCustomService);
     if (valiResult) {
       res.status(400).json({ message: valiResult });
     }
@@ -194,112 +198,134 @@ export const createShippingLabel = async (
     );
     if (api) {
       await api.init();
-      //***** TODO: 2023 START-1 add flag to skip search price *****/
-      logger.info('2. Check Package Price');
-      const result = await api.products(
-        shipping,
-        isShipmentInternational(shipping)
-      );
-      if (typeof result === 'string') {
-        res.status(400).json({ message: result });
-        return;
-      } else if (result.errors && result.errors.length > 0) {
-        res.status(500).json({ message: result.errors[0] });
-        return;
-      } else {
-        const rate = result.rates[0];
-        if (rate.rate && rate.currency) {
-          logger.info('3. Apply fee on top of the price to get total price');
-          const fee = computeFee(
-            shipping,
-            rate.rate,
-            rate.currency,
-            account.rates
-          );
-          const totalRate = roundToTwoDecimal(rate.rate + fee);
-          logger.info('4. Check total price against user balance');
-          if (!rate.isTest && user.balance < totalRate) {
-            res.status(400).json({ message: '余额不足' });
-            return;
-          }
-          //***** TODO: 2023 END-1 add flag to skip search price *****/
-          logger.info('5. Create Shipping label and response data');
-          const labelResponse = await api.label(shipping, rate);
-          const labels = labelResponse.labels;
-          const forms = labelResponse.forms;
-          if (!rate.isTest) {
-            logger.info('6. Charge the fee from user balance');
-            //***** TODO: 2023 START-2 add flag to skip charge fee *****/
-            const newBalance = roundToTwoDecimal(user.balance - totalRate);
-            user.balance = newBalance;
-            await user.save();
-            //***** TODO: 2023 END-2 add flag to skip charge fee *****/
-            logger.info('7. Generate billing record');
-            // @ts-expect-error: ignore
-            const billingObj: IBilling = {
-              userRef: user._id,
-              description: `${rate.carrier}, ${rate.service}, ${labels[0].tracking}`,
-              account: account.accountName,
-              total: totalRate,
-              balance: newBalance,
-              currency: rate.currency || Currency.USD,
-              details: {
-                shippingCost: {
-                  amount: rate.rate,
-                  currency: rate.currency || Currency.USD
-                },
-                fee: {
-                  amount: fee,
-                  currency: rate.currency || Currency.USD
-                }
-              },
-              addFund: false
-            };
-            await new BillingSchema(billingObj).save();
-          }
-          logger.info('8. Update shipment record');
-          if (!shipping.labels) shipping.labels = [];
-          const newLabels = shipping.labels.concat(labels);
-          shipping.labels = newLabels;
-          if (forms) {
-            if (!shipping.forms) shipping.forms = [];
-            const newForms = shipping.forms.concat(forms);
-            shipping.forms = newForms;
-          }
-          shipping.trackingId = labels[0].tracking;
-          if (!body.test) {
-            shipping.status = ShipmentStatus.FULFILLED;
-            shipping.rate = {
-              amount: totalRate,
-              currency: rate.currency || Currency.USD
-            };
-          }
-          await shipping.save();
-          logger.info('9. Return Label Data');
-          const labelResult: ILabelResponse = {
-            timestamp: new Date(),
-            carrier: shipping.carrier!,
-            service: shipping.service!.name,
-            facility: shipping.facility,
-            carrierAccount: shipping.carrierAccount!,
-            labels: shipping.labels.map((ele) => {
-              return {
-                createdOn: new Date(),
-                trackingId: ele.tracking,
-                labelData: ele.data,
-                encodeType: ele.encodeType,
-                format: ele.format
-              };
-            }),
-            shippingId: shipping.trackingId,
-            ref: body.ref
-          };
-          return LRes.resOk(res, labelResult);
-        } else {
-          res.status(400).json({ message: '获取邮寄费失败' });
+      logger.info(chargeFee ? '2. Check Package Price' : '2. Skip Price Check');
+      let result;
+      if (chargeFee) {
+        result = await api.products(
+          shipping,
+          isShipmentInternational(shipping)
+        );
+        if (typeof result === 'string') {
+          res.status(400).json({ message: result });
+          return;
+        } else if (result.errors && result.errors.length > 0) {
+          res.status(500).json({ message: result.errors[0] });
           return;
         }
       }
+
+      let rate: Rate;
+      if (chargeFee && result && result.rates) {
+        rate = result.rates[0];
+      } else {
+        rate = {
+          carrier,
+          service: shipping.service!.name,
+          serviceId: shipping.service!.key,
+          isTest: body.test,
+          clientCarrierId: account.accountId
+        };
+      }
+
+      if (chargeFee && (!rate.rate || !rate.currency)) {
+        res.status(400).json({ message: '获取邮寄费失败' });
+        return;
+      }
+
+      let totalRate = 0,
+        fee = 0;
+      if (chargeFee) {
+        logger.info('3. Apply fee on top of the price to get total price');
+        fee = computeFee(shipping, rate.rate!, rate.currency, account.rates);
+        totalRate = roundToTwoDecimal(rate.rate! + fee);
+        logger.info('4. Check total price against user balance');
+        if (!rate.isTest && user.balance < totalRate) {
+          res.status(400).json({ message: '余额不足' });
+          return;
+        }
+      }
+      logger.info('5. Create Shipping label and response data');
+      const labelResponse = await api.label(shipping, rate);
+      const labels = labelResponse.labels;
+      const forms = labelResponse.forms;
+      if (!rate.isTest) {
+        let newBalance = user.balance;
+        if (chargeFee) {
+          logger.info('6. Charge the fee from user balance');
+          newBalance = roundToTwoDecimal(user.balance - totalRate);
+          user.balance = newBalance;
+          await user.save();
+        } else {
+          const shippingRate = labelResponse.shippingRate;
+          const shippingCharge = shippingRate.reduce((acc, cur) => {
+            return acc + cur.rate;
+          }, 0);
+          const shippingChargeCurrency = shippingRate[0].Currency;
+          totalRate = shippingCharge;
+          rate.rate = shippingCharge;
+          rate.currency = shippingChargeCurrency;
+        }
+        logger.info('7. Generate billing record');
+        //@ts-ignore
+        const billingObj: IBilling = {
+          userRef: user._id,
+          description: `${rate.carrier}, ${rate.service}, ${labels[0].tracking}`,
+          account: account.accountName,
+          total: totalRate,
+          balance: newBalance,
+          currency: rate.currency || Currency.USD,
+          details: {
+            shippingCost: {
+              amount: rate.rate!,
+              currency: rate.currency || Currency.USD
+            },
+            fee: {
+              amount: fee,
+              currency: rate.currency || Currency.USD
+            }
+          },
+          addFund: false
+        };
+        await new BillingSchema(billingObj).save();
+      }
+      logger.info('8. Update shipment record');
+      if (!shipping.labels) shipping.labels = [];
+      const newLabels = shipping.labels.concat(labels);
+      shipping.labels = newLabels;
+      if (forms) {
+        if (!shipping.forms) shipping.forms = [];
+        const newForms = shipping.forms.concat(forms);
+        shipping.forms = newForms;
+      }
+      shipping.trackingId = labels[0].tracking;
+      if (!body.test) {
+        shipping.status = ShipmentStatus.FULFILLED;
+        shipping.rate = {
+          amount: totalRate,
+          currency: rate.currency || Currency.USD
+        };
+      }
+      await shipping.save();
+      logger.info('9. Return Label Data');
+      const labelResult: ILabelResponse = {
+        timestamp: new Date(),
+        carrier: shipping.carrier!,
+        service: shipping.service!.name,
+        facility: shipping.facility,
+        carrierAccount: shipping.carrierAccount!,
+        labels: shipping.labels.map((ele) => {
+          return {
+            createdOn: new Date(),
+            trackingId: ele.tracking,
+            labelData: ele.data,
+            encodeType: ele.encodeType,
+            format: ele.format
+          };
+        }),
+        shippingId: shipping.trackingId,
+        ref: body.ref
+      };
+      return LRes.resOk(res, labelResult);
     } else {
       res.status(500).json({ message: 'Failed to create carrier api' });
       return;

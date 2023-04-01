@@ -314,3 +314,8 @@ export interface ICustomService extends Document {
   services: ISubService[];
   active: boolean;
 }
+
+export interface ShippingRate {
+  rate: number;
+  currency: Currency | string;
+}

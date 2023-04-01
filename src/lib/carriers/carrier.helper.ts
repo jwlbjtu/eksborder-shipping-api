@@ -94,7 +94,8 @@ export const checkCustomService = async (
 
 export const validateShipment = (
   shipmentData: IShipping,
-  carrierAccount: IAccount | undefined
+  carrierAccount: IAccount | undefined,
+  isCustomService: boolean
 ): string | undefined => {
   if (!carrierAccount) return '账号信息错误';
   // - carrierName matches carrier account
@@ -106,10 +107,11 @@ export const validateShipment = (
   }
   // - service is supported by carrier account
   if (
-    !shipmentData.service ||
-    !carrierAccount.services
-      .map((ele) => ele.key)
-      .includes(shipmentData.service.key)
+    !isCustomService &&
+    (!shipmentData.service ||
+      !carrierAccount.services
+        .map((ele) => ele.key)
+        .includes(shipmentData.service.key))
   ) {
     return '所选服务不支持';
   }
