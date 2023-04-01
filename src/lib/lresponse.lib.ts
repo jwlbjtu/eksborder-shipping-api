@@ -23,11 +23,14 @@ class LRes {
         message: data
       };
     }
+    if (typeof data.message === 'object') {
+      data = { message: data.message.message };
+    }
     const formatData: IFormatDataErr = {
       error: data,
       status: status
     };
-    res.status(status).send(formatData);
+    res.status(status).json(formatData);
   };
 
   public invalidParamsErr = (

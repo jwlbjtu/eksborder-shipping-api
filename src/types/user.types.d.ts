@@ -118,6 +118,7 @@ export interface IAccount extends Document {
   userRef: any;
   note?: string;
   isActive: boolean;
+  payOffline: boolean;
 }
 
 export interface ClientAccount {

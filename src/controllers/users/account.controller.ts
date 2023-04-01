@@ -78,7 +78,8 @@ export const updateClientCarrierAccount = async (
     'thirdpartyPrice',
     'carrierRef',
     'note',
-    'isActive'
+    'isActive',
+    'payOffline'
   ];
   try {
     const updatedAccount = await Account.findById(data.id);

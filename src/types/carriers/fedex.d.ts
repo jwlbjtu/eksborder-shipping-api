@@ -152,17 +152,17 @@ export interface ShipmentRateDetail {
   FuelSurchargePercent: number;
   TotalBillingWeight: { Units: string; Value: number };
   TotalBaseCharge: { Currency: string; Amount: number };
-  TotalFreightDiscounts: { Currency: number; Amount: number };
-  TotalNetFreight: { Currency: number; Amount: number };
-  TotalSurcharges: { Currency: number; Amount: number };
-  TotalNetFedExCharge: { Currency: number; Amount: number };
-  TotalTaxes: { Currency: number; Amount: number };
-  TotalNetCharge: { Currency: number; Amount: number };
-  TotalRebates: { Currency: number; Amount: number };
-  TotalDutiesAndTaxes: { Currency: number; Amount: number };
-  TotalAncillaryFeesAndTaxes: { Currency: number; Amount: number };
-  TotalDutiesTaxesAndFees: { Currency: number; Amount: number };
-  TotalNetChargeWithDutiesAndTaxes: { Currency: number; Amount: number };
+  TotalFreightDiscounts: { Currency: string; Amount: number };
+  TotalNetFreight: { Currency: string; Amount: number };
+  TotalSurcharges: { Currency: string; Amount: number };
+  TotalNetFedExCharge: { Currency: string; Amount: number };
+  TotalTaxes: { Currency: string; Amount: number };
+  TotalNetCharge: { Currency: string; Amount: number };
+  TotalRebates: { Currency: string; Amount: number };
+  TotalDutiesAndTaxes: { Currency: string; Amount: number };
+  TotalAncillaryFeesAndTaxes: { Currency: string; Amount: number };
+  TotalDutiesTaxesAndFees: { Currency: string; Amount: number };
+  TotalNetChargeWithDutiesAndTaxes: { Currency: string; Amount: number };
   Surcharges: Surcharge[];
 }
 
@@ -336,6 +336,7 @@ export interface CompletedShipmentDetail {
   MasterTrackingId: MasterTrackingId;
   ServiceDescription: ServiceDescription;
   ShipmentDocuments?: ShipmentDocument[];
+  ShipmentRating: ShipmentRating;
   CompletedPackageDetails: CompletedPackageDetail[];
 }
 
@@ -368,4 +369,13 @@ export interface FedexLabelData {
 export interface FedexLabelPart {
   DocumentPartSequenceNumber: string;
   Image: string;
+}
+
+export interface ChargeAmount {
+  Currency: string;
+  Amount: number;
+}
+
+export interface ShipmentRating {
+  ShipmentRateDetails: ShipmentRateDetail[];
 }

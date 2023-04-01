@@ -17,7 +17,12 @@ import fastParser from 'fast-xml-parser';
 import util from 'util';
 import _ from 'lodash';
 import dayjs from 'dayjs';
-import { FormData, IShipping, LabelData } from '../../../types/record.types';
+import {
+  FormData,
+  IShipping,
+  LabelData,
+  ShippingRate
+} from '../../../types/record.types';
 import { Rate } from '../../../types/carriers/carrier';
 import {
   ImageParameters,
@@ -393,7 +398,11 @@ export const callUspsLabelEndpoint = async (
     | USPSIntlPMExpressLabelReqBody
     | UspsIntlPriorityMailLabelRequestBody,
   isTest: boolean
-): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+): Promise<{
+  labels: LabelData[];
+  forms: FormData[] | undefined;
+  shippingRate: ShippingRate[];
+}> => {
   let api = isTest
     ? USPS_LABEL_TEST_APIS.US_DOMESTIC
     : USPS_LABEL_APIS.US_DOMESTIC;
@@ -438,8 +447,29 @@ export const callUspsLabelEndpoint = async (
         encodeType: 'BASE64',
         isTest: isTest
       };
+
+      let postage = responseObj.Postage;
+      const extraServices = responseObj.ExtraServices?.ExtraService;
+      if (extraServices) {
+        if (Array.isArray(extraServices)) {
+          extraServices.forEach((item) => {
+            postage += item.Price;
+          });
+        } else {
+          postage += extraServices.Price;
+        }
+      }
+      const shippingRate = {
+        rate: postage,
+        currency: 'USD'
+      };
+
       logger.info('Return data from USPS [Label] endpoint');
-      return { labels: [labelResponse], forms: undefined };
+      return {
+        labels: [labelResponse],
+        forms: undefined,
+        shippingRate: [shippingRate]
+      };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));
       throw new Error(uspsLabelResponse.Error?.Description);
@@ -527,7 +557,16 @@ export const callUspsLabelEndpoint = async (
         });
       }
 
-      return { labels: labelData, forms: undefined };
+      const shippingRate = {
+        rate: responseObj.Postage,
+        currency: 'USD'
+      };
+
+      return {
+        labels: labelData,
+        forms: undefined,
+        shippingRate: [shippingRate]
+      };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));
       throw new Error(uspsLabelResponse.Error?.Description);
@@ -614,7 +653,17 @@ export const callUspsLabelEndpoint = async (
           isTest
         });
       }
-      return { labels: labelData, forms: undefined };
+
+      const shippingRate = {
+        rate: responseObj.Postage,
+        currency: 'USD'
+      };
+
+      return {
+        labels: labelData,
+        forms: undefined,
+        shippingRate: [shippingRate]
+      };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));
       throw new Error(uspsLabelResponse.Error?.Description);

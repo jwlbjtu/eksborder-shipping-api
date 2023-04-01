@@ -139,15 +139,12 @@ export const updateSelfPassword = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const user = req.user;
+  const user: any = req.user;
   const data = req.body;
   try {
-    // @ts-expect-error: ignore
     const isMatch = await user.comparePassword(data.password);
     if (isMatch) {
-      // @ts-expect-error: ignore
       user.password = data['new-password'];
-      // @ts-expect-error: ignore
       await user.save();
       LRes.resOk(res, user);
     } else {

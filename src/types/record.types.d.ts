@@ -293,3 +293,29 @@ export interface IPriceTable extends Document {
   rates: FeeRate[];
   carrierRef: string;
 }
+
+export interface ICustomServiceCondition {
+  type: string;
+  fields: { [key: string]: any };
+}
+
+export interface ISubService extends Document {
+  name: string;
+  code: string;
+  conditions: ICustomServiceCondition[];
+  isBackup: boolean;
+}
+
+export interface ICustomService extends Document {
+  id: Types.ObjectId;
+  name: string;
+  description?: string;
+  carrierId: Types.ObjectId;
+  services: ISubService[];
+  active: boolean;
+}
+
+export interface ShippingRate {
+  rate: number;
+  currency: Currency | string;
+}

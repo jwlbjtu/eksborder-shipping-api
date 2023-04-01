@@ -13,7 +13,11 @@ export interface ICarrierAPI {
   label: (
     shipmentData: IShipping,
     rate: Rate
-  ) => Promise<{ labels: LabelData[]; forms: FormData[] | undefined }>;
+  ) => Promise<{
+    labels: LabelData[];
+    forms: FormData[] | undefined;
+    shippingRate: ShippingRate[];
+  }>;
   createManifest?: (
     shipments: IShipping[],
     user: IUser

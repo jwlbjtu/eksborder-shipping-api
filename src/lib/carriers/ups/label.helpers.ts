@@ -15,7 +15,8 @@ import {
   FormData,
   IShipping,
   IThirdPartyAccount,
-  LabelData
+  LabelData,
+  ShippingRate
 } from '../../../types/record.types';
 import {
   InternationalForms,
@@ -212,12 +213,27 @@ export const callUpsLabelEndpoint = async (
   headers: Record<string, string>,
   serviceId: string,
   isTest: boolean
-): Promise<{ labels: LabelData[]; forms: FormData[] | undefined }> => {
+): Promise<{
+  labels: LabelData[];
+  forms: FormData[] | undefined;
+  shippingRate: ShippingRate[];
+}> => {
   const url = apiUrl + shipEndpoint;
   const response = await axios.post(url, labelReqBody, { headers: headers });
 
   const upsLabelResponse: UPSLabelResponse = response.data;
   logger.info(util.inspect(upsLabelResponse, true, null));
+
+  const shippingCharges =
+    upsLabelResponse.ShipmentResponse.ShipmentResults.ShipmentCharges
+      .TotalCharges;
+  const shippingRate: ShippingRate[] = [
+    {
+      rate: parseFloat(shippingCharges.MonetaryValue),
+      currency: shippingCharges.CurrencyCode
+    }
+  ];
+
   const upsPackage =
     upsLabelResponse.ShipmentResponse.ShipmentResults.PackageResults;
   if (Array.isArray(upsPackage)) {
@@ -250,7 +266,7 @@ export const callUpsLabelEndpoint = async (
     }
 
     logger.info('Return data from UPS [Label] endpoint');
-    return { labels: result, forms };
+    return { labels: result, forms, shippingRate };
   } else {
     const result: LabelData[] = [
       {
@@ -277,6 +293,6 @@ export const callUpsLabelEndpoint = async (
     }
 
     logger.info('Return data from UPS [Label] endpoint');
-    return { labels: result, forms };
+    return { labels: result, forms, shippingRate };
   }
 };
