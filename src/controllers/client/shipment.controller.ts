@@ -206,8 +206,21 @@ export const purchaseLabel = async (
 
         if (api) {
           await api.init();
-          // call carrierAPI to get price
-          //***** TODO: 2023 START-1 add flag to skip search price *****/
+
+          if (api.validateAddress) {
+            const result = await api.validateAddress(
+              shipmentData.toAddress,
+              true
+            ); // TDOD: replace with data.isTest
+            if (!result) {
+              res.status(400).json({
+                message:
+                  'Destination address validation failed, please double check your address'
+              });
+              return;
+            }
+          }
+
           let result;
           if (chargeFee) {
             result = await api.products(
@@ -257,13 +270,11 @@ export const purchaseLabel = async (
               return;
             }
           }
-          //***** TODO: 2023 END-1 add flag to skip search price *****/
           // call carrierAPI to get label
           const labelResponse = await api.label(shipmentData, rate);
           const labels = labelResponse.labels;
           const forms = labelResponse.forms;
           // charge fee from user balance
-          //***** TODO: 2023 START-2 add flag to skip charge fee *****/
           if (!rate.isTest) {
             let newBalance = user.balance;
             if (chargeFee) {
@@ -280,7 +291,6 @@ export const purchaseLabel = async (
               rate.rate = shippingCharge;
               rate.currency = shippingChargeCurrency;
             }
-            //***** TODO: 2023 END-2 add flag to skip charge fee *****/
             // generate billing record
             // @ts-expect-error: ignore
             const billingObj: IBilling = {

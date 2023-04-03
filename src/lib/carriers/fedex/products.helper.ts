@@ -50,7 +50,7 @@ export const buildFedexProductReqBody = (
       ServiceType: shipment.service?.key,
       PackagingType: 'YOUR_PACKAGING',
       Shipper: ceateFedexShipper(shipment.sender),
-      Recipient: ceateFedexShipper(shipment.toAddress, shipment.service?.key),
+      Recipient: ceateFedexShipper(shipment.toAddress),
       ShippingChargesPayment: {
         PaymentType: 'SENDER'
       }

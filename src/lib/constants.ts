@@ -397,7 +397,21 @@ export const UPS_SERVICES = {
 //*******************************//
 export const FEDEX_HOSTS = {
   FEDEX_TEST: 'https://wsbeta.fedex.com',
-  FEDEX_PROD: 'https://ws.fedex.com'
+  FEDEX_PROD: 'https://ws.fedex.com',
+  FEDEX_REST_TEST: 'https://apis-sandbox.fedex.com',
+  FEDEX_REST_PROD: 'https://apis.fedex.com'
+};
+
+export const getFedexHost = (isTest: boolean): string => {
+  let fedexUrl = process.env.FEDEX_REST_PROD
+    ? process.env.FEDEX_REST_PROD
+    : FEDEX_HOSTS.FEDEX_REST_PROD;
+  if (isTest) {
+    fedexUrl = process.env.FEDEX_REST_TEST
+      ? process.env.FEDEX_REST_TEST
+      : FEDEX_HOSTS.FEDEX_REST_TEST;
+  }
+  return fedexUrl;
 };
 
 export const PARCELSELITE_NAME = 'ParcelsElite';
