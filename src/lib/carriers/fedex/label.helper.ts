@@ -22,7 +22,7 @@ import { isShipmentInternational } from '../carrier.helper';
 import { createClientAsync } from 'soap';
 import util from 'util';
 import { logger } from '../../logger';
-import { CARRIERS, Country } from '../../constants';
+import { CARRIERS, Country, CURRENCY_LIST } from '../../constants';
 import { IAddress } from '../../../types/shipping.types';
 import {
   computeTotalShipmentWeight,
@@ -72,8 +72,8 @@ export const buildFedexLabelReqBody = (
         Units: totalWeight.unitOfMeasure.toUpperCase(),
         Value: roundToTwoDecimal(totalWeight.value)
       },
-      Shipper: ceateFedexShipper(shipmentData.sender, undefined),
-      Recipient: ceateFedexShipper(shipmentData.toAddress, rate.serviceId),
+      Shipper: ceateFedexShipper(shipmentData.sender),
+      Recipient: ceateFedexShipper(shipmentData.toAddress),
       ShippingChargesPayment: {
         PaymentType: 'SENDER',
         Payor: {
@@ -260,22 +260,24 @@ export const processFedexLabelResponse = (
       encodeType: 'BASE64'
     };
   }
-
-  const chargeAmount =
-    response.CompletedShipmentDetail.ShipmentRating.ShipmentRateDetails[0]
-      .TotalNetCharge;
-  const shippingRate = {
-    rate: chargeAmount.Amount,
-    currency: chargeAmount.Currency
-  };
-
-  return { label: labelData, form: formData, shippingRate };
+  const ShipmentRating = response.CompletedShipmentDetail.ShipmentRating;
+  if (ShipmentRating) {
+    const chargeAmount = ShipmentRating.ShipmentRateDetails[0].TotalNetCharge;
+    const shippingRate = {
+      rate: chargeAmount.Amount,
+      currency: chargeAmount.Currency
+    };
+    return { label: labelData, form: formData, shippingRate };
+  } else {
+    const shippingRate = {
+      rate: 0,
+      currency: 'USD'
+    };
+    return { label: labelData, form: formData, shippingRate };
+  }
 };
 
-export const ceateFedexShipper = (
-  address: IAddress,
-  service?: string
-): FedexShipper => {
+export const ceateFedexShipper = (address: IAddress): FedexShipper => {
   const contact: FedexContact = {
     PersonName: address.name!,
     CompanyName: address.company,
@@ -290,7 +292,7 @@ export const ceateFedexShipper = (
         : 'XX',
     PostalCode: address.zip,
     CountryCode: address.country,
-    Residential: service === 'GROUND_HOME_DELIVERY' ? true : false
+    Residential: address.isResidential ? address.isResidential : false
   };
   return { Contact: contact, Address: fAddress };
 };

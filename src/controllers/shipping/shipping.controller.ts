@@ -39,6 +39,7 @@ import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
 import { IManifestObj } from '../../types/shipping.types';
 import { Rate } from '../../types/carriers/carrier';
+import { addressValidation } from '../../lib/carriers/fedex/rest/address.helper';
 
 /**
  * Create Shipping Label API
@@ -198,6 +199,19 @@ export const createShippingLabel = async (
     );
     if (api) {
       await api.init();
+
+      if (api.validateAddress) {
+        logger.info('0. Validate Address');
+        const result = await api.validateAddress(shipping.toAddress, true); // TODO: replace with body.test
+        if (!result) {
+          res.status(400).json({
+            message:
+              'Destination address validation failed, please double check your address'
+          });
+          return;
+        }
+      }
+
       logger.info(chargeFee ? '2. Check Package Price' : '2. Skip Price Check');
       let result;
       if (chargeFee) {

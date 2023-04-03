@@ -161,6 +161,7 @@ export interface IAddress extends Record<string, any> {
   city: string;
   state?: string;
   zip: string;
+  isResidential?: boolean;
 }
 
 export interface IPackageDetail {

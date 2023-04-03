@@ -17,6 +17,8 @@ import {
 } from './products.helper';
 import { buildFedexLabelReqBody, callFedExLanelEndpoint } from './label.helper';
 import { FedexCredential } from '../../../types/carriers/fedex';
+import { addressValidation } from './rest/address.helper';
+import { IAddress } from '../../../types/shipping.types';
 
 class FedexAPI implements ICarrierAPI {
   private isTest: boolean;
@@ -184,6 +186,13 @@ class FedexAPI implements ICarrierAPI {
         throw new Error(error.message);
       }
     }
+  };
+
+  public validateAddress = async (
+    address: IAddress,
+    isTest: boolean
+  ): Promise<boolean> => {
+    return await addressValidation(address, isTest);
   };
 }
 
