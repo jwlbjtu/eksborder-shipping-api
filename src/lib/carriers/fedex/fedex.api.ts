@@ -139,7 +139,6 @@ class FedexAPI implements ICarrierAPI {
         masterLabelReqBody,
         this.isTest
       );
-
       if (shipmentData.morePackages && shipmentData.morePackages.length > 0) {
         let labels = response.labels;
         let forms = response.forms;
@@ -170,7 +169,6 @@ class FedexAPI implements ICarrierAPI {
           }
           shippingCharges = shippingCharges.concat(ele.shippingRate);
         });
-
         return { labels, forms, shippingRate: shippingCharges };
       }
 

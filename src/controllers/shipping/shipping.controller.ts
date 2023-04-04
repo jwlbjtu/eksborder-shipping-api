@@ -172,6 +172,33 @@ export const createShippingLabel = async (
       manifested: false,
       userRef: user._id
     };
+
+    if (body.additionalPackages && body.additionalPackages.length > 0) {
+      shipmentData.morePackages = body.additionalPackages.map((ele) => {
+        return {
+          packageType: 'PKG',
+          weight: {
+            value: convert(ele.weight.value)
+              .from(ele.weight.unitOfMeasure.toLowerCase() as WeightUnit)
+              .to(WeightUnit.LB),
+            unitOfMeasure: WeightUnit.LB
+          },
+          dimentions: {
+            length: convert(ele.dimension?.length)
+              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            width: convert(ele.dimension?.width)
+              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            height: convert(ele.dimension?.height)
+              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            unitOfMeasure: DistanceUnit.IN
+          }
+        };
+      });
+    }
+
     let shipping = new ShipmentSchema(shipmentData);
     shipping = await shipping.save();
 

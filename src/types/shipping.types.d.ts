@@ -33,6 +33,7 @@ export interface ILabelRequest {
   rate: { currency: string };
   test: boolean;
   ref?: string;
+  additionalPackages?: IPackageDetail[];
 }
 
 export interface ILabelResponse {
