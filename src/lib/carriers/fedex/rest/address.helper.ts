@@ -8,6 +8,10 @@ import { logger } from '../../../logger';
 
 //const ACCOUNT_NUMBER_TEST = '740561073';
 const addressValidationUrl = '/address/v1/addresses/resolve';
+const API_KEY_TEST = 'l798d34f0bb3b04fcd9668568fdb306490';
+const SECRET_KEY_TEST = 'f991c6816c7a452bb38bba678d1cf288';
+const API_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
+const SECRET_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
 
 //const URL_PRODUCTION = 'https://apis.fedex.com/address/v1/addresses/resolve';
 
@@ -16,7 +20,15 @@ export const addressValidation = async (
   isTest: boolean
 ): Promise<boolean> => {
   // Get auth token
-  const token = await FedexAuthHelper.getToken(isTest);
+  const apiKey = isTest ? API_KEY_TEST : API_KEY_PROD;
+  const apiSecret = isTest ? SECRET_KEY_TEST : SECRET_KEY_PROD;
+  const apiUrl = getFedexHost(isTest);
+  const token = await FedexAuthHelper.getToken(
+    apiUrl,
+    apiKey,
+    apiSecret,
+    isTest
+  );
   // Build request body
   const body: FedexAddressValidationRequest = {
     validateAddressControlParameters: {

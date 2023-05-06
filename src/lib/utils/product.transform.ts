@@ -72,7 +72,7 @@ class TransformShipmentToProduct extends stream.Transform {
         isCustomService
       );
       if (valiResult) return undefined;
-      const api = CarrierFactory.getCarrierAPI(
+      const api = await CarrierFactory.getCarrierAPI(
         carrierAccount,
         false,
         shipment.facility

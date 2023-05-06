@@ -1,13 +1,7 @@
 import { FedexAuthToken } from '../../../../types/carriers/fedex.rest';
 import axios from 'axios';
-import { getFedexHost } from '../../../constants';
 import { logger } from '../../../logger';
 import qs from 'qs';
-
-const API_KEY_TEST = 'l798d34f0bb3b04fcd9668568fdb306490';
-const SECRET_KEY_TEST = 'f991c6816c7a452bb38bba678d1cf288';
-const API_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
-const SECRET_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
 
 class FedexAuthHelper {
   static authUrl = '/oauth/token';
@@ -25,6 +19,9 @@ class FedexAuthHelper {
   };
 
   static getToken = async (
+    apiUrl: string,
+    apiKey: string,
+    apiSecret: string,
     isTest: boolean
   ): Promise<FedexAuthToken | undefined> => {
     const isBusiness = isTest
@@ -43,7 +40,7 @@ class FedexAuthHelper {
           }
         }, 100);
       });
-      return FedexAuthHelper.getToken(isTest);
+      return FedexAuthHelper.getToken(apiUrl, apiKey, apiSecret, isTest);
     }
 
     if (isTest) {
@@ -69,13 +66,12 @@ class FedexAuthHelper {
       FedexAuthHelper.isGettingToken = true;
     }
 
-    const fedexUrl = getFedexHost(isTest);
-    const url = `${fedexUrl}${FedexAuthHelper.authUrl}`;
+    const url = `${apiUrl}${FedexAuthHelper.authUrl}`;
 
     const data = {
       grant_type: 'client_credentials',
-      client_id: isTest ? API_KEY_TEST : API_KEY_PROD,
-      client_secret: isTest ? SECRET_KEY_TEST : SECRET_KEY_PROD
+      client_id: apiKey,
+      client_secret: apiSecret
     };
 
     try {

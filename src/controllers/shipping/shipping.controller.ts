@@ -219,7 +219,7 @@ export const createShippingLabel = async (
     if (valiResult) {
       res.status(400).json({ message: valiResult });
     }
-    const api = CarrierFactory.getCarrierAPI(
+    const api = await CarrierFactory.getCarrierAPI(
       account,
       body.test,
       shipping.facility
@@ -519,7 +519,11 @@ export const createManifest = async (
   }
 
   try {
-    const api = CarrierFactory.getCarrierAPI(account, body.test, facility);
+    const api = await CarrierFactory.getCarrierAPI(
+      account,
+      body.test,
+      facility
+    );
     if (api && api.createManifest) {
       await api.init();
       const results = await api.createManifest(shippings, user);
@@ -630,7 +634,7 @@ export const downloadManifest = async (
       _id: manifest.carrierRef
     });
     if (clientAccount) {
-      const api = CarrierFactory.getCarrierAPI(
+      const api = await CarrierFactory.getCarrierAPI(
         clientAccount,
         test,
         clientAccount.carrier === CARRIERS.DHL_ECOMMERCE

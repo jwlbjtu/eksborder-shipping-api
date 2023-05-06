@@ -112,7 +112,7 @@ export const createManifests = async (
       });
 
       if (clientAccount) {
-        const api = CarrierFactory.getCarrierAPI(
+        const api = await CarrierFactory.getCarrierAPI(
           clientAccount,
           false,
           clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
@@ -173,7 +173,7 @@ export const refreshManifest = async (
           _id: manifest.carrierRef
         });
         if (clientAccount) {
-          const api = CarrierFactory.getCarrierAPI(
+          const api = await CarrierFactory.getCarrierAPI(
             clientAccount,
             false,
             clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
@@ -234,7 +234,7 @@ export const getTrackingInfo = async (
           userRef: user._id
         });
         if (clientCarrier) {
-          const api = CarrierFactory.getCarrierAPI(
+          const api = await CarrierFactory.getCarrierAPI(
             clientCarrier,
             false,
             shipment.facility

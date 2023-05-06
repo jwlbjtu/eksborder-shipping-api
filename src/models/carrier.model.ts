@@ -80,6 +80,7 @@ const CarrierSchema: Schema = new Schema(
     shipperId: { type: String },
     regions: { type: [String], required: true },
     isActive: { type: Boolean, default: true },
+    isNewAPI: { type: Boolean, default: false },
     thirdparties: {
       type: [
         {

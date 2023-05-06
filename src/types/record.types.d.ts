@@ -34,6 +34,7 @@ export interface ICarrier extends Document {
   shipperId?: string;
   regions: string[];
   isActive: boolean;
+  isNewAPI?: boolean;
   thirdparties?: ThirdPartySummary[];
   priceTable?: PriceTableSummary[];
   createdAt: Date;

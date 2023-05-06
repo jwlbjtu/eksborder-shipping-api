@@ -198,7 +198,7 @@ export const purchaseLabel = async (
           res.status(400).json({ message: valiResult });
           return;
         }
-        const api = CarrierFactory.getCarrierAPI(
+        const api = await CarrierFactory.getCarrierAPI(
           carrierAccount,
           data.isTest,
           shipmentData.facility
@@ -551,7 +551,7 @@ export const importCsvData = async (
               } = data;
               try {
                 // call carrierAPI to get label
-                const api = CarrierFactory.getCarrierAPI(
+                const api = await CarrierFactory.getCarrierAPI(
                   carrierAccount,
                   false,
                   shipment.facility
