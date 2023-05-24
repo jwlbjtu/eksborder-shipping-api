@@ -24,10 +24,10 @@ class FedexAuthHelper {
     apiSecret: string,
     isTest: boolean
   ): Promise<FedexAuthToken | undefined> => {
-    const isBusiness = isTest
+    const isBusy = isTest
       ? FedexAuthHelper.isGettingTestToken
       : FedexAuthHelper.isGettingToken;
-    if (isBusiness) {
+    if (isBusy) {
       // Wait for token to be retrieved before trying again
       await new Promise<void>((resolve) => {
         const intervaId = setInterval(async () => {

@@ -150,7 +150,8 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
     billingRef: {
       type: Schema.Types.ObjectId,
       ref: 'Billing'
-    }
+    },
+    isReturn: { type: Boolean, default: false }
   },
   {
     timestamps: true,

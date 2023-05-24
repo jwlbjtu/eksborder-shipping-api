@@ -163,9 +163,9 @@ UserSchema.methods.toJSON = function () {
 
   userObject.id = this._id;
 
-  delete userObject.password;
+  userObject.password = '';
   delete userObject.tokens;
-  delete userObject.salt;
+  userObject.salt = '';
 
   return userObject;
 };

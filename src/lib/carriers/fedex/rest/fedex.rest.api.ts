@@ -83,7 +83,8 @@ class FedexRestAPI implements ICarrierAPI {
       const fedexRateRequestBody = buildFedexRestRateRequest(
         this.accountNumber,
         shipmentData,
-        this.hubId
+        this.hubId,
+        this.isTest
       );
       // Send request
       logger.info('Calling FEDEX [Product Finder] endpoint');

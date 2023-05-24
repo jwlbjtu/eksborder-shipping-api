@@ -7,6 +7,7 @@ import UpsAPI from './ups/ups.api';
 import UspsAPI from './usps/usps.api';
 import CarrierSchema from '../../models/carrier.model';
 import FedexRestAPI from './fedex/rest/fedex.rest.api';
+import { getFedExTrackingInfo } from './fedex/rest/tracking.helper';
 
 class CarrierFactory {
   static async getCarrierAPI(
@@ -30,6 +31,19 @@ class CarrierFactory {
         } else {
           return new FedexAPI(isTest, carrierAccount);
         }
+      default:
+        return undefined;
+    }
+  }
+
+  static async getCarrierTrackingAPI(
+    carrier: string,
+    trackingNumber: string,
+    isTest: boolean
+  ) {
+    switch (carrier) {
+      case CARRIERS.FEDEX:
+        return await getFedExTrackingInfo(trackingNumber, isTest);
       default:
         return undefined;
     }

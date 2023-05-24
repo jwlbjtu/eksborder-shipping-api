@@ -26,6 +26,7 @@ import ItemRoute from './routes/ItemRoute';
 import PriceTableRoute from './routes/PriceTableRoute';
 import ManifestRoute from './routes/ManifestRoute';
 import CustomServiceRoute from './routes/CustomServiceRoute';
+import TrackingRoute from './routes/TrackingRoute';
 
 const app = new App({
   routes: [
@@ -47,7 +48,8 @@ const app = new App({
     new ItemRoute(),
     new PriceTableRoute(),
     new ManifestRoute(),
-    new CustomServiceRoute()
+    new CustomServiceRoute(),
+    new TrackingRoute()
   ],
   middleWares: [
     morgan('combined', { stream: logStream }),

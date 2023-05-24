@@ -180,6 +180,7 @@ export interface IShipping extends Record<string, any>, Document {
   manifested: boolean = false;
   userRef: Types.ObjectId;
   billingRef?: Types.ObjectId;
+  isReturn: boolean = false;
 }
 
 export interface FormData {

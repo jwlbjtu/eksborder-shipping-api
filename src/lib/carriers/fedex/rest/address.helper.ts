@@ -48,6 +48,8 @@ export const addressValidation = async (
       }
     ]
   };
+  logger.info('Fedex Address Validation Request');
+  logger.info(body);
   // Send request
   const baseUrl = getFedexHost(isTest);
   const url = `${baseUrl}${addressValidationUrl}`;
@@ -59,7 +61,7 @@ export const addressValidation = async (
       }
     });
     const resolbedAddress = res.data.output.resolvedAddresses[0];
-    address.isResidential = resolbedAddress.classification === 'RESIDENTIAL';
+    address.isResidential = resolbedAddress.classification != 'BUSINESS';
     return true;
   } catch (error) {
     console.log(error.response.data);

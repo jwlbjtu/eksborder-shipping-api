@@ -24,7 +24,8 @@ const productUrl = '/rate/v1/rates/quotes';
 export const buildFedexRestRateRequest = (
   fedexAccount: string,
   shipment: IShipping,
-  hubId: string
+  hubId: string,
+  isTest: boolean
 ): FedexProductRequest => {
   // Build Account Number
   const accountNumber: FedexAccountNumber = {
@@ -40,7 +41,7 @@ export const buildFedexRestRateRequest = (
   const requestedShipment: RequestedShipment = {
     shipper: { address: generateFedexRestAddress(shipment.sender) },
     recipient: { address: generateFedexRestAddress(shipment.toAddress) },
-    serviceType: shipment.service?.key,
+    serviceType: isTest ? 'FIRST_OVERNIGHT' : shipment.service?.key,
     pickupType: 'CONTACT_FEDEX_TO_SCHEDULE',
     packagingType: 'YOUR_PACKAGING',
     rateRequestType: ['ACCOUNT'],

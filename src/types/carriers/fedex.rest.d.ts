@@ -39,6 +39,7 @@ interface FedexRestAddress {
   stateOrProvinceCode?: string;
   postalCode?: string;
   countryCode: string; // US
+  countryName?: string; // United States
   urbanizationCode?: string;
   addressVerificationId?: string;
   residential?: boolean;
@@ -857,4 +858,91 @@ interface FedexRestDutiesPayment {
     };
   };
   paymentType: 'SENDER' | 'RECIPIENT' | 'THIRD_PARTY' | 'COLLECT';
+}
+
+interface FedexTrackingRequest {
+  includeDetailedScans: boolean;
+  trackingInfo: FedexTrackingInfo[];
+}
+
+interface FedexTrackingInfo {
+  trackingNumberInfo: FedexTrackingNumberInfo;
+  trackingNumberUniqueId?: string;
+  carrierCode?: string;
+}
+
+interface FedexTrackingNumberInfo {
+  trackingNumber: string;
+}
+
+interface FedexTrackingResponse {
+  transactionId: string;
+  output: FedexTrackingResponseOutput;
+}
+
+interface FedexTrackingResponseOutput {
+  completeTrackResults: FedexCompleteTrackResult[];
+}
+
+interface FedexCompleteTrackResult {
+  trackingNumber: string;
+  trackResults: FedexTrackResult[];
+}
+
+interface FedexTrackResult {
+  trackingNumberInfo: FedexTrackingNumberInfo;
+  shipperInformation: FedexRestRecipient;
+  recipientInformation: FedexRestRecipient;
+  latestStatusDetail: FedexTrackingLatestStatusDetail;
+  scanEvents: FedexScanEvent[];
+  serviceDetail: FedexServiceDetail;
+  standardTransitTimeWindow: FedexTransitionTimeWindow;
+  estimatedDeliveryTimeWindow: FedexTransitionTimeWindow;
+}
+
+interface FedexTrackingLatestStatusDetail {
+  code: string;
+  derivedCode: string;
+  statusByLocation: string;
+  description: string;
+  scanLocation: FedexScanLocation;
+  delayDetail: FedexDelayDetail;
+}
+
+interface FedexScanLocation {
+  city: string;
+  countryCode: string;
+  residential: boolean;
+  countryName: string;
+}
+
+interface FedexDelayDetail {
+  status?: string;
+  type?: string;
+}
+
+interface FedexScanEvent {
+  date: Date;
+  eventType: string;
+  eventDescription: string;
+  exceptionCode: string;
+  exceptionDescription: string;
+  scanLocation: FedexRestAddress;
+  locationId: string;
+  locationType: string;
+  derivedStatusCode: string;
+  derivedStatus: string;
+  delayDetail?: FedexDelayDetail;
+}
+
+interface FedexServiceDetail {
+  type: string;
+  description: string;
+  shortDescription: string;
+}
+
+interface FedexTransitionTimeWindow {
+  window: {
+    ends: Date;
+  };
 }

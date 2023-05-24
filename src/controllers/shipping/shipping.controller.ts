@@ -238,6 +238,7 @@ export const createShippingLabel = async (
           return;
         }
       }
+      shipping.toAddress.isResidential = true;
 
       logger.info(chargeFee ? '2. Check Package Price' : '2. Skip Price Check');
       let result;

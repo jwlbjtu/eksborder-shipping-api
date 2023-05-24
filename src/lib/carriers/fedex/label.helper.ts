@@ -23,11 +23,12 @@ import { createClientAsync } from 'soap';
 import util from 'util';
 import { logger } from '../../logger';
 import { CARRIERS, Country, CURRENCY_LIST } from '../../constants';
-import { IAddress } from '../../../types/shipping.types';
+import { IAddress, IWeight } from '../../../types/shipping.types';
 import {
   computeTotalShipmentWeight,
   roundToTwoDecimal
 } from '../../utils/helpers';
+import convert from 'convert-units';
 
 const wsdl = path.join(
   __dirname,
@@ -97,9 +98,14 @@ export const buildFedexLabelReqBody = (
   }
 
   if (rate.serviceId === 'SMART_POST') {
+    const greaterThan1lb = isWeightGreater(totalWeight, 1);
     result.RequestedShipment.SmartPostDetail = {
       ProcessingOptionsRequested: undefined,
-      Indicia: 'PARCEL_SELECT',
+      Indicia: shipmentData.isReturn
+        ? 'PARCEL_RETURN'
+        : greaterThan1lb
+        ? 'PARCEL_SELECT'
+        : 'PRESORTED_STANDARD',
       AncillaryEndorsement: 'ADDRESS_CORRECTION',
       HubId: credential.hubId
     };
@@ -295,4 +301,11 @@ export const ceateFedexShipper = (address: IAddress): FedexShipper => {
     Residential: address.isResidential ? address.isResidential : false
   };
   return { Contact: contact, Address: fAddress };
+};
+
+export const isWeightGreater = (weight1: IWeight, weight2: number): boolean => {
+  const weight1InLb = convert(weight1.value)
+    .from(weight1.unitOfMeasure)
+    .to('lb');
+  return weight1InLb >= weight2;
 };
