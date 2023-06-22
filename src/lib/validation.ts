@@ -81,6 +81,18 @@ export const validateService = (
   return service;
 };
 
+export const validateRateService = (
+  account: IAccount,
+  service?: string
+): string | undefined => {
+  if (!service) return;
+  const supportedServices = account.services;
+  if (!supportedServices.find((ele) => service === ele.name)) {
+    return;
+  }
+  return service;
+};
+
 export const validateFacility = (
   account: IAccount,
   facility?: string

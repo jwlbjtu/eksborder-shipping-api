@@ -13,6 +13,7 @@ import {
   ICarrier,
   IShipping,
   LabelData,
+  ShipmentData,
   ShippingRate
 } from '../../../types/record.types';
 import CarrierSchema from '../../../models/carrier.model';
@@ -60,7 +61,7 @@ class UspsAPI implements ICarrierAPI {
   };
 
   public products = async (
-    shipmentData: IShipping,
+    shipmentData: IShipping | ShipmentData,
     isInternational: boolean
   ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
     // Do not support multiple package in an order
@@ -73,7 +74,7 @@ class UspsAPI implements ICarrierAPI {
       isInternational
     );
     logger.info('Calling USPS [Product Finder] endpoint');
-    logger.info(`User: ${shipmentData.userRef}, Order: ${shipmentData.id}`);
+    logger.info(`User: ${shipmentData.userRef}`);
     try {
       const response = await callUspsProductsEndpoint(
         this.apiUrl,

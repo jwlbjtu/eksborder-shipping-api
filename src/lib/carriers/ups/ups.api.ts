@@ -14,6 +14,7 @@ import {
   ICarrier,
   IShipping,
   LabelData,
+  ShipmentData,
   ShippingRate,
   ThirdPartySummary
 } from '../../../types/record.types';
@@ -95,7 +96,7 @@ class UpsAPI implements ICarrierAPI {
   };
 
   public products = async (
-    shipmentData: IShipping,
+    shipmentData: IShipping | ShipmentData,
     isInternational: boolean
   ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
     try {
@@ -126,7 +127,7 @@ class UpsAPI implements ICarrierAPI {
         // Call UPS API for Rates
         const headers = this.generateHeader();
         logger.info('Calling UPS [Product Finder] endpoint');
-        logger.info(`User: ${shipmentData.userRef}, Order: ${shipmentData.id}`);
+        logger.info(`User: ${shipmentData.userRef}`);
         const response = await callUpsProductsEndpoint(
           this.apiUrl,
           this.credential.shipperInfo!,

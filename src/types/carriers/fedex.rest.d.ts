@@ -1,4 +1,4 @@
-import { DistanceUnit, WeightUnit } from '../../lib/constants';
+import { Currency, DistanceUnit, WeightUnit } from '../../lib/constants';
 
 interface FedexAuthResponse {
   access_token: string;
@@ -155,7 +155,7 @@ interface RequestedShipment {
 interface FedexRestShippingAddress {
   streetLines?: string[];
   city?: string;
-  stateOrProviceCode?: string;
+  stateOrProvinceCode?: string;
   postalCode?: string;
   countryCode: string;
   residential?: boolean;
@@ -673,7 +673,7 @@ interface OptionalDetail {
 
 // Fedex REST API Label
 interface FedexRestLabelRequest {
-  mergeLabelDocOption: 'NONE' | 'LABELS_AND_DOCS' | 'LABELS_ONLY';
+  mergeLabelDocOption?: 'NONE' | 'LABELS_AND_DOCS' | 'LABELS_ONLY';
   requestedShipment: FedexRestRequestedShipment;
   labelResponseOptions: 'URL_ONLY' | 'LABEL';
   accountNumber: FedexAccountNumber;
@@ -748,10 +748,34 @@ interface FedexRestTransactionShipment {
   shipDatestamp: string;
   serviceCategory: string;
   shipmentDocuments: FedexRestShipmentDocument[];
+  pieceResponses: FedexRestPieceResponse[];
   serviceName: string;
   alerts: FedexAlert[];
   completedShipmentDetail: FedexRestCompletedShipmentDetail;
   masterTrackingNumber: string;
+}
+
+interface FedexRestPieceResponse {
+  masterTrackingNumber: string;
+  deliveryDatestamp: string;
+  packageSequenceNumber: number;
+  trackingNumber: string;
+  additionalChargesDiscount: number;
+  netRateAmount: number;
+  netChargeAmount: number;
+  netDiscountAmount: number;
+  packageDocuments: PackageDocument[];
+  currency: Currency;
+  customerReferences: string[];
+  codcollectionAmount: number;
+  baseRateAmount: number;
+}
+
+interface PackageDocument {
+  contentType: string;
+  copiesToPrint: number;
+  encodedLabel: string;
+  docType: string;
 }
 
 interface FedexRestCompletedShipmentDetail {
@@ -765,6 +789,8 @@ interface FedexRestShipmentRating {
 interface FedexRestShipmentRateDetail {
   rateZone: string;
   totalNetChargeWithDutiesAndTaxes: number;
+  totalNetCharge: number;
+  totalNetFedExCharge: number;
   currency: string;
 }
 
@@ -914,6 +940,7 @@ interface FedexScanLocation {
   countryCode: string;
   residential: boolean;
   countryName: string;
+  stateOrProvinceCode?: string;
 }
 
 interface FedexDelayDetail {

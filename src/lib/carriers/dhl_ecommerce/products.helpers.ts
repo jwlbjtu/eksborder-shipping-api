@@ -11,7 +11,11 @@ import convertToDHLAddress from './dhl_ecommerce.helpers';
 import util from 'util';
 import { roundToTwoDecimal } from '../../utils/helpers';
 import dayjs from 'dayjs';
-import { IFacility, IShipping } from '../../../types/record.types';
+import {
+  IFacility,
+  IShipping,
+  ShipmentData
+} from '../../../types/record.types';
 import {
   IDHLeCommerceCustomsDetail,
   IDHLeCommercePackageDetail,
@@ -31,7 +35,7 @@ export const callDhlEcommerceProductsEndpoint = async (
   api_url: string,
   prodReqBody: IDHLeCommerceProductRequest,
   headers: Record<string, string>,
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   isTest: boolean,
   clientCarrier: IAccount | undefined
 ): Promise<{ rates: Rate[]; errors: string[] }> => {
@@ -41,9 +45,7 @@ export const callDhlEcommerceProductsEndpoint = async (
     prodReqBody,
     { headers: headers }
   );
-  logger.info(
-    `DHL eCommerce response for User ${shipmentData.userRef} with Order ${shipmentData._id}`
-  );
+  logger.info(`DHL eCommerce response for User ${shipmentData.userRef}`);
   logger.info(util.inspect(response.data, true, null));
 
   const dhlProdResponse: IDHLeCommerceProductResponse = response.data;
@@ -105,7 +107,7 @@ const convertIDHLeCommerceProductToRate = (
 };
 
 export const buildDhlEcommerceProductReqBody = (
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   facilityObj: IFacility,
   isInternational: boolean
 ): IDHLeCommerceProductRequest => {
@@ -144,7 +146,7 @@ export const buildDhlEcommerceProductReqBody = (
     packageDetail: dhlPackageDetail,
     rate: {
       calculate: true,
-      currency: shipmentData.orderCurrency || Currency.USD,
+      currency: Currency.USD,
       rateDate: dayjs(shipmentData.shipmentOptions.shipmentDate).format(
         'YYYY-MM-DD'
       )

@@ -29,6 +29,7 @@ import {
   IFacility,
   IShipping,
   LabelData,
+  ShipmentData,
   ShippingRate
 } from '../../../types/record.types';
 import { IAccount, IUser } from '../../../types/user.types';
@@ -151,7 +152,7 @@ class DhlEcommerceAPI implements ICarrierAPI {
   };
 
   public products = async (
-    shipmentData: IShipping,
+    shipmentData: IShipping | ShipmentData,
     isInternational: boolean
   ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
     // Do not support multiple packages in an order
@@ -205,7 +206,7 @@ class DhlEcommerceAPI implements ICarrierAPI {
       );
       const headers = this.generateHeader(false);
       logger.info('Calling DHL eCommerce [Product Finder] endpoint');
-      logger.info(`User: ${shipmentData.userRef}, Order: ${shipmentData.id}`);
+      logger.info(`User: ${shipmentData.userRef}`);
       try {
         const response = await callDhlEcommerceProductsEndpoint(
           this.apiUrl,

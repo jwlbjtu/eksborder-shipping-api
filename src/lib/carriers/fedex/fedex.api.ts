@@ -4,6 +4,7 @@ import {
   ICarrier,
   IShipping,
   LabelData,
+  ShipmentData,
   ShippingRate
 } from '../../../types/record.types';
 import { IAccount } from '../../../types/user.types';
@@ -77,7 +78,7 @@ class FedexAPI implements ICarrierAPI {
   };
 
   public products = async (
-    shipmentData: IShipping,
+    shipmentData: IShipping | ShipmentData,
     isInternational: boolean
   ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
     try {
@@ -86,7 +87,7 @@ class FedexAPI implements ICarrierAPI {
         shipmentData
       );
       logger.info('Calling FEDEX [Product Finder] endpoint');
-      logger.info(`User: ${shipmentData.userRef}, Order: ${shipmentData.id}`);
+      logger.info(`User: ${shipmentData.userRef}`);
       const response = await callFedexProductsEndpoint(
         this.apiUrl,
         fedexRateReqBody,

@@ -229,7 +229,7 @@ export const createShippingLabel = async (
 
       if (api.validateAddress) {
         logger.info('0. Validate Address');
-        const result = await api.validateAddress(shipping.toAddress, true); // TODO: replace with body.test
+        const result = await api.validateAddress(shipping.toAddress, body.test);
         if (!result) {
           res.status(400).json({
             message:
@@ -238,7 +238,6 @@ export const createShippingLabel = async (
           return;
         }
       }
-      shipping.toAddress.isResidential = true;
 
       logger.info(chargeFee ? '2. Check Package Price' : '2. Skip Price Check');
       let result;

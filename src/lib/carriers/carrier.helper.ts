@@ -1,4 +1,4 @@
-import { IShipping } from '../../types/record.types';
+import { IShipping, ShipmentData } from '../../types/record.types';
 import { IAccount, IUser } from '../../types/user.types';
 import { CARRIERS, DistanceUnit, WeightUnit } from '../constants';
 import bwipjs from 'bwip-js';
@@ -163,7 +163,9 @@ export const validateShipment = (
   return undefined;
 };
 
-export const isShipmentInternational = (shipmentData: IShipping): boolean => {
+export const isShipmentInternational = (
+  shipmentData: IShipping | ShipmentData
+): boolean => {
   return shipmentData.sender.country !== shipmentData.toAddress.country;
 };
 

@@ -20,7 +20,7 @@ import {
   UPSRatedShipment,
   UPSShipper
 } from '../../../types/carriers/ups';
-import { IShipping } from '../../../types/record.types';
+import { IShipping, ShipmentData } from '../../../types/record.types';
 import { IAccount } from '../../../types/user.types';
 import { Rate } from '../../../types/carriers/carrier';
 import { logger } from '../../logger';
@@ -30,7 +30,7 @@ import { isShipmentInternational } from '../carrier.helper';
 const rateEndpoint = '/ship/v1801/rating/Rate';
 
 export const buildUpsProductReqBody = (
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   shipperInfo: UPSShipper
 ): UPSProductRequest => {
   const totalWeight = computeTotalShipmentWeight(shipmentData);
@@ -96,14 +96,12 @@ export const callUpsProductsEndpoint = async (
   apiUrl: string,
   shipperInfo: UPSShipper,
   headers: Record<string, string>,
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   isTest: boolean,
   clientCarrier: IAccount | undefined
 ): Promise<{ rates: Rate[]; errors: string[] }> => {
   if (!clientCarrier) return { rates: [], errors: [] };
-  logger.info(
-    `UPS response for User ${shipmentData.userRef} with Order ${shipmentData._id}`
-  );
+  logger.info(`UPS response for User ${shipmentData.userRef}`);
   const response = await requestUPSSingleRate(
     shipmentData,
     shipperInfo,
@@ -185,7 +183,7 @@ export const callUpsProductsEndpoint = async (
 // };
 
 export const requestUPSSingleRate = async (
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   shipperInfo: UPSShipper,
   apiUrl: string,
   headers: Record<string, string>

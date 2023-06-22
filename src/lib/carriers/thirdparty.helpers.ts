@@ -2,6 +2,7 @@ import convertlib from 'convert-units';
 import { Rate } from '../../types/carriers/carrier';
 import {
   IShipping,
+  ShipmentData,
   ThirdPartyPrice,
   ThirdPartySummary
 } from '../../types/record.types';
@@ -17,7 +18,7 @@ import { IAccount } from '../../types/user.types';
 
 export const findSuitableTirdpartyAccounts = (
   thirdpartyList: ThirdPartySummary[],
-  shipmentData: IShipping
+  shipmentData: IShipping | ShipmentData
 ): string[] => {
   logger.info('Finding Suitable Thirdparty Price Tables...');
   const thirdpartyIDs: string[] = [];
@@ -113,7 +114,7 @@ const findThirdpartyPriceByWeight = (
 
 export const generateThirdpartyRates = async (
   thirdpartyIds: string[],
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   orderRegion: string | undefined,
   isTest: boolean,
   clientCarrier: IAccount | undefined

@@ -8,7 +8,7 @@ import {
   FedexRestProductResponse,
   RequestedShipment
 } from '../../../../types/carriers/fedex.rest';
-import { IShipping } from '../../../../types/record.types';
+import { IShipping, ShipmentData } from '../../../../types/record.types';
 import { IAddress } from '../../../../types/shipping.types';
 import { IAccount } from '../../../../types/user.types';
 import FedexAuthHelper from './auth.helper';
@@ -23,7 +23,7 @@ const productUrl = '/rate/v1/rates/quotes';
 
 export const buildFedexRestRateRequest = (
   fedexAccount: string,
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   hubId: string,
   isTest: boolean
 ): FedexProductRequest => {
@@ -37,7 +37,6 @@ export const buildFedexRestRateRequest = (
   };
   // Build Requested Shipment
   const packages = buildFedexRestRatePackageItems(shipment);
-
   const requestedShipment: RequestedShipment = {
     shipper: { address: generateFedexRestAddress(shipment.sender) },
     recipient: { address: generateFedexRestAddress(shipment.toAddress) },
@@ -76,7 +75,7 @@ export const fedexRestRateService = async (
   apiKey: string,
   apiSecret: string,
   requestBody: FedexProductRequest,
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   isTest: boolean,
   clientCarrier: IAccount
 ): Promise<{
@@ -98,9 +97,7 @@ export const fedexRestRateService = async (
       Authorization: `Bearer ${token?.access_token}`
     }
   });
-  logger.info(
-    `FedEx response for User ${shipment.userRef} with Order ${shipment._id}`
-  );
+  logger.info(`FedEx response for User ${shipment.userRef}`);
   logger.info(util.inspect(res.data, true, null));
   const rateResponse = res.data;
   const result = processFedexRestRateResponse(
@@ -129,7 +126,7 @@ export const generateFedexRestAddress = (
 };
 
 export const buildFedexRestRatePackageItems = (
-  shipment: IShipping
+  shipment: IShipping | ShipmentData
 ): FedexRestPackageLineItem[] => {
   const packageInfo = shipment.packageInfo;
   if (!packageInfo) return [];

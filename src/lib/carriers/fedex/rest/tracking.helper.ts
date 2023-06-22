@@ -18,23 +18,23 @@ import {
 import { IAddress } from '../../../../types/shipping.types';
 
 const trackingUrl = '/track/v1/trackingnumbers';
-const API_KEY_TEST = 'l798d34f0bb3b04fcd9668568fdb306490';
-const SECRET_KEY_TEST = 'f991c6816c7a452bb38bba678d1cf288';
-const API_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
-const SECRET_KEY_PROD = 'l7ff41a4f16d674b5ebf09e9a1f6dddd8a';
 
 export const getFedExTrackingInfo = async (
   trackingNumber: string,
   isTest: boolean
 ): Promise<any> => {
   // Get auth token
-  const apiKey = isTest ? API_KEY_TEST : API_KEY_PROD;
-  const apiSecret = isTest ? SECRET_KEY_TEST : SECRET_KEY_PROD;
+  const apiKey = isTest
+    ? process.env.FEDEX_API_KEY_TEST
+    : process.env.FEDEX_API_KEY_PROD;
+  const apiSecret = isTest
+    ? process.env.FEDEX_SECRET_KEY_TEST
+    : process.env.FEDEX_SECRET_KEY_PROD;
   const apiUrl = getFedexHost(isTest);
   const token = await FedexAuthHelper.getToken(
     apiUrl,
-    apiKey,
-    apiSecret,
+    apiKey!,
+    apiSecret!,
     isTest
   );
   // Build request body
@@ -110,13 +110,14 @@ const fedexStatusToITrackingStatus = (
       street1: '',
       street2: '',
       city: latestStatus.scanLocation.city,
-      state: '',
+      state: latestStatus.scanLocation.stateOrProvinceCode || '',
       zip: '',
       country: latestStatus.scanLocation.countryCode
     },
-    delayDetail: latestStatus.delayDetail.status
-      ? latestStatus.delayDetail.status
-      : ''
+    delayDetail:
+      latestStatus.delayDetail && latestStatus.delayDetail.status
+        ? latestStatus.delayDetail.status
+        : ''
   };
 };
 

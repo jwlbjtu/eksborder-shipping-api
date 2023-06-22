@@ -3,7 +3,7 @@ import {
   UPSLabelPackage,
   UPSPackage
 } from '../../../types/carriers/ups';
-import { IShipping } from '../../../types/record.types';
+import { IShipping, ShipmentData } from '../../../types/record.types';
 import { IAddress } from '../../../types/shipping.types';
 import { Country, UPS_WEIGHT_UNITS } from '../../constants';
 import { roundToTwoDecimal } from '../../utils/helpers';
@@ -25,7 +25,9 @@ export const convertToUPSAddress = (address: IAddress): UPSAddress => {
   return result;
 };
 
-export const buildUpsPackages = (shipment: IShipping): UPSPackage[] => {
+export const buildUpsPackages = (
+  shipment: IShipping | ShipmentData
+): UPSPackage[] => {
   const upsPackages: UPSPackage[] = [];
   const packageInfo = shipment.packageInfo;
   const morePackages = shipment.morePackages;

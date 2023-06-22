@@ -6,7 +6,7 @@ import {
   RequestedPackageLineItem,
   Version
 } from '../../../types/carriers/fedex';
-import { IShipping } from '../../../types/record.types';
+import { IShipping, ShipmentData } from '../../../types/record.types';
 import { generateAuthentication } from './fedex.helpers';
 import { createClientAsync, security } from 'soap';
 import path from 'path';
@@ -37,7 +37,7 @@ const endpointPath = '/web-services';
 
 export const buildFedexProductReqBody = (
   credential: FedexCredential,
-  shipment: IShipping
+  shipment: IShipping | ShipmentData
 ): FedexProductReqBody => {
   const fedexAuth = generateAuthentication(credential, version);
   const packages = generateFedexProductPackageItems(shipment);
@@ -73,7 +73,7 @@ export const buildFedexProductReqBody = (
 };
 
 export const generateFedexProductPackageItems = (
-  shipment: IShipping
+  shipment: IShipping | ShipmentData
 ): RequestedPackageLineItem[] => {
   const packageinfo = shipment.packageInfo!;
   const morePackages = shipment.morePackages;
@@ -104,7 +104,7 @@ export const generateFedexProductPackageItems = (
 export const callFedexProductsEndpoint = async (
   apiUrl: string,
   prodReqBody: FedexProductReqBody,
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   isTest: boolean,
   clientCarrier: IAccount
 ): Promise<{
@@ -117,9 +117,7 @@ export const callFedexProductsEndpoint = async (
 
   const client = await createClientAsync(isTest ? wsdl : wsdlPro, options);
   const response = await client.getRatesAsync(prodReqBody);
-  logger.info(
-    `FedEx response for User ${shipment.userRef} with Order ${shipment._id}`
-  );
+  logger.info(`FedEx response for User ${shipment.userRef}`);
   logger.info(util.inspect(response[0], true, null));
   const data = response[0] as FedexRatesResponse;
   const result = processFedexProductsResponse(data, isTest, clientCarrier);

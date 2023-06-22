@@ -1,4 +1,4 @@
-import { FeeRate, IShipping } from '../../types/record.types';
+import { FeeRate, IShipping, ShipmentData } from '../../types/record.types';
 import {
   CarrierRateType,
   CARRIER_REGIONS,
@@ -63,7 +63,7 @@ export const computeWeightRate = (
 };
 
 export const computeFee = (
-  shipmentData: IShipping,
+  shipmentData: IShipping | ShipmentData,
   amount: number,
   currency: string,
   rates: FeeRate[]
@@ -100,7 +100,9 @@ export const base64Encode = (file: string): string => {
   return fs.readFileSync(file).toString('base64');
 };
 
-export const computeTotalShipmentWeight = (shipment: IShipping): IWeight => {
+export const computeTotalShipmentWeight = (
+  shipment: IShipping | ShipmentData
+): IWeight => {
   const packageinfo = shipment.packageInfo;
   const morePackages = shipment.morePackages;
   if (packageinfo) {
@@ -118,7 +120,7 @@ export const computeTotalShipmentWeight = (shipment: IShipping): IWeight => {
 };
 
 export const checkShipmentRegion = (
-  shipment: IShipping
+  shipment: IShipping | ShipmentData
 ): string | undefined => {
   const sender = shipment.sender;
   const recipient = shipment.toAddress;

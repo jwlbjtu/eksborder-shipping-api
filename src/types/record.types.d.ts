@@ -190,6 +190,7 @@ export interface FormData {
 }
 
 export interface LabelData {
+  masterTracking?: string;
   carrier: string;
   service: string;
   tracking: string;

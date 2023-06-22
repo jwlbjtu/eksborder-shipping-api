@@ -1,4 +1,4 @@
-import { FormData, IShipping, LabelData } from '../record.types';
+import { FormData, IShipping, LabelData, ShipmentData } from '../record.types';
 import { IAddress } from '../shipping.types';
 import { IUser } from '../user.types';
 import { IManifest, ManifestData, TrackingInfo } from './dhl_ecommerce';
@@ -8,7 +8,7 @@ export interface ICarrierAPI {
   init: () => Promise<void>;
   auth: () => Promise<void>;
   products: (
-    shipmentData: IShipping,
+    shipmentData: IShipping | ShipmentData,
     isInternational: boolean
   ) => Promise<{ rates: Rate[]; errors: string[] } | string>;
   label: (

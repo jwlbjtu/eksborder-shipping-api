@@ -26,6 +26,8 @@ import axios from 'axios';
 import util from 'util';
 import { logger } from '../../../logger';
 import { CARRIERS } from '../../../constants';
+import { isWeightGreater } from '../label.helper';
+import { computeTotalShipmentWeight } from '../../../utils/helpers';
 
 const labelUrl = '/ship/v1/shipments';
 
@@ -42,7 +44,7 @@ export const buildFedexRestLabelRequest = (
     pickupType: 'CONTACT_FEDEX_TO_SCHEDULE',
     serviceType: rate.serviceId,
     packagingType: 'YOUR_PACKAGING',
-    totalWeight: computeTotalShipmentWeight(shipmentData),
+    totalWeight: computeTotalWeight(shipmentData),
     shippingChargesPayment: {
       paymentType: 'SENDER',
       payor: {
@@ -63,8 +65,14 @@ export const buildFedexRestLabelRequest = (
   }
 
   if (rate.serviceId === 'SMART_POST') {
+    const totalWeight = computeTotalShipmentWeight(shipmentData);
+    const greaterThan1lb = isWeightGreater(totalWeight, 1);
     requestedShipment.smartPostDetail = {
-      indicia: 'PARCEL_SELECT',
+      indicia: shipmentData.isReturn
+        ? 'PARCEL_RETURN'
+        : greaterThan1lb
+        ? 'PARCEL_SELECT'
+        : 'PRESORTED_STANDARD',
       ancillaryEndorsement: 'ADDRESS_CORRECTION',
       hubId
     };
@@ -77,17 +85,15 @@ export const buildFedexRestLabelRequest = (
     labelOrder: 'SHIPPING_LABEL_FIRST'
   };
 
-  if (isShipmentInternational(shipmentData)) {
-    requestedShipment.shippingDocumentSpecification = {
-      shippingDocumentTypes: ['COMMERCIAL_INVOICE'],
-      commercialInvoiceDetail: {
-        documentFormat: {
-          stockType: 'PAPER_LETTER',
-          docType: 'PDF'
-        }
+  requestedShipment.shippingDocumentSpecification = {
+    shippingDocumentTypes: ['COMMERCIAL_INVOICE'],
+    commercialInvoiceDetail: {
+      documentFormat: {
+        stockType: 'PAPER_LETTER',
+        docType: 'PDF'
       }
-    };
-  }
+    }
+  };
 
   requestedShipment.totalPackageCount = shipmentData.morePackages
     ? shipmentData.morePackages.length + 1
@@ -96,7 +102,6 @@ export const buildFedexRestLabelRequest = (
     buildFedexRestLabelPackageLineItems(shipmentData);
 
   const result: FedexRestLabelRequest = {
-    mergeLabelDocOption: 'NONE',
     requestedShipment: requestedShipment,
     labelResponseOptions: 'LABEL',
     accountNumber: { value: accountNumber }
@@ -113,7 +118,7 @@ const buildFedexShipper = (
       ? [localtion.street1, localtion.street2]
       : [localtion.street1],
     city: localtion.city,
-    stateOrProviceCode: localtion.state,
+    stateOrProvinceCode: localtion.state,
     postalCode: localtion.zip,
     countryCode: localtion.country,
     residential: localtion.isResidential ? localtion.isResidential : false
@@ -141,7 +146,7 @@ const buildDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-const computeTotalShipmentWeight = (shipment: IShipping): number => {
+const computeTotalWeight = (shipment: IShipping): number => {
   const packageinfo = shipment.packageInfo;
   const morePackages = shipment.morePackages;
   if (packageinfo) {
@@ -272,7 +277,7 @@ export const fedexRestLabelService = async (
       'Content-Type': 'application/json'
     }
   });
-  logger.info(util.inspect(response, true, null));
+  logger.info(util.inspect(response.data, true, null));
   const result = processFedexRestLabelResponse(response.data, isTest);
   return {
     labels: result.labels,
@@ -296,22 +301,28 @@ const processFedexRestLabelResponse = (
   const shippingRate: ShippingRate[] = [];
   for (let i = 0; i < transactionShipments.length; i++) {
     const transactionShipment = transactionShipments[i];
-    const shipmentDocuments = transactionShipment.shipmentDocuments;
-    const label = shipmentDocuments.find(
-      (item) => item.contentType === 'LABEL'
-    );
-    const labelData: LabelData = {
-      carrier: CARRIERS.FEDEX,
-      createdOn: new Date(),
-      service: transactionShipment.serviceName,
-      tracking: label!.trackingNumber,
-      data: label!.encodedLabel,
-      format: label!.docType,
-      encodeType: 'BASE64',
-      isTest
-    };
-    labels.push(labelData);
+    const pieceResponses = transactionShipment.pieceResponses;
+    for (let j = 0; j < pieceResponses.length; j++) {
+      const pieceResponse = pieceResponses[j];
+      const packageDocuments = pieceResponse.packageDocuments;
+      const label = packageDocuments.find(
+        (item) => item.contentType === 'LABEL'
+      );
+      const labelData: LabelData = {
+        masterTracking: pieceResponse.masterTrackingNumber,
+        carrier: CARRIERS.FEDEX,
+        createdOn: new Date(),
+        service: transactionShipment.serviceName,
+        tracking: pieceResponse.trackingNumber,
+        data: label!.encodedLabel,
+        format: label!.docType,
+        encodeType: 'BASE64',
+        isTest
+      };
+      labels.push(labelData);
+    }
 
+    const shipmentDocuments = transactionShipment.shipmentDocuments;
     const invoice = shipmentDocuments.find(
       (item) => item.contentType === 'COMMERCIAL_INVOICE'
     );
@@ -325,14 +336,13 @@ const processFedexRestLabelResponse = (
       if (!forms) forms = [];
       forms.push(formData);
     }
-
     const shipmentRateDetails =
       transactionShipment.completedShipmentDetail.shipmentRating
         .shipmentRateDetails;
     for (let i = 0; i < shipmentDocuments.length; i++) {
       const shipmentRateDetail = shipmentRateDetails[i];
       const rate: ShippingRate = {
-        rate: shipmentRateDetail.totalNetChargeWithDutiesAndTaxes,
+        rate: shipmentRateDetail.totalNetCharge,
         currency: shipmentRateDetail.currency
       };
       shippingRate.push(rate);

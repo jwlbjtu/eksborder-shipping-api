@@ -187,8 +187,6 @@ export const purchaseLabel = async (
           isCustomService = true;
         }
 
-        console.log(shipmentData);
-
         const valiResult = validateShipment(
           shipmentData,
           carrierAccount,
@@ -210,8 +208,8 @@ export const purchaseLabel = async (
           if (api.validateAddress) {
             const result = await api.validateAddress(
               shipmentData.toAddress,
-              true
-            ); // TDOD: replace with data.isTest
+              data.isTest
+            );
             if (!result) {
               res.status(400).json({
                 message:

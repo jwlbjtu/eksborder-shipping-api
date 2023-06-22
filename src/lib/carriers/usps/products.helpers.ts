@@ -18,7 +18,7 @@ import convertlib from 'convert-units';
 import { roundToTwoDecimal } from '../../utils/helpers';
 import fastParser from 'fast-xml-parser';
 import util from 'util';
-import { IShipping } from '../../../types/record.types';
+import { IShipping, ShipmentData } from '../../../types/record.types';
 import {
   UspsDomasticProductRequest,
   UspsDomasticProductResponse,
@@ -34,7 +34,7 @@ import { Rate } from '../../../types/carriers/carrier';
 import { logger } from '../../logger';
 
 export const buildUspsProductReqBody = (
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   userId: string,
   isInternational: boolean
 ): UspsDomasticProductRequest | UspsInternationalProductRequest => {
@@ -46,7 +46,7 @@ export const buildUspsProductReqBody = (
 };
 
 const createDomesticRequest = (
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   userId: string
 ): UspsDomasticProductRequest => {
   const packageInfo = shipment.packageInfo!;
@@ -102,7 +102,7 @@ const createDomesticRequest = (
 };
 
 export const createInternationalRequest = (
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   userId: string
 ): UspsInternationalProductRequest => {
   const packageInfo = shipment.packageInfo!;
@@ -165,7 +165,7 @@ export const callUspsProductsEndpoint = async (
   apiUrl: string,
   isInternational: boolean,
   prodReqBody: UspsDomasticProductRequest | UspsInternationalProductRequest,
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   isTest: boolean,
   clientCarrier: IAccount | undefined
 ): Promise<{ rates: Rate[]; errors: string[] }> => {
@@ -185,9 +185,7 @@ export const callUspsProductsEndpoint = async (
   };
 
   const response = await axios.get(apiUrl, config);
-  logger.info(
-    `USPS response for User ${shipment.userRef} with Order ${shipment._id}`
-  );
+  logger.info(`USPS response for User ${shipment.userRef}`);
   logger.info(util.inspect(response.data, true, null));
 
   const options = {
@@ -260,7 +258,7 @@ const processUspsDomesticProductResponse = (
 };
 
 const processUspsInternationalProductResponse = (
-  shipment: IShipping,
+  shipment: IShipping | ShipmentData,
   uspsProdResponse: UspsInternationalProductResponse,
   isTest: boolean,
   clientCarrier: IAccount
