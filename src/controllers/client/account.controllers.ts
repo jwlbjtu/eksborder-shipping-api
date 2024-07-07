@@ -18,8 +18,8 @@ export const fetchClientAccounts = async (
           accountId: ele.accountId,
           carrier: ele.carrier,
           connectedAccount: ele.connectedAccount,
-          services: ele.services,
-          facilities: ele.facilities,
+          services: [ele.service],
+          facilities: [ele.facility],
           carrierRef: ele.carrierRef,
           userRef: ele.userRef,
           note: ele.note,
@@ -29,7 +29,7 @@ export const fetchClientAccounts = async (
       })
     );
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

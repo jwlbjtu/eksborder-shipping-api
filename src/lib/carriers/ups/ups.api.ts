@@ -21,6 +21,7 @@ import { IAccount } from '../../../types/user.types';
 import CarrierSchema from '../../../models/carrier.model';
 import { logger } from '../../logger';
 import { checkShipmentRegion } from '../../utils/helpers';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 class UpsAPI implements ICarrierAPI {
   private isTest: boolean;
@@ -138,14 +139,18 @@ class UpsAPI implements ICarrierAPI {
         return response;
       }
     } catch (error) {
-      if (error.response) {
-        console.log(error.response.data.response);
-        logger.error(util.inspect(error.response.data.response, true, null));
-        return `${CARRIERS.UPS} ERROR: ${error.response.data.response.errors[0].message}`;
+      if ((error as any).response) {
+        console.log((error as any).response.data.response);
+        logger.error(
+          util.inspect((error as any).response.data.response, true, null)
+        );
+        return `${CARRIERS.UPS} ERROR: ${
+          (error as any).response.data.response.errors[0].message
+        }`;
       } else {
         console.log(error);
-        logger.error(util.inspect(error.message, true, null));
-        return `${CARRIERS.UPS} ERROR: ${error.message}`;
+        logger.error(util.inspect((error as any).message, true, null));
+        return `${CARRIERS.UPS} ERROR: ${(error as any).message}`;
       }
     }
   };
@@ -153,11 +158,7 @@ class UpsAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{
-    labels: LabelData[];
-    forms: FormData[] | undefined;
-    shippingRate: ShippingRate[];
-  }> => {
+  ): Promise<ApiFinalResult> => {
     const labelReqBody = await buildUpsLabelReqBody(
       shipmentData,
       this.credential.accountNum,
@@ -175,16 +176,20 @@ class UpsAPI implements ICarrierAPI {
         rate.serviceId,
         this.isTest
       );
-      return response;
+      return { ...response, rOrderId: shipmentData.orderId };
     } catch (error) {
-      if (error.response) {
-        console.log(error.response.data.response);
-        logger.error(util.inspect(error.response.data.response, true, null));
-        throw new Error(error.response.data.response.errors[0].message);
+      if ((error as any).response) {
+        console.log((error as any).response.data.response);
+        logger.error(
+          util.inspect((error as any).response.data.response, true, null)
+        );
+        throw new Error(
+          (error as any).response.data.response.errors[0].message
+        );
       } else {
         console.log(error);
-        logger.error(util.inspect(error.message, true, null));
-        throw new Error(error.message);
+        logger.error(util.inspect((error as any).message, true, null));
+        throw new Error((error as any).message);
       }
     }
   };

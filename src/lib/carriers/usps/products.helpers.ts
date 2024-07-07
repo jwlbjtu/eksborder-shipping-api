@@ -58,7 +58,7 @@ const createDomesticRequest = (
       shipment.service!.id! === USPS_CLASSID.FIRST_CLASS
         ? 'PACKAGE SERVICE'
         : '',
-    ZipOrigination: shipment.sender.zip!,
+    ZipOrigination: shipment.sender!.zip!,
     ZipDestination: shipment.toAddress.zip!,
     Pounds: roundToTwoDecimal(
       convertlib(packageInfo.weight.value)
@@ -146,7 +146,7 @@ export const createInternationalRequest = (
         .to(DistanceUnit.IN)
     ),
     Girth: {},
-    OriginZip: shipment.sender.zip!,
+    OriginZip: shipment.sender!.zip!,
     CommercialFlag: 'Y'
   };
 

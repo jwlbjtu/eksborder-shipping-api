@@ -32,6 +32,6 @@ export const updatePrintFormat = async (
     }
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: (error as any).message });
   }
 };

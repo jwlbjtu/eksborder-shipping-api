@@ -32,6 +32,7 @@ import { isShipmentInternational } from '../carrier.helper';
 import IdGenerator from '../../utils/IdGenerator';
 import { logger } from '../../logger';
 import convertlib from 'convert-units';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 const shipEndpoint = '/ship/v1801/shipments';
 
@@ -70,6 +71,7 @@ export const buildUpsLabelReqBody = async (
         }
       };
 
+  const sender = shipment.sender!;
   const upsLabelRequest: UPSLabelReqBody = {
     ShipmentRequest: {
       Shipment: {
@@ -88,13 +90,13 @@ export const buildUpsLabelReqBody = async (
           Address: convertToUPSAddress(shipment.toAddress)
         },
         ShipFrom: {
-          Name: shipment.sender.company || shipment.sender.name!,
-          AttentionName: shipment.sender.company || shipment.sender.name,
+          Name: sender.company || sender.name!,
+          AttentionName: sender.company || sender.name,
           Phone: {
-            Number: shipment.sender.phone!
+            Number: sender.phone!
           },
-          EMailAddress: shipment.sender.email,
-          Address: convertToUPSAddress(shipment.sender)
+          EMailAddress: sender.email,
+          Address: convertToUPSAddress(sender)
         },
         PaymentInformation: paymentInformation,
         Service: {
@@ -213,11 +215,7 @@ export const callUpsLabelEndpoint = async (
   headers: Record<string, string>,
   serviceId: string,
   isTest: boolean
-): Promise<{
-  labels: LabelData[];
-  forms: FormData[] | undefined;
-  shippingRate: ShippingRate[];
-}> => {
+): Promise<ApiFinalResult> => {
   const url = apiUrl + shipEndpoint;
   const response = await axios.post(url, labelReqBody, { headers: headers });
 
@@ -266,7 +264,17 @@ export const callUpsLabelEndpoint = async (
     }
 
     logger.info('Return data from UPS [Label] endpoint');
-    return { labels: result, forms, shippingRate };
+    return {
+      labels: result,
+      forms,
+      shippingRate,
+      labelUrlList: [],
+      invoiceUrl: '',
+      trackingNum: result[0].tracking,
+      rOrderId: '',
+      turnChanddelId: CARRIERS.UPS,
+      turnServiceType: serviceId
+    };
   } else {
     const result: LabelData[] = [
       {
@@ -293,6 +301,16 @@ export const callUpsLabelEndpoint = async (
     }
 
     logger.info('Return data from UPS [Label] endpoint');
-    return { labels: result, forms, shippingRate };
+    return {
+      labels: result,
+      forms,
+      shippingRate,
+      labelUrlList: [],
+      invoiceUrl: '',
+      trackingNum: result[0].tracking,
+      rOrderId: '',
+      turnChanddelId: CARRIERS.UPS,
+      turnServiceType: serviceId
+    };
   }
 };

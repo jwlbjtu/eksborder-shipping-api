@@ -28,6 +28,7 @@ import {
   computeTotalShipmentWeight,
   roundToTwoDecimal
 } from '../../utils/helpers';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 const wsdl = path.join(
   __dirname,
@@ -72,7 +73,7 @@ export const buildFedexLabelReqBody = (
         Units: totalWeight.unitOfMeasure.toUpperCase(),
         Value: roundToTwoDecimal(totalWeight.value)
       },
-      Shipper: ceateFedexShipper(shipmentData.sender),
+      Shipper: ceateFedexShipper(shipmentData.sender!),
       Recipient: ceateFedexShipper(shipmentData.toAddress),
       ShippingChargesPayment: {
         PaymentType: 'SENDER',
@@ -204,11 +205,7 @@ export const callFedExLanelEndpoint = async (
   apiUrl: string,
   reqBody: FedexLabelReqBody,
   isTest: boolean
-): Promise<{
-  labels: LabelData[];
-  forms: FormData[] | undefined;
-  shippingRate: ShippingRate[];
-}> => {
+): Promise<ApiFinalResult> => {
   const options = {
     endpoint: `${apiUrl}${endpointPath}`
   };
@@ -219,7 +216,13 @@ export const callFedExLanelEndpoint = async (
   return {
     labels: [processedResponse.label],
     forms: processedResponse.form ? [processedResponse.form] : undefined,
-    shippingRate: [processedResponse.shippingRate]
+    shippingRate: [processedResponse.shippingRate],
+    labelUrlList: [],
+    invoiceUrl: '',
+    trackingNum: processedResponse.label.tracking,
+    rOrderId: '',
+    turnChanddelId: CARRIERS.FEDEX,
+    turnServiceType: ''
   };
 };
 

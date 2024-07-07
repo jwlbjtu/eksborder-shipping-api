@@ -47,7 +47,8 @@ export const CARRIERS = {
   PITNEY_BOWES: 'pitney bowes',
   USPS: 'USPS',
   UPS: 'UPS',
-  FEDEX: 'FedEx'
+  FEDEX: 'FedEx',
+  RUI_YUN: 'Rui Yun'
 };
 
 export const SUPPORTED_CARRIERS = [
@@ -447,4 +448,12 @@ export const CARRIER_REGIONS = {
   US_DOMESTIC: 'US_DOMESTIC',
   US_INTERNATIONAL: 'US_INTERNATIONAL',
   CN_IMPORT: 'CN_IMPORT'
+};
+
+//**********************************//
+//******** RUI YUN Constants *******//
+//**********************************//
+export const RUIYUN_HOSTS = {
+  RUIYUN_TEST: 'http://aa94.rui-y.com:8401/lgtbws/eship/orderShip',
+  RUIYUN_PROD: 'http://www.pm-l.com:8401/lgtbws/eship/orderShip'
 };

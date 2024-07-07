@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { Currency } from '../lib/constants';
 import { IBilling } from '../types/record.types';
 
@@ -12,7 +12,9 @@ const BillingSchema: Schema<IBilling> = new Schema<IBilling>(
     description: { type: String, required: true },
     account: { type: String },
     total: { type: Number, required: true, min: 0 },
-    balance: { type: Number, required: true, min: 0 },
+    balance: { type: Number, required: true },
+    deposit: { type: Number, required: true },
+    clientDeposit: { type: Number, required: true },
     currency: { type: String, required: true },
     details: {
       type: {

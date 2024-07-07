@@ -22,6 +22,7 @@ export interface UserData {
   companyName?: string;
   logoImage?: string;
   balance: number;
+  deposit: number;
   currency: string;
   isActive: boolean;
   token_type: string;
@@ -42,6 +43,7 @@ export interface ClientInfo {
   companyName?: string;
   logoImage?: string;
   balance: number;
+  deposit: number;
   currency: string;
   isActive: boolean;
   token_type: string;
@@ -77,6 +79,7 @@ export interface IUser extends Document {
   companyName?: string;
   logoImage?: string;
   balance: number;
+  deposit: number;
   minBalance: number;
   currency: string;
   referalName?: string;
@@ -110,8 +113,8 @@ export interface IAccount extends Document {
   accountId: string;
   carrier: string;
   connectedAccount: string;
-  services: IService[];
-  facilities: string[];
+  service: IService;
+  facility: string;
   rates: FeeRate[];
   thirdpartyPrice: boolean;
   carrierRef: any;

@@ -3,6 +3,7 @@ import { IAccount } from '../../types/user.types';
 import { CARRIERS } from '../constants';
 import DhlEcommerceAPI from './dhl_ecommerce/dhl_ecommerce.api';
 import FedexAPI from './fedex/fedex.api';
+import RuiYunAPI from './rui_yun/rui_yun.api';
 import UpsAPI from './ups/ups.api';
 import UspsAPI from './usps/usps.api';
 
@@ -21,6 +22,8 @@ class CarrierFactory {
         return new UpsAPI(isTest, carrierAccount);
       case CARRIERS.FEDEX:
         return new FedexAPI(isTest, carrierAccount);
+      case CARRIERS.RUI_YUN:
+        return new RuiYunAPI(isTest, carrierAccount);
       default:
         return undefined;
     }

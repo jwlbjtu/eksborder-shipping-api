@@ -7,6 +7,10 @@ import { IUser } from '../../types/user.types';
 import '../../lib/env';
 import { Types } from 'mongoose';
 import lresponseLib from '../../lib/lresponse.lib';
+import {
+  IUserBalance,
+  updateUserBalanceAndDeposit
+} from '../../lib/utils/user.balance.utils';
 
 // get billing records for a client
 export const getUserBillingRecords = async (
@@ -41,26 +45,36 @@ export const createBillingRecord = async (
       _id: Types.ObjectId(userId)
     });
     if (!user) return lresponseLib.resErr(res, 404, { title: 'No user found' });
-
-    const newBalance = (data.balance = data.addFund
-      ? user.balance + data.total
-      : user.balance - data.total);
-    if (newBalance < 0)
-      return lresponseLib.resErr(res, 400, {
-        title: 'User balance cannot be lower than 0'
-      });
+    const total = data.addFund ? Math.abs(data.total) : -Math.abs(data.total);
+    const deposit = data.addFund
+      ? Math.abs(data.deposit)
+      : -Math.abs(data.deposit);
+    const newBalance: IUserBalance = await updateUserBalanceAndDeposit(
+      user.id.toString(),
+      total,
+      deposit
+    );
+    // const newBalance = (data.balance = data.addFund
+    //   ? user.balance + data.total
+    //   : user.balance - data.total);
+    // const newDeposit = data.addFund
+    //   ? user.deposit + data.deposit
+    //   : user.deposit - data.deposit;
     // Update user balance
-    user.balance = newBalance;
-    await user.save();
+    // user.balance = newBalance;
+    // user.deposit = newDeposit;
+    // await user.save();
 
     data.userRef = user._id;
     data.currency = user.currency;
-    data.balance = newBalance;
+    data.balance = newBalance.balance;
+    data.clientDeposit = newBalance.deposit;
     // Create billing record
     const billing = new Billing(data);
     await billing.save();
     lresponseLib.resOk(res, billing);
   } catch (error) {
+    console.log(error);
     lresponseLib.resErr(res, 500, error);
   }
 };

@@ -2,9 +2,11 @@ import * as express from 'express';
 import AuthHandler from '../lib/auth/auth.handler';
 import {
   generateApiToken,
-  deleteApiToken
+  deleteApiToken,
+  apiLabelHandler
 } from '../controllers/users/api.controller';
 import { USER_ROLES } from '../lib/constants';
+import { apiLabelHandlerValidator } from './validators/api.validators';
 
 class APIRoute {
   public path = '/api';
@@ -30,6 +32,13 @@ class APIRoute {
       this.authJwt.authenticateJWT,
       this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       deleteApiToken
+    );
+
+    // Shipping label API
+    this.router.post(
+      this.path + '/label',
+      apiLabelHandlerValidator,
+      apiLabelHandler
     );
   }
 }

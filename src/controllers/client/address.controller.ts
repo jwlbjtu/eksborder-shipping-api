@@ -17,8 +17,8 @@ export const getAddressesForUser = async (
     const addresses = await AddressSchema.find({ userRef: user._id });
     res.json(addresses);
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -48,8 +48,8 @@ export const createAddress = async (
       res.json(address);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -98,8 +98,8 @@ export const updateAddress = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -118,7 +118,7 @@ export const deleteAddress = async (
       res.json({ message: 'Successfully delted' });
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

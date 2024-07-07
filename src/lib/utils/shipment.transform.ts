@@ -102,6 +102,7 @@ class TransformDataToShipment extends stream.Transform {
         zip: map.zip !== undefined ? data[map.zip] : '',
         country: data[map.country]
       },
+      packageList: [],
       return: {
         name: defaultReturn.name,
         company: defaultReturn.company,
@@ -114,7 +115,6 @@ class TransformDataToShipment extends stream.Transform {
         zip: defaultReturn.zip,
         country: defaultReturn.country
       },
-      morePackages: [],
       shipmentOptions: {
         shipmentDate: new Date()
       },
@@ -124,12 +124,12 @@ class TransformDataToShipment extends stream.Transform {
     };
 
     // Check if order is international
-    if (result.sender.country !== result.toAddress.country) {
+    if (result.sender!.country !== result.toAddress.country) {
       result.customDeclaration = {
         typeOfContent: TYPE_OF_CONTENT.MERCHANDISE,
         incoterm: INCOTERM.DDU.value,
         nonDeliveryHandling: NON_DELIVERY_HANDLING.RETURN,
-        signingPerson: result.sender.name!
+        signingPerson: result.sender!.name!
       };
     }
 
@@ -145,7 +145,7 @@ class TransformDataToShipment extends stream.Transform {
         result.carrier = clientCarrier.carrier;
         result.facility = data[map.facility];
         if (data[map.service]) {
-          const service = clientCarrier.services.find(
+          const service = [clientCarrier.service].find(
             (ele) => ele.name === data[map.service]
           );
           if (service) {
@@ -157,23 +157,25 @@ class TransformDataToShipment extends stream.Transform {
 
     // PackageInfo
     if (data[map.packageType]) {
-      result.packageInfo = {
-        packageType: data[map.packageType],
-        dimentions: {
-          length: data[map.length] ? parseFloat(data[map.length]) : 0,
-          width: data[map.width] ? parseFloat(data[map.width]) : 0,
-          height: data[map.height] ? parseFloat(data[map.height]) : 0,
-          unitOfMeasure: data[map.dimentionUnit]
-            ? (data[map.dimentionUnit].toLowerCase() as DistanceUnit)
-            : DistanceUnit.IN
-        },
-        weight: {
-          value: data[map.weight] ? parseFloat(data[map.weight]) : 0,
-          unitOfMeasure: data[map.weightUnit]
-            ? (data[map.weightUnit].toLowerCase() as WeightUnit)
-            : WeightUnit.LB
+      result.packageList = [
+        {
+          packageType: data[map.packageType],
+          dimentions: {
+            length: data[map.length] ? parseFloat(data[map.length]) : 0,
+            width: data[map.width] ? parseFloat(data[map.width]) : 0,
+            height: data[map.height] ? parseFloat(data[map.height]) : 0,
+            unitOfMeasure: data[map.dimentionUnit]
+              ? (data[map.dimentionUnit].toLowerCase() as DistanceUnit)
+              : DistanceUnit.IN
+          },
+          weight: {
+            value: data[map.weight] ? parseFloat(data[map.weight]) : 0,
+            unitOfMeasure: data[map.weightUnit]
+              ? (data[map.weightUnit].toLowerCase() as WeightUnit)
+              : WeightUnit.LB
+          }
         }
-      };
+      ];
     }
     return result;
   };

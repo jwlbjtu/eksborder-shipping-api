@@ -49,7 +49,7 @@ export const buildFedexProductReqBody = (
       DropoffType: 'REGULAR_PICKUP',
       ServiceType: shipment.service?.key,
       PackagingType: 'YOUR_PACKAGING',
-      Shipper: ceateFedexShipper(shipment.sender),
+      Shipper: ceateFedexShipper(shipment.sender!),
       Recipient: ceateFedexShipper(shipment.toAddress),
       ShippingChargesPayment: {
         PaymentType: 'SENDER'

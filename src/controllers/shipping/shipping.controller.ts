@@ -54,7 +54,8 @@ export const createShippingLabel = async (
   console.log(body);
   const user = req.user as IUser;
   let carrier: string | undefined = undefined;
-  let chargeFee = true;
+  const chargeFee = true;
+  // TODO: Just get a channel number instead of all the carrier details
   const provider: string | undefined = body.provider || undefined;
   let service: string | undefined = body.service || undefined;
   let facility: string | undefined = body.facility || undefined;
@@ -71,7 +72,7 @@ export const createShippingLabel = async (
     carrierAccount = checkValues.carrierAccount;
     account = checkValues.account;
     carrier = account.carrier;
-    chargeFee = !account.payOffline;
+    // chargeFee = !account.payOffline;
     // * Validate Service Name is Supported
     service = validateService(account, service);
     // * Validate Facility Name is Supported
@@ -108,7 +109,7 @@ export const createShippingLabel = async (
       accountName: account.accountName,
       carrierAccount: account.accountId,
       carrier: account.carrier,
-      service: { ...account.services.find((ele) => ele.name === service)! },
+      service: account.service,
       facility: facility,
       sender: {
         name: fromAddress.name,
@@ -146,57 +147,66 @@ export const createShippingLabel = async (
       shipmentOptions: {
         shipmentDate: new Date()
       },
-      packageInfo: {
-        packageType: 'PKG',
-        weight: {
-          value: convert(weight)
-            .from(unitOfMeasure.toLowerCase() as WeightUnit)
-            .to(WeightUnit.LB),
-          unitOfMeasure: WeightUnit.LB
-        },
-        dimentions: {
-          length: convert(dimension?.length)
-            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-            .to(DistanceUnit.IN),
-          width: convert(dimension?.width)
-            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-            .to(DistanceUnit.IN),
-          height: convert(dimension?.height)
-            .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-            .to(DistanceUnit.IN),
-          unitOfMeasure: DistanceUnit.IN
+      packageList: [
+        {
+          packageType: 'PKG',
+          weight: {
+            value: convert(weight)
+              .from(unitOfMeasure.toLowerCase() as WeightUnit)
+              .to(WeightUnit.LB),
+            unitOfMeasure: WeightUnit.LB
+          },
+          dimentions: {
+            length: convert(dimension?.length)
+              .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            width: convert(dimension?.width)
+              .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            height: convert(dimension?.height)
+              .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
+              .to(DistanceUnit.IN),
+            unitOfMeasure: DistanceUnit.IN
+          }
         }
-      },
-      morePackages: [],
+      ],
       status: ShipmentStatus.PENDING,
       manifested: false,
       userRef: user._id
     };
 
     if (body.additionalPackages && body.additionalPackages.length > 0) {
-      shipmentData.morePackages = body.additionalPackages.map((ele) => {
-        return {
-          packageType: 'PKG',
-          weight: {
-            value: convert(ele.weight.value)
-              .from(ele.weight.unitOfMeasure.toLowerCase() as WeightUnit)
-              .to(WeightUnit.LB),
-            unitOfMeasure: WeightUnit.LB
-          },
-          dimentions: {
-            length: convert(ele.dimension?.length)
-              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-              .to(DistanceUnit.IN),
-            width: convert(ele.dimension?.width)
-              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-              .to(DistanceUnit.IN),
-            height: convert(ele.dimension?.height)
-              .from(ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
-              .to(DistanceUnit.IN),
-            unitOfMeasure: DistanceUnit.IN
-          }
-        };
-      });
+      shipmentData.packageList = shipmentData.packageList.concat(
+        body.additionalPackages.map((ele) => {
+          return {
+            packageType: 'PKG',
+            weight: {
+              value: convert(ele.weight.value)
+                .from(ele.weight.unitOfMeasure.toLowerCase() as WeightUnit)
+                .to(WeightUnit.LB),
+              unitOfMeasure: WeightUnit.LB
+            },
+            dimentions: {
+              length: convert(ele.dimension?.length)
+                .from(
+                  ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit
+                )
+                .to(DistanceUnit.IN),
+              width: convert(ele.dimension?.width)
+                .from(
+                  ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit
+                )
+                .to(DistanceUnit.IN),
+              height: convert(ele.dimension?.height)
+                .from(
+                  ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit
+                )
+                .to(DistanceUnit.IN),
+              unitOfMeasure: DistanceUnit.IN
+            }
+          };
+        })
+      );
     }
 
     let shipping = new ShipmentSchema(shipmentData);
@@ -256,34 +266,22 @@ export const createShippingLabel = async (
       }
 
       let rate: Rate;
-      if (chargeFee && result && result.rates) {
+      if (result && result.rates) {
         rate = result.rates[0];
       } else {
-        rate = {
-          carrier,
-          service: shipping.service!.name,
-          serviceId: shipping.service!.key,
-          isTest: body.test,
-          clientCarrierId: account.accountId
-        };
-      }
-
-      if (chargeFee && (!rate.rate || !rate.currency)) {
         res.status(400).json({ message: '获取邮寄费失败' });
         return;
       }
 
       let totalRate = 0,
         fee = 0;
-      if (chargeFee) {
-        logger.info('3. Apply fee on top of the price to get total price');
-        fee = computeFee(shipping, rate.rate!, rate.currency, account.rates);
-        totalRate = roundToTwoDecimal(rate.rate! + fee);
-        logger.info('4. Check total price against user balance');
-        if (!rate.isTest && user.balance < totalRate) {
-          res.status(400).json({ message: '余额不足' });
-          return;
-        }
+      logger.info('3. Apply fee on top of the price to get total price');
+      fee = computeFee(shipping, rate.rate!, rate.currency, account.rates);
+      totalRate = roundToTwoDecimal(rate.rate! + fee);
+      logger.info('4. Check total price against user balance');
+      if (!rate.isTest && user.balance < totalRate) {
+        res.status(400).json({ message: '余额不足' });
+        return;
       }
       logger.info('5. Create Shipping label and response data');
       const labelResponse = await api.label(shipping, rate);
@@ -296,19 +294,9 @@ export const createShippingLabel = async (
           newBalance = roundToTwoDecimal(user.balance - totalRate);
           user.balance = newBalance;
           await user.save();
-        } else {
-          const shippingRate = labelResponse.shippingRate;
-          const shippingCharge = shippingRate.reduce((acc, cur) => {
-            return acc + cur.rate;
-          }, 0);
-          const shippingChargeCurrency = shippingRate[0].Currency;
-          totalRate = shippingCharge;
-          rate.rate = shippingCharge;
-          rate.currency = shippingChargeCurrency;
         }
         logger.info('7. Generate billing record');
-        //@ts-ignore
-        const billingObj: IBilling = {
+        const billingObj: Partial<IBilling> = {
           userRef: user._id,
           description: `${rate.carrier}, ${rate.service}, ${labels[0].tracking}`,
           account: account.accountName,
@@ -353,7 +341,8 @@ export const createShippingLabel = async (
         carrier: shipping.carrier!,
         service: shipping.service!.name,
         facility: shipping.facility,
-        carrierAccount: shipping.carrierAccount!,
+        channelId: shipping.carrierAccount!,
+        labelUrlList: shipping.labelUrlList!,
         labels: shipping.labels.map((ele) => {
           return {
             createdOn: new Date(),
@@ -363,7 +352,7 @@ export const createShippingLabel = async (
             format: ele.format
           };
         }),
-        shippingId: shipping.trackingId,
+        trackingNumber: shipping.trackingId,
         ref: body.ref
       };
       return LRes.resOk(res, labelResult);
@@ -406,7 +395,8 @@ export const GetLabelByShippingId = async (
         carrier: shipping.carrier!,
         service: shipping.service!.name,
         facility: shipping.facility,
-        carrierAccount: shipping.carrierAccount!,
+        channelId: shipping.carrierAccount!,
+        labelUrlList: shipping.labelUrlList!,
         labels: shipping.labels.map((ele) => {
           return {
             createdOn: shipping.createdAt,
@@ -416,7 +406,7 @@ export const GetLabelByShippingId = async (
             format: ele.format
           };
         }),
-        shippingId: shipping.trackingId
+        trackingNumber: shipping.trackingId
       };
       return LRes.resOk(res, labelResult);
     } else {
@@ -634,7 +624,7 @@ export const downloadManifest = async (
         clientAccount,
         test,
         clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
-          ? clientAccount.facilities![0]
+          ? clientAccount.facility
           : undefined
       );
       if (api && api.getManifest) {

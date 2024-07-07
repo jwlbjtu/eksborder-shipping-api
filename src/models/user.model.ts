@@ -104,7 +104,8 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       trim: true
     },
     logoImage: { type: String },
-    balance: { type: Number, min: 0, default: 0, required: true },
+    balance: { type: Number, default: 0, required: true },
+    deposit: { type: Number, default: 0, required: true },
     minBalance: { type: Number, min: 0, default: 0, required: true },
     currency: { type: String, default: 'USD' },
     referalName: { type: String },
@@ -163,9 +164,9 @@ UserSchema.methods.toJSON = function () {
 
   userObject.id = this._id;
 
-  delete userObject.password;
+  delete (userObject as any).password;
   delete userObject.tokens;
-  delete userObject.salt;
+  delete (userObject as any).salt;
 
   return userObject;
 };
@@ -206,6 +207,7 @@ UserSchema.methods.toAuthJSON = async function () {
     companyName: this.companyName,
     logoImage: this.logoImage,
     balance: this.balance,
+    deposit: this.deposit,
     currency: this.currency,
     isActive: this.isActive,
     token_type: 'Bearer',
@@ -235,6 +237,7 @@ UserSchema.methods.toClientInfo = async function () {
     companyName: this.companyName,
     logoImage: this.logoImage,
     balance: this.balance,
+    deposit: this.deposit,
     currency: this.currency,
     isActive: this.isActive,
     token_type: 'Bearer',
@@ -250,8 +253,8 @@ UserSchema.methods.toClientInfo = async function () {
         accountId: ele.accountId,
         carrier: ele.carrier,
         connectedAccount: ele.connectedAccount,
-        services: ele.services,
-        facilities: ele.facilities,
+        services: [ele.service],
+        facilities: [ele.facility],
         carrierRef: ele.carrierRef,
         userRef: ele.userRef,
         note: ele.note,

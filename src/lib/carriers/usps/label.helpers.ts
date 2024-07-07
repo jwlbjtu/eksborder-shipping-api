@@ -38,6 +38,7 @@ import {
   UspsIntlShippingItem
 } from '../../../types/carriers/usps';
 import { logger } from '../../logger';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 export const buildUspsLabelReqBody = (
   shipment: IShipping,
@@ -71,7 +72,7 @@ const buildUspsIntlPriorityMailLabelReqBody = (
   userId: string,
   isTest: boolean
 ): UspsIntlPriorityMailLabelRequestBody => {
-  const sender = shipment.sender;
+  const sender = shipment.sender!;
   const senderNames = sender.name!.split(' ');
   const recipient = shipment.toAddress;
   const recipientNames = recipient.name!.split(' ');
@@ -188,7 +189,7 @@ const buildUspsIntlPMExpressLabelReqBody = (
   userId: string,
   isTest: boolean
 ): USPSIntlPMExpressLabelReqBody => {
-  const sender = shipment.sender;
+  const sender = shipment.sender!;
   const senderNames = sender.name!.split(' ');
   const recipient = shipment.toAddress;
   const recipientNames = recipient.name!.split(' ');
@@ -305,7 +306,7 @@ const buildUspsDomesticLabelReqBody = (
   userId: string,
   rate: Rate
 ): UspsDomesticLabelReqBody => {
-  const sender = shipment.sender;
+  const sender = shipment.sender!;
   const recipient = shipment.toAddress;
   const packageInfo = shipment.packageInfo!;
   const dimentions = packageInfo.dimentions!;
@@ -398,11 +399,7 @@ export const callUspsLabelEndpoint = async (
     | USPSIntlPMExpressLabelReqBody
     | UspsIntlPriorityMailLabelRequestBody,
   isTest: boolean
-): Promise<{
-  labels: LabelData[];
-  forms: FormData[] | undefined;
-  shippingRate: ShippingRate[];
-}> => {
+): Promise<ApiFinalResult> => {
   let api = isTest
     ? USPS_LABEL_TEST_APIS.US_DOMESTIC
     : USPS_LABEL_APIS.US_DOMESTIC;
@@ -468,7 +465,13 @@ export const callUspsLabelEndpoint = async (
       return {
         labels: [labelResponse],
         forms: undefined,
-        shippingRate: [shippingRate]
+        shippingRate: [shippingRate],
+        labelUrlList: [],
+        invoiceUrl: '',
+        trackingNum: labelResponse.tracking,
+        rOrderId: '',
+        turnChanddelId: CARRIERS.USPS,
+        turnServiceType: serviceId
       };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));
@@ -565,7 +568,13 @@ export const callUspsLabelEndpoint = async (
       return {
         labels: labelData,
         forms: undefined,
-        shippingRate: [shippingRate]
+        shippingRate: [shippingRate],
+        labelUrlList: [],
+        invoiceUrl: '',
+        trackingNum: labelData[0].tracking,
+        rOrderId: '',
+        turnChanddelId: CARRIERS.USPS,
+        turnServiceType: serviceId
       };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));
@@ -662,7 +671,13 @@ export const callUspsLabelEndpoint = async (
       return {
         labels: labelData,
         forms: undefined,
-        shippingRate: [shippingRate]
+        shippingRate: [shippingRate],
+        labelUrlList: [],
+        invoiceUrl: '',
+        trackingNum: labelData[0].tracking,
+        rOrderId: '',
+        turnChanddelId: CARRIERS.USPS,
+        turnServiceType: serviceId
       };
     } else {
       logger.error(util.inspect(uspsLabelResponse.Error));

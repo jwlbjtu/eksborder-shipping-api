@@ -26,8 +26,8 @@ export const fetchPriceTableAccounts = async (
       res.json(accounts);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -60,8 +60,8 @@ export const createPriceTableAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -101,8 +101,8 @@ export const updatePriceTableAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -186,7 +186,7 @@ export const uploadPriceTablePrice = async (
       );
     }
     logger.error(util.inspect(error, true, null));
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -220,7 +220,7 @@ export const deltePriceTableAccount = async (
       res.json({ message: 'Delete price table account' });
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

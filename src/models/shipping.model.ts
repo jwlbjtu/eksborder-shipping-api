@@ -6,6 +6,7 @@ import { DistanceUnit, ShipmentStatus, WeightUnit } from '../lib/constants';
 const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
   {
     orderId: { type: String, required: true },
+    rOrderId: { type: String },
     accountName: { type: String },
     carrierAccount: { type: String, index: true },
     carrier: { type: String },
@@ -29,7 +30,8 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
         country: { type: String, required: true },
         zip: { type: String, required: true },
         email: { type: String },
-        phone: { type: String }
+        phone: { type: String },
+        taxNumber: { type: String }
       }
     },
     toAddress: {
@@ -43,7 +45,8 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
         country: { type: String, required: true },
         zip: { type: String, required: true },
         email: { type: String },
-        phone: { type: String }
+        phone: { type: String },
+        taxNumber: { type: String }
       }
     },
     return: {
@@ -60,24 +63,13 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
         phone: { type: String }
       }
     },
-    packageInfo: {
-      type: {
-        packageType: { type: String },
-        weight: {
-          type: { value: { type: Number }, unitOfMeasure: { type: String } }
-        },
-        dimentions: {
-          type: {
-            length: { type: Number, required: true },
-            width: { type: Number, required: true },
-            height: { type: Number, required: true },
-            unitOfMeasure: { type: String, require: true }
-          },
-          required: false
-        }
-      }
-    },
-    morePackages: {
+    signature: { type: String },
+    description: { type: String },
+    referenceNumber: { type: String },
+    specialRemarks: { type: String },
+    fretaxdutyType: { type: String },
+    taxdutyType: { type: String },
+    packageList: {
       type: [
         {
           packageType: { type: String },
@@ -92,12 +84,46 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
               unitOfMeasure: { type: String, require: true }
             },
             required: false
-          }
+          },
+          count: { type: Number }
         }
       ]
     },
     shipmentOptions: {
       type: { shipmentDate: Date }
+    },
+    invoice: {
+      type: {
+        currencyCode: { type: String },
+        shipmentTerms: { type: String },
+        exportReason: { type: String },
+        placeOfIncoterm: { type: String },
+        insuranceCharges: { type: Number },
+        freightCharges: { type: Number },
+        invoiceDetailList: [
+          {
+            descriptionEn: { type: String },
+            descriptionCn: { type: String },
+            partNumber: { type: String },
+            commodityCode: { type: String },
+            originalCountry: { type: String },
+            weight: { type: Number },
+            currencyValue: { type: Number },
+            unitCount: { type: Number },
+            material: { type: String },
+            materialEn: { type: String },
+            attributel: { type: String },
+            attributelEn: { type: String },
+            brand: { type: String },
+            brandEn: { type: String },
+            model: { type: String },
+            modelEn: { type: String },
+            measure: { type: String },
+            picUrl: { type: String },
+            manufacture: { type: String }
+          }
+        ]
+      }
     },
     customDeclaration: {
       type: {
@@ -134,6 +160,15 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
         isTest: { type: Boolean, required: true, default: false }
       }
     ],
+    labelUrlList: [
+      {
+        labelUrl: { type: String, required: true },
+        type: { type: String, required: true }
+      }
+    ],
+    invoiceUrl: { type: String },
+    turnChannelId: { type: String },
+    turnServiceType: { type: String },
     forms: [
       {
         data: { type: String, requied: true },
@@ -171,42 +206,10 @@ ShippingSchema.methods.toJSON = function () {
 };
 
 ShippingSchema.pre<IShipping>('save', async function save(next) {
-  if (this.isModified('packageInfo')) {
-    const packageInfo = this.packageInfo;
-    if (packageInfo) {
-      const weight = packageInfo.weight;
-      const dimentions = packageInfo.dimentions;
-      const newInfo: PackageInfo = {
-        packageType: packageInfo.packageType,
-        weight: {
-          value: convert(weight.value)
-            .from(weight.unitOfMeasure)
-            .to(WeightUnit.LB),
-          unitOfMeasure: WeightUnit.LB
-        }
-      };
-      if (dimentions) {
-        newInfo.dimentions = {
-          length: convert(dimentions.length)
-            .from(dimentions.unitOfMeasure)
-            .to(DistanceUnit.IN),
-          width: convert(dimentions.width)
-            .from(dimentions.unitOfMeasure)
-            .to(DistanceUnit.IN),
-          height: convert(dimentions.height)
-            .from(dimentions.unitOfMeasure)
-            .to(DistanceUnit.IN),
-          unitOfMeasure: DistanceUnit.IN
-        };
-      }
-      this.packageInfo = newInfo;
-    }
-  }
-
-  if (this.isModified('morePackages')) {
-    const morePackages = this.morePackages;
-    if (morePackages && morePackages.length > 0) {
-      const newPackages = morePackages.map((ele) => {
+  if (this.isModified('packageList')) {
+    const packageList = this.packageList;
+    if (packageList && packageList.length > 0) {
+      const newPackages = packageList.map((ele) => {
         const eleWeight = ele.weight;
         const eleDimentions = ele.dimentions;
         const newEleInfo: PackageInfo = {

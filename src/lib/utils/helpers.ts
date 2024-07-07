@@ -101,26 +101,22 @@ export const base64Encode = (file: string): string => {
 };
 
 export const computeTotalShipmentWeight = (shipment: IShipping): IWeight => {
-  const packageinfo = shipment.packageInfo;
-  const morePackages = shipment.morePackages;
-  if (packageinfo) {
-    const data = { ...packageinfo.weight };
-    if (morePackages && morePackages.length > 0) {
-      const total = morePackages.reduce(
-        (acumulator, ele) => acumulator + ele.weight.value,
-        0
-      );
-      data.value += total;
-    }
-    return data;
+  const packageList = shipment.packageList;
+  const data = { value: 0, unitOfMeasure: packageList[0].weight.unitOfMeasure };
+  if (packageList && packageList.length > 0) {
+    const total = packageList.reduce(
+      (acumulator, ele) => acumulator + ele.weight.value,
+      0
+    );
+    data.value += total;
   }
-  return { value: 0, unitOfMeasure: WeightUnit.LB };
+  return data;
 };
 
 export const checkShipmentRegion = (
   shipment: IShipping
 ): string | undefined => {
-  const sender = shipment.sender;
+  const sender = shipment.sender!;
   const recipient = shipment.toAddress;
 
   if (sender.country === Country.USA && recipient.country === Country.USA) {

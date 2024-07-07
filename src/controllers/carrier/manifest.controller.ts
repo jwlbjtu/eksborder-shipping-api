@@ -41,8 +41,8 @@ export const getManifestShipmentsForUser = async (
       res.json(shipments);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -75,8 +75,8 @@ export const getManifests = async (
       res.json(manifests);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -116,7 +116,7 @@ export const createManifests = async (
           clientAccount,
           false,
           clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
-            ? clientAccount.facilities![0]
+            ? clientAccount.facility!
             : undefined
         );
         if (api && api.createManifest) {
@@ -142,8 +142,8 @@ export const createManifests = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -177,7 +177,7 @@ export const refreshManifest = async (
             clientAccount,
             false,
             clientAccount.carrier === CARRIERS.DHL_ECOMMERCE
-              ? clientAccount.facilities![0]
+              ? clientAccount.facility!
               : undefined
           );
           if (api && api.getManifest) {
@@ -206,8 +206,8 @@ export const refreshManifest = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -271,7 +271,7 @@ export const getTrackingInfo = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

@@ -21,16 +21,14 @@ const AccountSchema: Schema = new Schema(
     },
     carrier: { type: String, required: true },
     connectedAccount: { type: String, required: true },
-    services: {
-      type: [
-        {
-          key: { type: String, required: true },
-          id: { type: String },
-          name: { type: String, required: true }
-        }
-      ]
+    service: {
+      type: {
+        key: { type: String, required: true },
+        id: { type: String },
+        name: { type: String, required: true }
+      }
     },
-    facilities: [String],
+    facility: { type: String },
     rates: {
       type: [
         {

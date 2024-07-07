@@ -26,8 +26,8 @@ export const fetchThirdpartyAccounts = async (
       res.json(accounts);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -60,8 +60,8 @@ export const createThirdPartyAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -85,6 +85,7 @@ export const updateThirdPartyAccount = async (
         account.zipCode = data.zipCode;
         account.service = data.service;
         account.region = data.region;
+        account.zoneMode = data.zoneMode;
         account.condition = data.condition;
         account.zoneMap = data.zoneMap;
         account.rates = data.rates;
@@ -104,8 +105,8 @@ export const updateThirdPartyAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -189,7 +190,7 @@ export const uploadThirdpartyPrice = async (
       );
     }
     logger.error(util.inspect(error, true, null));
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -223,7 +224,7 @@ export const delteThridPartyAccount = async (
       res.json({ message: 'Delete thridparty account' });
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

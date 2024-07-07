@@ -23,8 +23,8 @@ export const fetchCustomServiceAccounts = async (
       res.json(services);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -50,8 +50,8 @@ export const createCustomServiceAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -82,8 +82,8 @@ export const updateCustomServiceAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -110,7 +110,7 @@ export const deleteCustomServiceAccount = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };

@@ -1,6 +1,7 @@
 import { Document } from 'mongoose';
 import { IAddress } from '../lib/carriers/flat/flat.helper';
 import { DistanceUnit, WeightUnit } from '../lib/constants';
+import { RuiYunLableUrl } from './carriers/rui_yun';
 
 export interface IProductRequest {
   carrier: string;
@@ -42,9 +43,11 @@ export interface ILabelResponse {
   provider?: string;
   service: string;
   facility?: string;
-  carrierAccount: string;
+  channelId: string;
   labels: ILabel[];
-  shippingId?: string;
+  labelUrlList: RuiYunLableUrl[];
+  trackingNumber?: string;
+  invoiceUrl?: string;
   ref?: string;
 }
 
@@ -162,6 +165,7 @@ export interface IAddress extends Record<string, any> {
   city: string;
   state?: string;
   zip: string;
+  taxNumber?: string;
   isResidential?: boolean;
 }
 

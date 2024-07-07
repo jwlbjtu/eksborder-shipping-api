@@ -109,7 +109,7 @@ export const validateShipment = (
   if (
     !isCustomService &&
     (!shipmentData.service ||
-      !carrierAccount.services
+      ![carrierAccount.service]
         .map((ele) => ele.key)
         .includes(shipmentData.service.key))
   ) {
@@ -119,7 +119,7 @@ export const validateShipment = (
   if (
     CARRIERS.DHL_ECOMMERCE === shipmentData.carrier &&
     (!shipmentData.facility ||
-      !carrierAccount.facilities.includes(shipmentData.facility))
+      ![carrierAccount.facility].includes(shipmentData.facility))
   ) {
     return '所选操作中心不支持';
   }
@@ -164,6 +164,7 @@ export const validateShipment = (
 };
 
 export const isShipmentInternational = (shipmentData: IShipping): boolean => {
+  if (!shipmentData.sender) return false;
   return shipmentData.sender.country !== shipmentData.toAddress.country;
 };
 

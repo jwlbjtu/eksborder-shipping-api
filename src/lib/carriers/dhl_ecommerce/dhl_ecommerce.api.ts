@@ -49,6 +49,7 @@ import {
 } from '../../../types/carriers/dhl_ecommerce';
 import convertlib from 'convert-units';
 import PriceTableSchema from '../../../models/priceTabel.model';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 class DhlEcommerceAPI implements ICarrierAPI {
   public isTest: boolean;
@@ -114,14 +115,16 @@ class DhlEcommerceAPI implements ICarrierAPI {
       try {
         await this.auth();
       } catch (error) {
-        logger.error(util.inspect(error.response.data));
+        logger.error(util.inspect((error as any).response.data));
         logger.error(
           `Failed to authenticate to ${this.carrier.carrierName} ${
             this.isTest ? 'test' : ''
           }`
         );
         throw new Error(
-          `${this.carrier.carrierName} ERROR: ${error.response.data.title}`
+          `${this.carrier.carrierName} ERROR: ${
+            (error as any).response.data.title
+          }`
         );
       }
     } else {
@@ -217,9 +220,11 @@ class DhlEcommerceAPI implements ICarrierAPI {
         );
         return response;
       } catch (error) {
-        console.log(error.response.data);
-        logger.error(util.inspect(error.response.data, true));
-        return `${CARRIERS.DHL_ECOMMERCE} ERROR: ${error.response.data.title}`;
+        console.log((error as any).response.data);
+        logger.error(util.inspect((error as any).response.data, true));
+        return `${CARRIERS.DHL_ECOMMERCE} ERROR: ${
+          (error as any).response.data.title
+        }`;
       }
     }
   };
@@ -227,11 +232,7 @@ class DhlEcommerceAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{
-    labels: LabelData[];
-    forms: FormData[] | undefined;
-    shippingRate: ShippingRate[];
-  }> => {
+  ): Promise<ApiFinalResult> => {
     if (shipmentData.service?.key === 'FLAT') {
       // Generate tracking number
       const trackingNumber = trackingNumberGenerator();
@@ -257,7 +258,13 @@ class DhlEcommerceAPI implements ICarrierAPI {
       return {
         labels: [result],
         forms: undefined,
-        shippingRate: [{ rate: 0, currency: 'USD' }]
+        shippingRate: [{ rate: 0, currency: 'USD' }],
+        labelUrlList: [],
+        invoiceUrl: '',
+        rOrderId: shipmentData.orderId,
+        trackingNum: result.tracking,
+        turnChanddelId: CARRIERS.DHL_ECOMMERCE,
+        turnServiceType: shipmentData.service!.key
       };
     } else {
       const isInternational = isShipmentInternational(shipmentData);
@@ -283,11 +290,17 @@ class DhlEcommerceAPI implements ICarrierAPI {
         return {
           labels: response,
           forms: undefined,
-          shippingRate: [{ rate: 0, currency: 'USD' }]
+          shippingRate: [{ rate: 0, currency: 'USD' }],
+          labelUrlList: [],
+          invoiceUrl: '',
+          rOrderId: shipmentData.orderId,
+          trackingNum: response[0].tracking,
+          turnChanddelId: CARRIERS.DHL_ECOMMERCE,
+          turnServiceType: shipmentData.service!.key
         };
       } catch (error) {
-        logger.error(util.inspect(error.response.data, true, null));
-        throw new Error(error.response.data.title);
+        logger.error(util.inspect((error as any).response.data, true, null));
+        throw new Error((error as any).response.data.title);
       }
     }
   };
@@ -344,12 +357,12 @@ class DhlEcommerceAPI implements ICarrierAPI {
         const response = await Promise.all(manifestCalls);
         return response;
       } catch (error) {
-        if (error.response) {
-          logger.error(util.inspect(error.response.data, true, null));
-          throw new Error(error.response.data.title);
+        if ((error as any).response) {
+          logger.error(util.inspect((error as any).response.data, true, null));
+          throw new Error((error as any).response.data.title);
         } else {
           logger.error(util.inspect(error, true, null));
-          throw new Error(error.message);
+          throw new Error((error as any).message);
         }
       }
     } else {
@@ -371,12 +384,12 @@ class DhlEcommerceAPI implements ICarrierAPI {
       );
       return response;
     } catch (error) {
-      if (error.response) {
-        logger.error(util.inspect(error.response.data, true, null));
-        throw new Error(error.response.data.title);
+      if ((error as any).response) {
+        logger.error(util.inspect((error as any).response.data, true, null));
+        throw new Error((error as any).response.data.title);
       } else {
         logger.error(util.inspect(error, true, null));
-        throw new Error(error.message);
+        throw new Error((error as any).message);
       }
     }
   };
@@ -395,12 +408,12 @@ class DhlEcommerceAPI implements ICarrierAPI {
       );
       return response;
     } catch (error) {
-      if (error.response) {
-        logger.error(util.inspect(error.response.data, true, null));
-        throw new Error(error.response.data.title);
+      if ((error as any).response) {
+        logger.error(util.inspect((error as any).response.data, true, null));
+        throw new Error((error as any).response.data.title);
       } else {
         logger.error(util.inspect(error, true, null));
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
       }
     }
   };

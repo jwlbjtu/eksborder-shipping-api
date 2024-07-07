@@ -1,11 +1,5 @@
 import { ICarrierAPI, Rate } from '../../../types/carriers/carrier';
-import {
-  FormData,
-  ICarrier,
-  IShipping,
-  LabelData,
-  ShippingRate
-} from '../../../types/record.types';
+import { ICarrier, IShipping } from '../../../types/record.types';
 import { IAccount } from '../../../types/user.types';
 import { CARRIERS, FEDEX_HOSTS } from '../../constants';
 import CarrierSchema from '../../../models/carrier.model';
@@ -19,6 +13,7 @@ import { buildFedexLabelReqBody, callFedExLanelEndpoint } from './label.helper';
 import { FedexCredential } from '../../../types/carriers/fedex';
 import { addressValidation } from './rest/address.helper';
 import { IAddress } from '../../../types/shipping.types';
+import { ApiFinalResult } from '../../../types/carriers/api';
 
 class FedexAPI implements ICarrierAPI {
   private isTest: boolean;
@@ -97,14 +92,18 @@ class FedexAPI implements ICarrierAPI {
       return response;
     } catch (error) {
       console.log(error);
-      if (error.response) {
-        console.log(error.response.data.response);
-        logger.error(util.inspect(error.response.data.response, true, null));
-        return `${CARRIERS.FEDEX} ERROR: ${error.response.data.response.errors[0].message}`;
+      if ((error as any).response) {
+        console.log((error as any).response.data.response);
+        logger.error(
+          util.inspect((error as any).response.data.response, true, null)
+        );
+        return `${CARRIERS.FEDEX} ERROR: ${
+          (error as any).response.data.response.errors[0].message
+        }`;
       } else {
         console.log(error);
-        logger.error(util.inspect(error.message, true, null));
-        return `${CARRIERS.FEDEX} ERROR: ${error.message}`;
+        logger.error(util.inspect((error as any).message, true, null));
+        return `${CARRIERS.FEDEX} ERROR: ${(error as any).message}`;
       }
     }
   };
@@ -112,14 +111,8 @@ class FedexAPI implements ICarrierAPI {
   public label = async (
     shipmentData: IShipping,
     rate: Rate
-  ): Promise<{
-    labels: LabelData[];
-    forms: FormData[] | undefined;
-    shippingRate: ShippingRate[];
-  }> => {
-    const packageCount = shipmentData.morePackages
-      ? shipmentData.morePackages.length + 1
-      : 1;
+  ): Promise<ApiFinalResult> => {
+    const packageCount = shipmentData.packageList.length;
     const masterLabelReqBody = buildFedexLabelReqBody(
       this.credential,
       shipmentData,
@@ -127,7 +120,7 @@ class FedexAPI implements ICarrierAPI {
       false,
       '',
       packageCount,
-      shipmentData.packageInfo!,
+      shipmentData.packageList[0],
       1
     );
     logger.info(util.inspect(masterLabelReqBody, true, null));
@@ -139,7 +132,7 @@ class FedexAPI implements ICarrierAPI {
         masterLabelReqBody,
         this.isTest
       );
-      if (shipmentData.morePackages && shipmentData.morePackages.length > 0) {
+      if (shipmentData.packageList.length > 1) {
         let labels = response.labels;
         let forms = response.forms;
         let shippingCharges = response.shippingRate;
@@ -169,19 +162,43 @@ class FedexAPI implements ICarrierAPI {
           }
           shippingCharges = shippingCharges.concat(ele.shippingRate);
         });
-        return { labels, forms, shippingRate: shippingCharges };
+        return {
+          labels,
+          forms,
+          shippingRate: shippingCharges,
+          labelUrlList: [],
+          invoiceUrl: '',
+          trackingNum: labels[0].tracking,
+          rOrderId: shipmentData.orderId,
+          turnChanddelId: CARRIERS.FEDEX,
+          turnServiceType: shipmentData.service!.key
+        };
       }
 
-      return response;
+      return {
+        labels: response.labels,
+        forms: response.forms,
+        shippingRate: response.shippingRate,
+        labelUrlList: [],
+        invoiceUrl: '',
+        trackingNum: response.labels[0].tracking,
+        rOrderId: shipmentData.orderId,
+        turnChanddelId: CARRIERS.FEDEX,
+        turnServiceType: shipmentData.service!.key
+      };
     } catch (error) {
-      if (error.response) {
+      if ((error as any).response) {
         console.log(error);
-        logger.error(util.inspect(error.response.data.response, true, null));
-        throw new Error(error.response.data.response.errors[0].message);
+        logger.error(
+          util.inspect((error as any).response.data.response, true, null)
+        );
+        throw new Error(
+          (error as any).response.data.response.errors[0].message
+        );
       } else {
         console.log(error);
-        logger.error(util.inspect(error.message, true, null));
-        throw new Error(error.message);
+        logger.error(util.inspect((error as any).message, true, null));
+        throw new Error((error as any).message);
       }
     }
   };

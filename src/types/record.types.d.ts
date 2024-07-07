@@ -11,6 +11,8 @@ import {
   ShipmentStatus,
   WeightUnit
 } from '../lib/constants';
+import { ApiInvoice } from './carriers/api';
+import { RuiYunLableUrl } from './carriers/rui_yun';
 
 export interface ICarrier extends Document {
   id: Types.ObjectId;
@@ -70,12 +72,15 @@ export interface IThirdPartyAccount extends Document {
   countryCode?: string;
   service: IService;
   region: string;
+  zoneMode: string;
   condition: ThirdPartyCondition;
   price?: ThirdPartyPrice;
   zones?: string[];
   zoneMap?: ThirdPartyZoneMap[];
   rates: FeeRate[];
   carrierRef: string;
+  zoneMode: string;
+  origin?: string;
 }
 
 export interface ThirdPartyCondition {
@@ -101,6 +106,8 @@ export interface IBilling extends Document {
   account?: string;
   total: number;
   balance: number;
+  deposit: number;
+  clientDeposit: number;
   currency: string;
   details?: {
     shippingCost?: {
@@ -120,20 +127,27 @@ export interface IBilling extends Document {
 
 export interface ShipmentData {
   orderId: string;
+  rOrderId?: string;
   accountName?: string;
   carrierAccount?: string;
   carrier?: string;
   provider?: string;
   service?: IService;
   facility?: string;
-  sender: IAddress;
+  sender?: IAddress;
   toAddress: IAddress;
-  return: IAddress;
-  packageInfo?: PackageInfo;
-  morePackages: PackageInfo[];
+  return?: IAddress;
+  signature?: string; // UPS签名服务 0:不需要签名（默认）1:需要签名 2：成人签名
+  description?: string; // 货物描述 min: 1 max: 100
+  referenceNumber?: string; // 参考号码 min: 1 max: 35
+  specialRemarks?: string; // 特殊备注 min: 1 max: 100 fedex的时候才会起效果
+  fretaxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方 只能S,R
+  taxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方
+  packageList: PackageInfo[];
   shipmentOptions: {
     shipmentDate: Date;
   };
+  invoice?: ApiInvoice; // 发票 货件类型为包裹时，必须填写发票信息
   customDeclaration?: CustomDeclaration;
   customItems?: Item[];
   items?: Item[];
@@ -143,6 +157,10 @@ export interface ShipmentData {
   shippingId?: string;
   rate?: ShipmentRate;
   labels?: LabelData[];
+  labelUrlList?: RuiYunLableUrl[];
+  invoiceUrl?: string;
+  turnChannelId?: string;
+  turnServiceType?: string;
   forms?: FormData[];
   manifested: boolean = false;
   userRef: Types.ObjectId;
@@ -152,20 +170,27 @@ export interface ShipmentData {
 export interface IShipping extends Record<string, any>, Document {
   id: string;
   orderId: string;
+  rOrderId?: string;
   accountName?: string;
   carrierAccount?: string;
   carrier?: string;
   provider?: string;
   service?: IService;
   facility?: string;
-  sender: IAddress;
+  sender?: IAddress;
   toAddress: IAddress;
-  return: IAddress;
-  packageInfo?: PackageInfo;
-  morePackages: PackageInfo[];
+  return?: IAddress;
+  signature?: string; // UPS签名服务 0:不需要签名（默认）1:需要签名 2：成人签名
+  description?: string; // 货物描述 min: 1 max: 100
+  referenceNumber?: string; // 参考号码 min: 1 max: 35
+  specialRemarks?: string; // 特殊备注 min: 1 max: 100 fedex的时候才会起效果
+  fretaxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方 只能S,R
+  taxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方 只能R,S,T
+  packageList: PackageInfo[];
   shipmentOptions: {
     shipmentDate: Date;
   };
+  invoice?: ApiInvoice; // 发票 货件类型为包裹时，必须填写发票信息
   customDeclaration?: CustomDeclaration;
   customItems?: Item[];
   items?: Item[];
@@ -175,6 +200,10 @@ export interface IShipping extends Record<string, any>, Document {
   shippingId?: string;
   rate?: ShipmentRate;
   labels?: LabelData[];
+  labelUrlList?: RuiYunLableUrl[];
+  invoiceUrl?: string;
+  turnChannelId?: string;
+  turnServiceType?: string;
   forms?: FormData[];
   manifested: boolean = false;
   userRef: Types.ObjectId;
@@ -256,6 +285,7 @@ export interface PackageInfo {
   packageType: string;
   dimentions?: IDimension;
   weight: IWeight;
+  count?: number;
 }
 
 export interface ShipmentRate {

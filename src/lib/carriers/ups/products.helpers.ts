@@ -48,8 +48,8 @@ export const buildUpsProductReqBody = (
           Address: convertToUPSAddress(shipmentData.toAddress)
         },
         ShipFrom: {
-          Name: shipmentData.sender.company || shipmentData.sender.name!,
-          Address: convertToUPSAddress(shipmentData.sender)
+          Name: shipmentData.sender!.company || shipmentData.sender!.name!,
+          Address: convertToUPSAddress(shipmentData.sender!)
         },
         Service: {
           Code: shipmentData.service!.id!,
@@ -208,14 +208,18 @@ export const requestUPSSingleRate = async (
     logger.info(util.inspect(response.data, true, null));
     return response;
   } catch (error) {
-    if (error.response) {
-      console.log(error.response.data.response);
-      logger.error(util.inspect(error.response.data.response, true, null));
-      return `${CARRIERS.UPS} ERROR: ${error.response.data.response.errors[0].message}`;
+    if ((error as any).response) {
+      console.log((error as any).response.data.response);
+      logger.error(
+        util.inspect((error as any).response.data.response, true, null)
+      );
+      return `${CARRIERS.UPS} ERROR: ${
+        (error as any).response.data.response.errors[0].message
+      }`;
     } else {
       console.log(error);
-      logger.error(util.inspect(error.message, true, null));
-      return `${CARRIERS.UPS} ERROR: ${error.message}`;
+      logger.error(util.inspect((error as any).message, true, null));
+      return `${CARRIERS.UPS} ERROR: ${(error as any).message}`;
     }
   }
 };

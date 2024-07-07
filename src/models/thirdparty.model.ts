@@ -7,6 +7,8 @@ const ThirdPartyAccount: Schema = new Schema({
   accountNum: { type: String, required: true },
   zipCode: { type: String },
   countryCode: { type: String },
+  zoneMode: { type: String },
+  origin: { type: String },
   service: {
     type: {
       key: { type: String, required: true },

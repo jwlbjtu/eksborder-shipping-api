@@ -85,7 +85,9 @@ class App {
       console.log('Connect to Database!');
     } catch (error) {
       console.log(
-        `!!!!! ERROR !!!!! ***** Could not connect to database! ***** !!!!! ERROR !!!!!\n\t${error.stack}`
+        `!!!!! ERROR !!!!! ***** Could not connect to database! ***** !!!!! ERROR !!!!!\n\t${
+          (error as Error).stack
+        }`
       );
     }
   }

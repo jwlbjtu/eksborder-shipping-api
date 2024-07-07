@@ -140,7 +140,7 @@ export const buildDhlEcommerceProductReqBody = (
     pickup: facilityObj.pickup,
     distributionCenter: facilityObj.facility,
     consigneeAddress: convertToDHLAddress(shipmentData.toAddress),
-    returnAddress: convertToDHLAddress(shipmentData.return),
+    returnAddress: convertToDHLAddress(shipmentData.return!),
     packageDetail: dhlPackageDetail,
     rate: {
       calculate: true,

@@ -101,7 +101,7 @@ class FedexAuthHelper {
       return token;
     } catch (error) {
       logger.error('Failed to authenticate with Fedex');
-      logger.error(error.response.data.errors[0].message);
+      logger.error((error as any).response.data.errors[0].message);
       FedexAuthHelper.isGettingToken = false;
       return;
     }

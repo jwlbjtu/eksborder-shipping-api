@@ -56,7 +56,13 @@ export const createClientCarrierAccount = async (
 ): Promise<void> => {
   const account: IAccount = req.body;
   try {
-    account.accountId = uniqid();
+    // Check if accountId is unique
+    const existingAccount = await Account.findOne({
+      accountId: account.accountId
+    });
+    if (existingAccount) {
+      return LRes.resErr(res, 400, { title: 'Account ID already exists' });
+    }
     const createdAccount: IAccount = new Account(account);
     await createdAccount.save();
     return LRes.resOk(res, createdAccount);
@@ -73,7 +79,7 @@ export const updateClientCarrierAccount = async (
   const updateFields = [
     'carrier',
     'connectedAccount',
-    'services',
+    'service',
     'rates',
     'thirdpartyPrice',
     'carrierRef',

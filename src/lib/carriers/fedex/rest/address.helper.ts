@@ -50,8 +50,8 @@ export const addressValidation = async (
     address.isResidential = resolbedAddress.classification === 'RESIDENTIAL';
     return true;
   } catch (error) {
-    console.log(error.response.data);
-    logger.error(JSON.stringify(error.response.data));
+    console.log((error as any).response.data);
+    logger.error(JSON.stringify((error as any).response.data));
     return false;
   }
 };

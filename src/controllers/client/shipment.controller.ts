@@ -48,8 +48,8 @@ export const getShipmentsForUser = async (
       .populate('customItems');
     res.json(orders);
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -77,8 +77,8 @@ export const createShipment = async (
       res.json(shipment);
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -119,8 +119,8 @@ export const updateShipments = async (
       }
     }
   } catch (error) {
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -240,36 +240,25 @@ export const purchaseLabel = async (
           if (chargeFee && result && result.rates) {
             rate = result.rates[0];
           } else {
-            rate = {
-              carrier: carrierAccount.carrier,
-              service: shipmentData.service!.name,
-              serviceId: shipmentData.service!.key,
-              isTest: data.test,
-              clientCarrierId: carrierAccount.accountId
-            };
-          }
-
-          if (chargeFee && (!rate.rate || !rate.currency)) {
             res.status(400).json({ message: '获取邮寄费失败' });
             return;
           }
 
           let totalRate = 0;
           let fee = 0;
-          if (chargeFee) {
-            // check user balance
-            fee = computeFee(
-              shipmentData,
-              rate.rate!,
-              rate.currency,
-              carrierAccount.rates
-            );
-            totalRate = roundToTwoDecimal(rate.rate! + fee);
-            if (!rate.isTest && user.balance < totalRate) {
-              res.status(400).json({ message: '余额不足' });
-              return;
-            }
+          // check user balance
+          fee = computeFee(
+            shipmentData,
+            rate.rate!,
+            rate.currency,
+            carrierAccount.rates
+          );
+          totalRate = roundToTwoDecimal(rate.rate! + fee);
+          if (!rate.isTest && user.balance < totalRate) {
+            res.status(400).json({ message: '余额不足' });
+            return;
           }
+
           // call carrierAPI to get label
           const labelResponse = await api.label(shipmentData, rate);
           const labels = labelResponse.labels;
@@ -281,15 +270,6 @@ export const purchaseLabel = async (
               newBalance = roundToTwoDecimal(user.balance - totalRate);
               user.balance = newBalance;
               await user.save();
-            } else {
-              const shippingRate = labelResponse.shippingRate;
-              const shippingCharge = shippingRate.reduce((acc, cur) => {
-                return acc + cur.rate;
-              }, 0);
-              const shippingChargeCurrency = shippingRate[0].Currency;
-              totalRate = shippingCharge;
-              rate.rate = shippingCharge;
-              rate.currency = shippingChargeCurrency;
             }
             // generate billing record
             // @ts-expect-error: ignore
@@ -348,8 +328,8 @@ export const purchaseLabel = async (
     }
   } catch (error) {
     console.log(error);
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -430,7 +410,7 @@ export const preloadCsvFile = async (
       logger.error(util.inspect(err, true, null))
     );
     logger.error(util.inspect(error, true, null));
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: (error as any).message });
   }
 };
 
@@ -645,8 +625,8 @@ export const importCsvData = async (
     }
   } catch (error) {
     console.log(error);
-    logger.error(error.message);
-    res.status(500).json({ message: error.message });
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
   }
 };
 

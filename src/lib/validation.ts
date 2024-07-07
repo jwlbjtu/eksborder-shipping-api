@@ -69,7 +69,7 @@ export const validateService = (
   service?: string
 ): string => {
   if (!service) throw LRes.fieldErr('service', '/', errorTypes.MISSING);
-  const supportedServices = account.services;
+  const supportedServices = [account.service];
   if (!supportedServices.find((ele) => service === ele.name))
     throw LRes.fieldErr(
       'carrierAccount',
@@ -87,7 +87,7 @@ export const validateFacility = (
 ): string | undefined => {
   if (account.carrier !== CARRIERS.DHL_ECOMMERCE) return;
   if (!facility) throw LRes.fieldErr('facility', '/', errorTypes.MISSING);
-  const supportedFacilities = account.facilities;
+  const supportedFacilities = [account.facility];
   if (!supportedFacilities.includes(facility))
     throw LRes.fieldErr(
       'carrierAccount',
