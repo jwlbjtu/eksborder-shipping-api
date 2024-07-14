@@ -10,13 +10,15 @@ import { ruiYunOrderShipHandler } from '../carriers/rui_yun/rui_yun.label';
 import { DistanceUnit, ShipmentStatus, WeightUnit } from '../constants';
 import IdGenerator from './IdGenerator';
 import { logger } from '../logger';
+import { IAddress } from '../../types/shipping.types';
 
 export const createShipmentData = async (
   data: ApiLabelHandlerRequest,
   user: IUser,
   carrier: string,
   service: IService,
-  facility: string
+  facility: string,
+  sender: IAddress
 ): Promise<ShipmentData> => {
   const username = user.userName;
   const result: ShipmentData = {
@@ -29,21 +31,7 @@ export const createShipmentData = async (
     carrier,
     service,
     facility,
-    sender: data.sender
-      ? {
-          name: data.sender.name,
-          company: data.sender.companyName,
-          street1: data.sender.address1,
-          street2: data.sender.address2,
-          city: data.sender.city,
-          state: data.sender.state,
-          zip: data.sender.zipCode,
-          country: data.sender.country,
-          phone: data.sender.phone,
-          email: data.sender.email,
-          taxNumber: data.sender.taxNumber
-        }
-      : undefined,
+    sender,
     toAddress: {
       name: data.shipTo.name,
       company: data.shipTo.companyName,

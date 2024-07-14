@@ -31,10 +31,10 @@ export const createOrderItem = async (
           itemTitle: data.itemTitle,
           quantity: data.quantity,
           itemWeight: convert(data.itemWeight)
-            .from(data.itemWeightUnit)
+            .from(data.itemWeightUnit!)
             .to(WeightUnit.LB),
           totalWeight: convert(data.totalWeight)
-            .from(data.itemWeightUnit)
+            .from(data.itemWeightUnit!)
             .to(WeightUnit.LB),
           itemWeightUnit: WeightUnit.LB,
           itemValue: data.itemValue,
@@ -90,17 +90,17 @@ export const updateOrderItem = async (
         });
         if (item) {
           const newTotalWeight = convert(data.totalWeight)
-            .from(data.itemWeightUnit)
+            .from(data.itemWeightUnit!)
             .to(WeightUnit.LB);
 
           item.itemTitle = data.itemTitle;
           item.quantity = data.quantity;
           item.itemWeight = convert(data.itemWeight)
-            .from(data.itemWeightUnit)
+            .from(data.itemWeightUnit!)
             .to(WeightUnit.LB);
           item.totalWeight = newTotalWeight;
           item.itemWeightUnit = WeightUnit.LB;
-          item.itemValue = data.itemValue;
+          item.itemValue = data.itemValue!;
           item.totalValue = data.totalValue;
           item.itemValueCurrency = data.itemValueCurrency;
           item.country = data.country;

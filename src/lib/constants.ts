@@ -48,7 +48,8 @@ export const CARRIERS = {
   USPS: 'USPS',
   UPS: 'UPS',
   FEDEX: 'FedEx',
-  RUI_YUN: 'Rui Yun'
+  RUI_YUN: 'Rui Yun',
+  USPS3: 'USPS3'
 };
 
 export const SUPPORTED_CARRIERS = [
@@ -456,4 +457,11 @@ export const CARRIER_REGIONS = {
 export const RUIYUN_HOSTS = {
   RUIYUN_TEST: 'http://aa94.rui-y.com:8401/lgtbws/eship/orderShip',
   RUIYUN_PROD: 'http://www.pm-l.com:8401/lgtbws/eship/orderShip'
+};
+
+//**********************************//
+//******** USPS 3 Constants *******//
+//**********************************//
+export const USPS3_HOSTS = {
+  USPS3_PROD: 'https://api.apparcel.com'
 };

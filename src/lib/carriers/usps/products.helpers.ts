@@ -122,7 +122,7 @@ export const createInternationalRequest = (
     ValueOfContents: parseFloat(
       customItems
         .reduce(
-          (acumulator, ele) => acumulator + ele.quantity * ele.itemValue,
+          (acumulator, ele) => acumulator + ele.quantity * ele.itemValue!,
           0
         )
         .toFixed(2)

@@ -13,7 +13,8 @@ import {
   delteThridPartyAccount,
   fetchThirdpartyAccounts,
   updateThirdPartyAccount,
-  uploadThirdpartyPrice
+  uploadThirdpartyPrice,
+  uploadThirdpartyPriceZoneMap
 } from '../controllers/carrier/thirdparty.controller';
 
 class ThirdPartyRoute {
@@ -56,6 +57,14 @@ class ThirdPartyRoute {
       this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
       csvFileUpload.single('price_csv'),
       uploadThirdpartyPrice
+    );
+
+    this.router.post(
+      this.path + '/zone',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      csvFileUpload.single('zone_csv'),
+      uploadThirdpartyPriceZoneMap
     );
 
     this.router.delete(

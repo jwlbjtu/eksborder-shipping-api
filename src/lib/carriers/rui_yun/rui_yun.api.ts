@@ -96,6 +96,27 @@ class RuiYunAPI implements ICarrierAPI {
     shipmentData: IShipping,
     rate: Rate
   ): Promise<ApiFinalResult> => {
+    // Return test response
+    if (this.isTest) {
+      return {
+        turnChanddelId: 'ups',
+        turnServiceType: 'M4',
+        labels: [],
+        labelUrlList: [
+          {
+            labelUrl:
+              'https://ruiy-public.oss-cn-hangzhou.aliyuncs.com/ruiy-public/202407/public/clabel/L2/AA06/92612903029788543475702827.pdf',
+            type: 'pdf'
+          }
+        ],
+        trackingNum: '92612903029788543475702810',
+        invoiceUrl: undefined,
+        forms: undefined,
+        shippingRate: [],
+        rOrderId: shipmentData.orderId
+      };
+    }
+
     const labelReqBody = buildRuiYunLabelReqBody(
       shipmentData,
       this.credentials,

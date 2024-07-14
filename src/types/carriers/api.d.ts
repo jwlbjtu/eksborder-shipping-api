@@ -12,7 +12,7 @@ export interface ApiLabelHandlerRequest {
   specialRemarks?: string; // 特殊备注 min: 1 max: 100 fedex的时候才会起效果
   packageType: string; // 包装类型 M min:2 max:2 01：文件  02：包裹 03:PAK
   fretaxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方 只能S,R
-  sender?: ApiAddress;
+  sender: ApiAddress;
   taxdutyType?: string; // 运费付款人 O min:1 max:1 R:收件人（默认）S:发件人 T:第三方 只能R,S,T
   shipTo: ApiAddress;
   packageList: ApiPackage[];
@@ -57,6 +57,15 @@ export interface ApiPackage {
   width?: number; // 宽 cm
   height?: number; // 高 cm
   count: number; // 件数
+  lineItems: ApiLineItem[];
+}
+
+export interface ApiLineItem {
+  name: string; // 品名
+  sku?: string; // 商品编码
+  hsCode?: string; // 商品海关编码
+  totalValue: number; // 总价
+  quantity: number; // 数量
 }
 
 export interface ApiAddress {

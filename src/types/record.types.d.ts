@@ -246,12 +246,13 @@ export interface CustomDeclaration {
 
 export interface Item {
   id?: string;
+  index?: number;
   itemTitle: string;
   quantity: number;
-  itemWeight: number;
-  totalWeight: number;
-  itemWeightUnit: WeightUnit;
-  itemValue: number;
+  itemWeight?: number;
+  totalWeight?: number;
+  itemWeightUnit?: WeightUnit;
+  itemValue?: number;
   totalValue: number;
   itemValueCurrency: Currency;
   country?: Country;
@@ -262,6 +263,7 @@ export interface Item {
 
 export interface IItem extends Document {
   id?: string;
+  index?: number;
   itemTitle: string;
   quantity: number;
   itemWeight: number;

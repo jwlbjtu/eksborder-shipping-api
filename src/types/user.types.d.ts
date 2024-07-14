@@ -3,6 +3,7 @@ import { ClientAddress } from './client/address';
 import { PackageUnits } from './client/packageUnits';
 import { PrintFormat } from './client/printformat';
 import { FeeRate, IFacility, IService } from './record.types';
+import { IAddress } from './shipping.types';
 
 export interface IUserLogin extends Document {
   email: string;
@@ -115,6 +116,7 @@ export interface IAccount extends Document {
   connectedAccount: string;
   service: IService;
   facility: string;
+  address: IAddress;
   rates: FeeRate[];
   thirdpartyPrice: boolean;
   carrierRef: any;

@@ -166,14 +166,14 @@ export const buildFedexCustomClearanceDetail = (
       Description: ele.itemTitle,
       CountryOfManufacture: ele.country!,
       Weight: {
-        Units: ele.itemWeightUnit.toUpperCase(),
-        Value: ele.itemWeight
+        Units: ele.itemWeightUnit!.toUpperCase(),
+        Value: ele.itemWeight!
       },
       Quantity: ele.quantity,
       QuantityUnits: 'EA',
       UnitPrice: {
         Currency: ele.itemValueCurrency,
-        Amount: ele.itemValue
+        Amount: ele.itemValue!
       },
       CustomsValue: {
         Currency: ele.itemValueCurrency,

@@ -167,7 +167,7 @@ const generateInternationalForm = async (
         UnitOfMeasurement: {
           Code: 'PCS' // Pieces
         },
-        Value: ele.itemValue.toFixed(2)
+        Value: ele.itemValue!.toFixed(2)
       },
       CommodityCode: ele.sku,
       OriginCountryCode: ele.country!

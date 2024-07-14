@@ -81,6 +81,7 @@ export const updateClientCarrierAccount = async (
     'connectedAccount',
     'service',
     'rates',
+    'address',
     'thirdpartyPrice',
     'carrierRef',
     'note',

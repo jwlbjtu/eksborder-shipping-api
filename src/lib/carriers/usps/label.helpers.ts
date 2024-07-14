@@ -116,14 +116,14 @@ const buildUspsIntlPriorityMailLabelReqBody = (
     ShippingContents: {
       ItemDetail: shipment.customItems!.map((ele) => {
         const [pound, ounce] = getPoundAndOunces(
-          ele.itemWeight,
-          ele.itemWeightUnit
+          ele.itemWeight!,
+          ele.itemWeightUnit!
         );
 
         const item: UspsIntlShippingItem = {
           Description: ele.itemTitle,
           Quantity: ele.quantity,
-          Value: roundToTwoDecimal(ele.itemValue),
+          Value: roundToTwoDecimal(ele.itemValue!),
           NetPounds: pound,
           NetOunces: ounce,
           HSTariffNumber: ele.hsTariffNumber,
@@ -233,13 +233,13 @@ const buildUspsIntlPMExpressLabelReqBody = (
     ShippingContents: {
       ItemDetail: shipment.customItems!.map((ele) => {
         const [pound, ounce] = getPoundAndOunces(
-          ele.itemWeight,
-          ele.itemWeightUnit
+          ele.itemWeight!,
+          ele.itemWeightUnit!
         );
         const item: UspsIntlShippingItem = {
           Description: ele.itemTitle,
           Quantity: ele.quantity,
-          Value: roundToTwoDecimal(ele.itemValue),
+          Value: roundToTwoDecimal(ele.itemValue!),
           NetPounds: pound,
           NetOunces: ounce,
           HSTariffNumber: ele.hsTariffNumber,

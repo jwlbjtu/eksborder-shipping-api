@@ -29,6 +29,22 @@ const AccountSchema: Schema = new Schema(
       }
     },
     facility: { type: String },
+    address: {
+      type: {
+        name: { type: String },
+        company: { type: String },
+        street1: { type: String, required: true },
+        street2: { type: String },
+        city: { type: String, required: true },
+        state: { type: String },
+        country: { type: String, required: true },
+        zip: { type: String, required: true },
+        email: { type: String },
+        phone: { type: String },
+        taxNumber: { type: String }
+      },
+      required: true
+    },
     rates: {
       type: [
         {

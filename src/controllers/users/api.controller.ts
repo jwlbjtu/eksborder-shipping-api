@@ -15,9 +15,10 @@ import BillingSchema from '../../models/billing.model';
 import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { isShipmentInternational } from '../../lib/carriers/carrier.helper';
 import { Rate } from '../../types/carriers/carrier';
+import ItemSchema from '../../models/item.model';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
 import { Currency, ShipmentStatus } from '../../lib/constants';
-import { IBilling } from '../../types/record.types';
+import { IBilling, Item } from '../../types/record.types';
 import { ILabelResponse } from '../../types/shipping.types';
 import {
   chargeUserBalance,
@@ -25,6 +26,7 @@ import {
   IUserBalance,
   updateUserBalanceAndDeposit
 } from '../../lib/utils/user.balance.utils';
+import { Types } from 'mongoose';
 
 export const generateApiToken = async (
   req: Request,
@@ -104,6 +106,7 @@ export const apiLabelHandler = async (
     // const chargeFee = clientAccount?.payOffline;
     const service = clientAccount.service;
     const facility = clientAccount.facility;
+    const sender = clientAccount.address;
 
     // Validate user balance
     let userBalance: IUserBalance = await getUserBalance(user.id.toString());
@@ -120,11 +123,34 @@ export const apiLabelHandler = async (
       user,
       carrier,
       service,
-      facility
+      facility,
+      sender
     );
     logger.info(shipmentData);
     let shipping = new ShipmentSchema(shipmentData);
     shipping = await shipping.save();
+
+    // 1.1 Create Items Object
+    logger.info('1.1 Create Items Object');
+    // const itemList: Item[] = [];
+    for (let i = 0; i < body.packageList.length; i++) {
+      const pkg = body.packageList[i];
+      const items = pkg.lineItems.map((lineItem) => {
+        const r: Item = {
+          index: i,
+          itemTitle: lineItem.name,
+          sku: lineItem.sku,
+          hsTariffNumber: lineItem.hsCode,
+          totalValue: lineItem.totalValue,
+          itemValueCurrency: Currency.USD,
+          quantity: lineItem.quantity,
+          shipmentRef: Types.ObjectId(shipping.id)
+        };
+        return new ItemSchema(r);
+      });
+      await ItemSchema.insertMany(items);
+      shipping.items = items;
+    }
 
     // 2. Get Carrier API
     logger.info('2. Get Carrier API');

@@ -194,6 +194,63 @@ export const uploadThirdpartyPrice = async (
   }
 };
 
+export const uploadThirdpartyPriceZoneMap = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const data = req.body;
+    const thirdpartyId = data.thirdpartyId;
+    const account = await ThirdPartyAccountSchema.findOne({
+      _id: thirdpartyId
+    });
+    if (account && req.file) {
+      const dataList: string[][] = [];
+      fs.createReadStream(req.file.path)
+        .pipe(CsvParser())
+        .on('data', function (data) {
+          dataList.push(data);
+        })
+        .on('end', async function () {
+          if (req.file) {
+            fs.unlink(req.file.path, (err) => {
+              if (err) {
+                if (req.file) {
+                  logger.error(`Failed to delete file ${req.file.path}`);
+                  logger.error(util.inspect(err, true, null));
+                }
+              } else {
+                if (req.file) {
+                  logger.info(`File ${req.file.path} is deleted`);
+                }
+              }
+            });
+          }
+
+          // Gernate ZoneMap
+          const zoneMap: ThirdPartyZoneMap[] = [];
+          for (let i = 0; i < dataList.length; i += 1) {
+            const dataArray = dataList[i];
+            const zone = dataArray[0].trim();
+            const data = dataArray[1].trim();
+            if (zoneMap.findIndex((ele) => ele.zone === zone) === -1) {
+              zoneMap.push({ zone, maps: data });
+            } else {
+              const index = zoneMap.findIndex((ele) => ele.zone === zone);
+              zoneMap[index].maps = `${zoneMap[index].maps},${data}`;
+            }
+          }
+          account.zoneMap = zoneMap.sort((a, b) => (a.zone > b.zone ? 1 : -1));
+          await account.save();
+          res.json({ message: 'Zone map uploaded successfully' });
+        });
+    }
+  } catch (error) {
+    logger.error(util.inspect(error, true, null));
+    res.status(500).json({ message: (error as any).message });
+  }
+};
+
 export const delteThridPartyAccount = async (
   req: Request,
   res: Response

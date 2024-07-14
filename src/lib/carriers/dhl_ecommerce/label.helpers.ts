@@ -66,7 +66,7 @@ export const buildDhlEcommerceLabelReqBody = (
         itemDescription: ele.itemTitle,
         countryOfOrigin: ele.country!,
         packagedQuantity: ele.quantity,
-        itemValue: ele.itemValue,
+        itemValue: ele.itemValue!,
         currency: ele.itemValueCurrency,
         skuNumber: ele.sku!
       };

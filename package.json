@@ -36,7 +36,7 @@
     "app-root-path": "^3.0.0",
     "async": "^3.2.0",
     "async-lock": "^1.4.1",
-    "axios": "^0.19.2",
+    "axios": "^1.7.2",
     "bcrypt": "^5.0.0",
     "bwip-js": "^2.0.10",
     "convert-units": "^2.3.4",
@@ -105,7 +105,7 @@
     "supertest": "^5.0.0",
     "ts-jest": "^26.4.0",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.7"
+    "typescript": "^5.5.3"
   },
   "repository": {
     "type": "git",

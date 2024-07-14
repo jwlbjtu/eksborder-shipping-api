@@ -21,6 +21,7 @@ export const validateThirdpartyPrice = (
   priceList: IThirdPartyAccount[],
   shipping: IShipping
 ): IThirdPartyAccount | undefined => {
+  logger.info('Validating Thirdparty Price Tables...');
   for (let i = 0; i < priceList.length; i += 1) {
     const price = priceList[i];
     const condition = price.condition;
@@ -31,6 +32,7 @@ export const validateThirdpartyPrice = (
       const orderWeight = convertlib(totalWeight.value)
         .from(totalWeight.unitOfMeasure)
         .to(condition.weightUnit as WeightUnit);
+      logger.info(`Order weight: ${orderWeight} ${condition.weightUnit}`);
       if (
         minWeight !== undefined &&
         maxWeight !== undefined &&
@@ -173,14 +175,19 @@ export const computeThirdpartyRate = (
     );
     // Find zone for the weight
     const zoneMode = priceTable.zoneMode;
-    const origin = priceTable.origin;
+    const originZip = priceTable.zipCode;
+    const originCountry = priceTable.countryCode;
+    const originState = undefined;
     let zoneMap: ThirdPartyZoneMap | undefined;
+    logger.info('Validate Rui Yun thirdaparty sender');
     if (zoneMode === 'zip') {
+      logger.info('Validate Rui Yun thirdaparty sender by ZIP mode');
       const fromZip = shipmentData.sender?.zip;
       const toZip = shipmentData.toAddress.zip;
-      if (fromZip && origin) {
+      logger.info(`fromZip=${fromZip}, toZip=${toZip}, origin=${originZip}`);
+      if (fromZip && originZip) {
         const fromZip3 = fromZip.substring(0, 3);
-        if (fromZip3 !== origin) {
+        if (fromZip3 !== originZip) {
           throw new Error('渠道不支持寄出地址');
         }
       }
@@ -189,10 +196,11 @@ export const computeThirdpartyRate = (
         ele.maps.split(',').includes(toZip3)
       );
     } else if (zoneMode === 'state') {
+      logger.info('Validate Rui Yun thirdaparty sender by STATE mode');
       const fromState = shipmentData.sender?.state;
       const toState = shipmentData.toAddress.state!;
-      if (fromState && origin) {
-        if (fromState !== origin) {
+      if (fromState && originState) {
+        if (fromState !== originState) {
           throw new Error('渠道不支持寄出地址');
         }
       }
@@ -200,10 +208,11 @@ export const computeThirdpartyRate = (
         ele.maps.split(',').includes(toState)
       );
     } else if (zoneMode === 'country') {
+      logger.info('Validate Rui Yun thirdaparty sender by COUNTRY mode');
       const fromCountry = shipmentData.sender?.country;
       const toCountry = shipmentData.toAddress.toCountry;
-      if (fromCountry && origin) {
-        if (fromCountry !== origin) {
+      if (fromCountry && originCountry) {
+        if (fromCountry !== originCountry) {
           throw new Error('渠道不支持寄出地址');
         }
       }
