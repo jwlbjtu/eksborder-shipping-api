@@ -22,7 +22,7 @@ class APIRoute {
     this.router.get(
       this.path + '/refresh/:id',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       generateApiToken
     );
 
@@ -30,7 +30,7 @@ class APIRoute {
     this.router.get(
       this.path + '/revoke/:id',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       deleteApiToken
     );
 

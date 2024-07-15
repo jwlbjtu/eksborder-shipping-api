@@ -31,7 +31,7 @@ class AccountRoute {
     this.router.get(
       this.path + '/:userId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       getClientCarrierAccountsByUser
     );
 
@@ -47,7 +47,7 @@ class AccountRoute {
     this.router.post(
       this.path,
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       createClientCarrierAccount
     );
 
@@ -55,7 +55,7 @@ class AccountRoute {
     this.router.put(
       this.path,
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       updateClientCarrierAccount
     );
 
@@ -63,7 +63,7 @@ class AccountRoute {
     this.router.delete(
       this.path + '/:id',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       deleteClientCarrierAccount
     );
   }

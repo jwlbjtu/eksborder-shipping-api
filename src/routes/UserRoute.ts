@@ -62,7 +62,7 @@ class UserRoute {
     this.router.put(
       this.path + '/selfPassword',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       updateSelfPassword
     );
 
@@ -70,7 +70,7 @@ class UserRoute {
     this.router.get(
       this.path + '/list/:role',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       getUsersByRole
     );
 
@@ -86,7 +86,7 @@ class UserRoute {
     this.router.put(
       this.path,
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       updateUser
     );
 

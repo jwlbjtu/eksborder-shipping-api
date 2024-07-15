@@ -20,7 +20,7 @@ class BillingRoute {
     this.router.get(
       this.path + '/:userId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       getUserBillingRecords
     );
 
@@ -28,7 +28,7 @@ class BillingRoute {
     this.router.post(
       this.path + '/:userId',
       this.authJwt.authenticateJWT,
-      this.authJwt.checkRole(USER_ROLES.ADMIN_SUPER),
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       createBillingRecord
     );
   }
