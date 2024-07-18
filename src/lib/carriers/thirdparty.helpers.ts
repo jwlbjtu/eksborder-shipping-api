@@ -147,6 +147,7 @@ const findThirdpartyPriceByWeight = (
     }
   }
   if (foundPriceData) {
+    console.log(foundPriceData);
     logger.info(
       `Found ${foundPriceData.weight} ${price.weightUnit} for ${weight} ${weightUnit}`
     );
@@ -192,9 +193,11 @@ export const computeThirdpartyRate = (
         }
       }
       const toZip3 = toZip.substring(0, 3);
+      logger.info(`Search zone map for ${toZip3}`);
       zoneMap = priceTable.zoneMap.find((ele) =>
         ele.maps.split(',').includes(toZip3)
       );
+      logger.info(`Found zone map ${zoneMap?.zone}, ${zoneMap?.maps}`);
     } else if (zoneMode === 'state') {
       logger.info('Validate Rui Yun thirdaparty sender by STATE mode');
       const fromState = shipmentData.sender?.state;
@@ -225,6 +228,11 @@ export const computeThirdpartyRate = (
     }
     // Gnerate Rate
     if (priceData && zoneMap) {
+      logger.info(
+        `Found ${priceData[zoneMap.zone]} for ${priceData.weight}${
+          priceTable.price.weightUnit
+        } and zone ${zoneMap.zone}`
+      );
       let ratePrice = parseFloat(priceData[zoneMap.zone]);
       // Apply fees of the thirdparty price first
       let fee = computeFee(

@@ -78,6 +78,9 @@ class RuiYunAPI implements ICarrierAPI {
       if (!priceTable) {
         return '货物重量超出渠道范围';
       }
+      logger.info(
+        `Using price table ${priceTable.name}, ${priceTable.service.key}-${priceTable.service.id}-${priceTable.service.name}`
+      );
       // Calculate rates based on price table
       const result = computeThirdpartyRate(
         priceTable,
