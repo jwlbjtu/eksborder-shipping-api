@@ -16,6 +16,7 @@ export const apiLabelHandlerValidator = [
   check('packageList').notEmpty().withMessage('packageList 不能为空'),
   check('packageList').isArray().withMessage('packageList 必須为数组'),
   check('packageList.*.weight').notEmpty().withMessage('weight 不能为空'),
+  check('packageList.*.weight').isNumeric().withMessage('weight 必須为数字'),
   check('packageList.*.lineItems').notEmpty().withMessage('lineItems 不能为空'),
   check('packageList.*.lineItems')
     .isArray()

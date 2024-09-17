@@ -7,8 +7,11 @@ import { validationResult } from 'express-validator';
 import AccountSchema from '../../models/account.model';
 import { logger } from '../../lib/logger';
 import {
+  cacheLabelResponseForOrderId,
+  checkOrderIdProcessed,
   createApiFailedResponse,
-  createShipmentData
+  createShipmentData,
+  validatePackageList
 } from '../../lib/utils/api.utils';
 import ShipmentSchema from '../../models/shipping.model';
 import BillingSchema from '../../models/billing.model';
@@ -27,6 +30,7 @@ import {
   updateUserBalanceAndDeposit
 } from '../../lib/utils/user.balance.utils';
 import { Types } from 'mongoose';
+import util from 'util';
 
 export const generateApiToken = async (
   req: Request,
@@ -82,6 +86,7 @@ export const apiLabelHandler = async (
   }
 
   let totalRate = 0;
+  let feeIsCharged = false;
   const body = req.body as ApiLabelHandlerRequest;
   // Validate token
   const token = body.token;
@@ -90,7 +95,28 @@ export const apiLabelHandler = async (
     res.status(401).json(createApiFailedResponse('token 不存在'));
     return;
   }
+
+  let orderId = body.orderId;
+  if (body.orderId) {
+    // Check if orderId has been processed
+    logger.info(`${body.orderId} - *. Check if orderId has been processed`);
+    const { flag, data } = await checkOrderIdProcessed(
+      body.orderId,
+      user.userName.substring(0, 2),
+      user._id
+    );
+    // console.log('flag', flag);
+    // console.log('data', data);
+    if (flag) {
+      logger.info(
+        `*. OrderId: ${body.orderId} has been processed for user ${user.userName}`
+      );
+      return LRes.resOk(res, data);
+    }
+  }
+
   try {
+    logger.info('Start. API Label Handler');
     // Validate channelId
     const channelId = body.channelId;
     const clientAccount = await AccountSchema.findOne({
@@ -116,6 +142,14 @@ export const apiLabelHandler = async (
       return;
     }
 
+    // 0. Validate body packageList
+    logger.info('0. Validate body packageList');
+    const result = validatePackageList(body.packageList);
+    if (!result.status) {
+      res.status(400).json(createApiFailedResponse(result.message));
+      return;
+    }
+
     // 1. Create Shipment Object
     logger.info('1. Create Shipment Object');
     const shipmentData = await createShipmentData(
@@ -126,12 +160,13 @@ export const apiLabelHandler = async (
       facility,
       sender
     );
-    logger.info(shipmentData);
+    logger.info(util.inspect(shipmentData, false, null, true));
     let shipping = new ShipmentSchema(shipmentData);
     shipping = await shipping.save();
+    orderId = shipping.orderId;
 
     // 1.1 Create Items Object
-    logger.info('1.1 Create Items Object');
+    logger.info(`${shipping.orderId} - 1.1 Create Items Object`);
     // const itemList: Item[] = [];
     for (let i = 0; i < body.packageList.length; i++) {
       const pkg = body.packageList[i];
@@ -153,7 +188,7 @@ export const apiLabelHandler = async (
     }
 
     // 2. Get Carrier API
-    logger.info('2. Get Carrier API');
+    logger.info(`${shipping.orderId} - 2. Get Carrier API`);
     const api = CarrierFactory.getCarrierAPI(
       clientAccount,
       body.test,
@@ -166,7 +201,7 @@ export const apiLabelHandler = async (
     await api.init();
 
     // 3. Get Shipment Price
-    logger.info('3. Get Shipment Price');
+    logger.info(`${shipping.orderId} - 3. Get Shipment Price`);
     const priceResult = await api.products(
       shipping,
       isShipmentInternational(shipping)
@@ -193,21 +228,32 @@ export const apiLabelHandler = async (
 
     // 4. Compute total price = shipment price + fee
     let fee = 0;
-    logger.info('4. Compute total price = shipment price + fee');
+    logger.info(
+      `${shipping.orderId} - 4. Compute total price = shipment price + fee`
+    );
     fee = computeFee(shipping, rate.rate!, rate.currency, clientAccount.rates);
     totalRate = roundToTwoDecimal(rate.rate! + fee);
-    logger.info('4.1 Check total price against user balance');
-    // Validate user balance and charge fee
-    userBalance = await chargeUserBalance(user.id.toString(), totalRate);
+    if (!body.test) {
+      logger.info(
+        `${shipping.orderId} - 4.1 Check total price against user balance for total cost: ${totalRate}`
+      );
+      // Validate user balance and charge fee
+      userBalance = await chargeUserBalance(user.id.toString(), totalRate);
+      feeIsCharged = true;
+    } else {
+      logger.info(
+        `${shipping.orderId} - 4.1 skip user balance check for test mode`
+      );
+    }
 
     // 5. Create Shipment Label
-    logger.info('5. Create Shipment Label');
+    logger.info(`${shipping.orderId} - 5. Create Shipment Label`);
     const labelResponse = await api.label(shipping, rate);
     const labels = labelResponse.labels;
     const forms = labelResponse.forms;
 
     if (!rate.isTest) {
-      logger.info('6 Generate billing record');
+      logger.info(`${shipping.orderId} - 6 Generate billing record`);
       const billingObj: Partial<IBilling> = {
         userRef: user._id,
         description: shipmentData.orderId,
@@ -232,11 +278,11 @@ export const apiLabelHandler = async (
       await new BillingSchema(billingObj).save();
     } else {
       // 6.2 Test mode - skip payment
-      logger.info('6 Test mode - skip payment');
+      logger.info(`${shipping.orderId} - 6 Test mode - skip payment`);
     }
 
     // 7. Update shipping record
-    logger.info('7. Update shipping record');
+    logger.info(`${shipping.orderId} - 7. Update shipping record`);
     if (!shipping.labels) shipping.labels = [];
     const newLabels = shipping.labels.concat(labels);
     shipping.labels = newLabels;
@@ -262,7 +308,7 @@ export const apiLabelHandler = async (
     await shipping.save();
 
     // 8. Return response
-    logger.info('8. Return Label Data');
+    logger.info(`${shipping.orderId} - 8. Return Label Data`);
     const labelResult: ILabelResponse = {
       timestamp: new Date(),
       carrier: labelResponse.turnChanddelId,
@@ -280,10 +326,29 @@ export const apiLabelHandler = async (
       labelUrlList: labelResponse.labelUrlList,
       trackingNumber: shipping.trackingId
     };
+    // Cache the labelResult with the orderId
+    logger.info(`${shipping.orderId} - 9. Cache label response`);
+    await cacheLabelResponseForOrderId(
+      shipping.orderId,
+      user.userName.substring(0, 2),
+      labelResult
+    );
+    logger.info(
+      `End. OrderID: ${shipping.orderId}}, Shipping trackingId: ${shipping.trackingId}`
+    );
     return LRes.resOk(res, labelResult);
   } catch (error) {
-    logger.error(error);
-    await updateUserBalanceAndDeposit(user.id.toString(), totalRate, 0);
-    res.status(500).json(createApiFailedResponse((error as Error).message));
+    console.error(orderId, error);
+    logger.error(`${orderId ? orderId + ' - ' : ''}` + error);
+    if (feeIsCharged) {
+      await updateUserBalanceAndDeposit(user.id.toString(), totalRate, 0);
+    }
+    res
+      .status(500)
+      .json(
+        createApiFailedResponse(
+          `${orderId ? orderId + ' - ' : ''}` + (error as Error).message
+        )
+      );
   }
 };

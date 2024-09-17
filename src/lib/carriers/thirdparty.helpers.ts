@@ -147,7 +147,6 @@ const findThirdpartyPriceByWeight = (
     }
   }
   if (foundPriceData) {
-    console.log(foundPriceData);
     logger.info(
       `Found ${foundPriceData.weight} ${price.weightUnit} for ${weight} ${weightUnit}`
     );

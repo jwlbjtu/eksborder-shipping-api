@@ -11,6 +11,7 @@ import {
   IUserBalance,
   updateUserBalanceAndDeposit
 } from '../../lib/utils/user.balance.utils';
+import { ShipmentStatus } from '../../lib/constants';
 
 // get billing records for a client
 export const getUserBillingRecords = async (
@@ -29,6 +30,40 @@ export const getUserBillingRecords = async (
     });
     lresponseLib.resOk(res, billings);
   } catch (error) {
+    lresponseLib.resErr(res, 500, error);
+  }
+};
+
+// search billing records for a client
+export const searchBillingRecord = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const body = req.body;
+    const userId = body.id;
+    const user = await User.findOne({ _id: userId });
+    if (!user) return lresponseLib.resErr(res, 404, { title: 'No user found' });
+
+    const { startDate, endDate, status, orderId, channel } =
+      body.searchQuery as UserBillingRecordsSearchQuery;
+    const searchQuery: Record<string, any> = {
+      userRef: userId,
+      status: status ? status : { $ne: ShipmentStatus.DELETED },
+      updatedAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
+    };
+    if (orderId) {
+      searchQuery['description'] = { $regex: orderId, $options: 'i' };
+    }
+    if (channel) {
+      searchQuery['account'] = { $regex: channel, $options: 'i' };
+    }
+    const billings = await Billing.find(searchQuery).sort({
+      updatedAt: -1
+    });
+    lresponseLib.resOk(res, billings);
+  } catch (error) {
+    console.error(error);
     lresponseLib.resErr(res, 500, error);
   }
 };
@@ -78,3 +113,11 @@ export const createBillingRecord = async (
     lresponseLib.resErr(res, 500, error);
   }
 };
+
+export interface UserBillingRecordsSearchQuery {
+  startDate: string;
+  endDate: string;
+  status?: string;
+  orderId?: string;
+  channel?: string;
+}

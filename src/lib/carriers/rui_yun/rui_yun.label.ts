@@ -14,6 +14,7 @@ import { WeightUnit } from '../../constants';
 import { ApiPackage } from '../../../types/carriers/api';
 import util from 'util';
 import { roundToTwoDecimal } from '../../utils/helpers';
+import { logger } from '../../logger';
 
 const options = {
   ignoreAttributes: false,
@@ -26,6 +27,8 @@ export const buildRuiYunLabelReqBody = (
   credentials: RuiYunCredentials,
   rate: Rate
 ): RuiYunLabelRequest => {
+  const search = '-';
+  const replacer = new RegExp(search, 'g');
   const ruiYunLabelRequest: RuiYunLabelRequest = {
     clientInfo: {
       bankerId: credentials.bankerId,
@@ -40,8 +43,8 @@ export const buildRuiYunLabelReqBody = (
         priceId: rate.serviceId,
         description: shipmentData.description,
         referenceNumber: shipmentData.referenceNumber
-          ? shipmentData.referenceNumber
-          : shipmentData.orderId,
+          ? shipmentData.referenceNumber.replace(replacer, '')
+          : shipmentData.orderId.replace(replacer, ''),
         packageType: shipmentData.packageList[0].packageType, // 02 - package
         taxdutyType: shipmentData.taxdutyType ? shipmentData.taxdutyType : 'R', // 'R',
         shipTo: {
@@ -124,7 +127,7 @@ export const ruiYunOrderShipHandler = async (
   const Parser = fastParser.j2xParser;
   const xmlRequest = new Parser(options).parse(body);
   const xmlRequestString = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://service.eship.logisticstb/"><soapenv:Header/>${xmlRequest}</soapenv:Envelope>`;
-  // console.log(xmlRequestString);
+  console.log(xmlRequestString);
 
   try {
     const response = await axios.post(url, xmlRequestString, {
@@ -132,7 +135,8 @@ export const ruiYunOrderShipHandler = async (
         'Content-Type': 'application/xml;charset=UTF-8'
       }
     });
-    // console.log(response.data);
+    logger.info('Rui Yun Label API Response:');
+    console.log(response.data);
     const result = fastParser.parse(response.data, options);
     const ruiYunLabelResponse: RuiYunLabelResponse =
       result['soap:Envelope']['soap:Body']['ns1:orderShipResponse'];
@@ -165,6 +169,8 @@ export const ruiYunOrderShipHandler = async (
     }
   } catch (error) {
     const data = (error as any).response.data;
+    logger.error('Rui Yun Label API Error:');
+    console.log(data);
     const result = fastParser.parse(data, options);
     // console.log(result);
     const msg = result['soap:Envelope']['soap:Body']['soap:Fault'].faultstring;

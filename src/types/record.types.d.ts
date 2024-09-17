@@ -72,7 +72,6 @@ export interface IThirdPartyAccount extends Document {
   countryCode?: string;
   service: IService;
   region: string;
-  zoneMode: string;
   condition: ThirdPartyCondition;
   price?: ThirdPartyPrice;
   zones?: string[];
@@ -106,6 +105,7 @@ export interface IBilling extends Document {
   account?: string;
   total: number;
   balance: number;
+  status?: string;
   deposit: number;
   clientDeposit: number;
   currency: string;

@@ -1,6 +1,10 @@
 import * as express from 'express';
 import AuthController from '../lib/auth/auth.handler';
-import { getShippingRecordsForClient } from '../controllers/users/record.controller';
+import {
+  getShippingRecordsForClient,
+  searchShippingRecordsForClient,
+  updateShippingRecordStatus
+} from '../controllers/users/record.controller';
 import { USER_ROLES } from '../lib/constants';
 
 class RecordRoute {
@@ -19,6 +23,22 @@ class RecordRoute {
       this.authJwt.authenticateJWT,
       this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       getShippingRecordsForClient
+    );
+
+    // Search shipping records for a client
+    this.router.post(
+      this.path + '/search',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      searchShippingRecordsForClient
+    );
+
+    // Update shipping record status
+    this.router.put(
+      this.path + '/update',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      updateShippingRecordStatus
     );
   }
 }

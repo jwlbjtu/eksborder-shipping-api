@@ -192,7 +192,9 @@ export enum REST_ERROR_CODE {
 
 export enum ShipmentStatus {
   PENDING = 'Pending',
-  FULFILLED = 'Shipped'
+  FULFILLED = 'Shipped',
+  DEL_PENDING = 'Del_Pending',
+  DELETED = 'Deleted'
 }
 
 export const SHIPMENT_UPDATE_FIELDS = [

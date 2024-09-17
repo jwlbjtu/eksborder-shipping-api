@@ -9,6 +9,7 @@ const BillingSchema: Schema<IBilling> = new Schema<IBilling>(
       ref: 'User',
       required: true
     },
+    status: { type: String },
     description: { type: String, required: true },
     account: { type: String },
     total: { type: Number, required: true, min: 0 },
