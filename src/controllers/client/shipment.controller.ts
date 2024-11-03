@@ -33,6 +33,8 @@ import { IAddress } from '../../types/shipping.types';
 import es from 'event-stream';
 import TransformShipmentToProduct from '../../lib/utils/product.transform';
 import { Rate } from '../../types/carriers/carrier';
+import { UserShippingRecordsSearchQuery } from '../users/record.controller';
+import { Types } from 'mongoose';
 
 export const getShipmentsForUser = async (
   req: Request,
@@ -50,6 +52,99 @@ export const getShipmentsForUser = async (
   } catch (error) {
     logger.error((error as any).message);
     res.status(500).json({ message: (error as any).message });
+  }
+};
+
+export const searchShipmentsForUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const body = req.body as UserShippingRecordsSearchQuery;
+    const user = req.user as IUser;
+    const userId = user.id;
+    const userObj = await User.findById(userId);
+    if (!userObj) {
+      res.status(404).json({ message: 'No user found' });
+      return;
+    }
+
+    const {
+      startDate,
+      endDate,
+      orderId,
+      name,
+      phone,
+      trackingId,
+      zip,
+      status
+    } = body;
+    const searchQuery: Record<string, any> = {
+      userRef: userId,
+      status,
+      updatedAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
+    };
+    if (orderId) {
+      searchQuery['orderId'] = { $regex: orderId, $options: 'i' };
+    }
+    if (name) {
+      searchQuery['toAddress.name'] = { $regex: name, $options: 'i' };
+    }
+    if (phone) {
+      searchQuery['toAddress.phone'] = { $regex: phone, $options: 'i' };
+    }
+    if (trackingId) {
+      searchQuery['trackingId'] = { $regex: trackingId, $options: 'i' };
+    }
+    if (zip) {
+      searchQuery['toAddress.zip'] = { $regex: zip, $options: 'i' };
+    }
+    const records = await ShipmentSchema.find(searchQuery).sort({
+      updatedAt: -1
+    });
+    res.json(records);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+export const cancelShipmentForUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const body = req.body as { recordId: string; status: string };
+    const user = req.user as IUser;
+    const userId = user.id;
+    const userObj = await User.findById(userId);
+    if (!userObj) {
+      res.status(404).json({ message: 'No user found' });
+      return;
+    }
+
+    const recordId = body.recordId;
+    const record = await ShipmentSchema.findOne({
+      _id: recordId,
+      userRef: userId
+    });
+    if (!record) {
+      res.status(404).json({ message: '面单信息未找到' });
+      return;
+    }
+    if (record.status === body.status) {
+      res.json({ message: '面单状态已更新' });
+      return;
+    }
+    if (ShipmentStatus.DEL_PENDING === body.status) {
+      // 取消面单
+      record.status = ShipmentStatus.DEL_PENDING;
+      res.json({ message: '面单状态已更新' });
+      return;
+    }
+    res.status(400).json({ message: '不支持操作' });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
   }
 };
 

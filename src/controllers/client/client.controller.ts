@@ -105,7 +105,7 @@ export const refreshClient = async (
 ): Promise<void> => {
   try {
     const user: IUser = req.user as IUser;
-    res.json({ balance: user.balance });
+    res.json({ balance: user.balance, deposit: user.deposit });
   } catch (error) {
     logger.error(error);
     res.status(500).json({ message: (error as any).message });

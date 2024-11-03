@@ -2,11 +2,13 @@ import express from 'express';
 import { USER_ROLES } from '../../lib/constants';
 import AuthHandler from '../../lib/auth/auth.handler';
 import {
+  cancelShipmentForUser,
   createShipment,
   getShipmentsForUser,
   importCsvData,
   preloadCsvFile,
   purchaseLabel,
+  searchShipmentsForUser,
   updateShipments
 } from '../../controllers/client/shipment.controller';
 import {
@@ -26,20 +28,27 @@ class ClientShipmentRoute {
   }
 
   public initRoutes(): void {
-    this.router.get(
-      this.path,
-      this.authJwt.authenticateJWT,
-      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
-      getShipmentsForUser
-    );
-
     this.router.post(
       this.path,
       this.authJwt.authenticateJWT,
       this.authJwt.checkSingleRole(USER_ROLES.API_USER),
-      createShipmentValidator,
-      createShipment
+      searchShipmentsForUser
     );
+
+    this.router.put(
+      this.path + '/update',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      cancelShipmentForUser
+    );
+
+    // this.router.post(
+    //   this.path,
+    //   this.authJwt.authenticateJWT,
+    //   this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+    //   createShipmentValidator,
+    //   createShipment
+    // );
 
     this.router.put(
       this.path,
