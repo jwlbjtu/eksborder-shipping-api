@@ -144,6 +144,10 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
       }
     },
     status: { type: String, required: true, default: ShipmentStatus.PENDING },
+    accountingStatus: { type: String },
+    accountingDiff: { type: Number, default: 0 },
+    accountingWeight: { type: Number },
+    accountingWeightUnit: { type: String },
     trackingId: { type: String, index: true },
     trackingStatus: { type: String },
     shippingId: { type: String },

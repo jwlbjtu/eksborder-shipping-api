@@ -106,6 +106,8 @@ export interface IBilling extends Document {
   total: number;
   balance: number;
   status?: string;
+  accountingStatus?: string;
+  accountingDiff?: number;
   deposit: number;
   clientDeposit: number;
   currency: string;
@@ -195,6 +197,10 @@ export interface IShipping extends Record<string, any>, Document {
   customItems?: Item[];
   items?: Item[];
   status: string;
+  accountingStatus?: string;
+  accountingDiff?: number;
+  accountingWeight?: number;
+  accountingWeightUnit?: WeightUnit;
   trackingId?: string;
   trackingStatus?: string;
   shippingId?: string;

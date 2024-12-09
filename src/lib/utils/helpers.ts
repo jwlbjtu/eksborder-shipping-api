@@ -92,6 +92,37 @@ export const computeFee = (
   return parseFloat(fee.toFixed(2));
 };
 
+export const computeFeeWithAmount = (
+  shipmentData: IShipping,
+  amount: number,
+  currency: string,
+  weight: number,
+  weightUnit: WeightUnit,
+  rates: FeeRate[]
+): number => {
+  let fee = 0;
+  for (let i = 0; i < rates.length; i += 1) {
+    const rate = rates[i];
+    if (rate.ratebase === RATE_BASES.ORDER) {
+      fee += computeOrderRate(amount, rate.rate, rate.ratetype);
+    } else if (rate.ratebase === RATE_BASES.PACKAGE) {
+      let count = shipmentData.packageInfo ? 1 : 0;
+      if (shipmentData.morePackages && shipmentData.morePackages.length > 0) {
+        count += shipmentData.morePackages.length;
+      }
+      fee += computePackageRate(count, rate.rate, rate.ratetype);
+    } else if (rate.ratebase === RATE_BASES.WEIGHT) {
+      fee += computeWeightRate(
+        { value: weight, unitOfMeasure: weightUnit },
+        rate.weightUnit,
+        rate.rate,
+        rate.ratetype
+      );
+    }
+  }
+  return parseFloat(fee.toFixed(2));
+};
+
 export const roundToTwoDecimal = (num: number): number => {
   return Math.round((num + Number.EPSILON) * 100) / 100;
 };
@@ -143,4 +174,21 @@ export const getPoundAndOunces = (
     .to(WeightUnit.OZ);
   const ounce = Math.ceil(weightInOunces);
   return [pound, ounce];
+};
+
+export const getWeightUnit = (unit: string): WeightUnit => {
+  switch (unit.toLowerCase()) {
+    case 'kg':
+      return WeightUnit.KG;
+    case 'g':
+      return WeightUnit.G;
+    case 'lb':
+    case 'lbs':
+      return WeightUnit.LB;
+    case 'oz':
+    case 'ozs':
+      return WeightUnit.OZ;
+    default:
+      return WeightUnit.G;
+  }
 };

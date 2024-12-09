@@ -10,6 +10,8 @@ const BillingSchema: Schema<IBilling> = new Schema<IBilling>(
       required: true
     },
     status: { type: String },
+    accountingStatus: { type: String },
+    accountingDiff: { type: Number, default: 0 },
     description: { type: String, required: true },
     account: { type: String },
     total: { type: Number, required: true, min: 0 },
