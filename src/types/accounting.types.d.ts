@@ -16,8 +16,9 @@ export interface AccountingItemData {
   uspsState: string;
   pieceId: string;
   trackingNumber: string;
-  amount: number;
-  baseAmount: number;
+  amount: number; // total amount (应收账款)
+  baseAmount: number; // base amount
+  servicePayment: number; // service payment (应付账款)
   channel: string;
   orderId: string;
   orderDate: string;

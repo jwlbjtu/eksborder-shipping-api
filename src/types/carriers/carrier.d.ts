@@ -11,6 +11,12 @@ export interface ICarrierAPI {
     shipmentData: IShipping,
     isInternational: boolean
   ) => Promise<{ rates: Rate[]; errors: string[] } | string>;
+  verifyPrice?: (
+    shipmentData: IShipping,
+    weight: number,
+    weightType: string,
+    zone: string
+  ) => Promise<{ rates: Rate[]; errors: string[] } | string>;
   label: (shipmentData: IShipping, rate: Rate) => Promise<ApiFinalResult>;
   createManifest?: (
     shipments: IShipping[],

@@ -12,6 +12,7 @@ const AccountingItemSchema: Schema<AccountingItemDocument> =
       trackingNumber: { type: String, required: true },
       amount: { type: Number, required: true },
       baseAmount: { type: Number, required: true },
+      servicePayment: { type: Number, required: true },
       channel: { type: String, required: true },
       orderId: { type: String, required: true },
       orderDate: { type: String, required: true },

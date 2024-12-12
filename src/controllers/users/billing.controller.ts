@@ -50,7 +50,7 @@ export const searchBillingRecord = async (
     const searchQuery: Record<string, any> = {
       userRef: userId,
       status: status ? status : { $ne: ShipmentStatus.DELETED },
-      updatedAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
+      createdAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
     };
     if (orderId) {
       searchQuery['description'] = { $regex: orderId, $options: 'i' };
@@ -59,7 +59,7 @@ export const searchBillingRecord = async (
       searchQuery['account'] = { $regex: channel, $options: 'i' };
     }
     const billings = await Billing.find(searchQuery).sort({
-      updatedAt: -1
+      createdAt: -1
     });
     lresponseLib.resOk(res, billings);
   } catch (error) {

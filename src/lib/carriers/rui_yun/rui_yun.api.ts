@@ -8,11 +8,14 @@ import { ICarrier, IShipping } from '../../../types/record.types';
 import { logger } from '../../logger';
 import {
   computeThirdpartyRate,
-  validateThirdpartyPrice
+  computeThirdpartyRateWithWeight,
+  validateThirdpartyPrice,
+  validateThirdpartyPriceWithWeight
 } from '../thirdparty.helpers';
 import { buildRuiYunLabelReqBody } from './rui_yun.label';
 import { callRuiYunLabelEndpoint } from '../../utils/api.utils';
 import { ApiFinalResult } from '../../../types/carriers/api';
+import { getWeightUnit } from '../../utils/helpers';
 
 class RuiYunAPI implements ICarrierAPI {
   private isTest: boolean;
@@ -56,6 +59,50 @@ class RuiYunAPI implements ICarrierAPI {
 
   public auth = async (): Promise<void> => {
     // Intended to leave blank
+  };
+
+  public verifyPrice = async (
+    shipmentData: IShipping,
+    weight: number,
+    weightType: string,
+    zone: string
+  ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
+    logger.info('Start to verify price');
+    logger.info('Fetching rates from thirdparty price tables');
+    try {
+      // Find the price table for the given channel
+      const priceTableList = await ThirdpartyPriceSchema.find({
+        'service.id': shipmentData.service!.id!
+      });
+      if (!priceTableList || priceTableList.length === 0) {
+        return '渠道异常';
+      }
+      // console.log(priceTableList);
+      // Validate shipment with price table conditions
+      const priceTable = validateThirdpartyPriceWithWeight(
+        priceTableList,
+        weight,
+        weightType
+      );
+      if (!priceTable) {
+        return '货物重量超出渠道范围';
+      }
+      logger.info(
+        `Using price table ${priceTable.name}, ${priceTable.service.key}-${priceTable.service.id}-${priceTable.service.name}`
+      );
+      // Calculate rates based on price table
+      const result = computeThirdpartyRateWithWeight(
+        shipmentData,
+        priceTable,
+        weight,
+        getWeightUnit(weightType),
+        zone
+      );
+      return result;
+    } catch (error) {
+      logger.error(error);
+      return (error as Error).message;
+    }
   };
 
   public products = async (

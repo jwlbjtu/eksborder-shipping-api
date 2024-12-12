@@ -52,7 +52,7 @@ export const searchShippingRecordsForClient = async (
     const searchQuery: Record<string, any> = {
       userRef: userId,
       status,
-      updatedAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
+      createdAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
     };
     if (orderId) {
       searchQuery['orderId'] = { $regex: orderId, $options: 'i' };
@@ -70,7 +70,7 @@ export const searchShippingRecordsForClient = async (
       searchQuery['toAddress.zip'] = { $regex: zip, $options: 'i' };
     }
     const records = await ShippingRecord.find(searchQuery).sort({
-      updatedAt: -1
+      createdAt: -1
     });
     return LRes.resOk(res, records);
   } catch (error) {

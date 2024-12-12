@@ -11,11 +11,74 @@ import { Currency, WeightUnit } from '../constants';
 import { logger } from '../logger';
 import {
   computeFee,
+  computeFeeWithAmount,
   computeTotalShipmentWeight,
+  getWeightUnit,
   roundToTwoDecimal
 } from '../utils/helpers';
 import ThirdPartySchema from '../../models/thirdparty.model';
 import { IAccount } from '../../types/user.types';
+import { get } from 'lodash';
+
+export const validateThirdpartyPriceWithWeight = (
+  priceList: IThirdPartyAccount[],
+  weight: number,
+  weightType: string
+): IThirdPartyAccount | undefined => {
+  logger.info(
+    `Validating Thirdparty Price Tables with weight: ${weight}, weightType: ${weightType} ...`
+  );
+  for (let i = 0; i < priceList.length; i += 1) {
+    const price = priceList[i];
+    const condition = price.condition;
+    if (condition && condition.weightUnit) {
+      console.log(condition.weightUnit);
+      // Check Weight Unit
+      if (weight <= 16 && getWeightUnit(weightType) === WeightUnit.OZ) {
+        // Only consider weight in oz
+        if (condition.weightUnit !== WeightUnit.OZ) {
+          continue;
+        }
+      }
+      if (weight >= 1 && getWeightUnit(weightType) === WeightUnit.LB) {
+        // Only consider weight in lb
+        if (condition.weightUnit !== WeightUnit.LB) {
+          continue;
+        }
+      }
+      const minWeight = condition.minWeight;
+      const maxWeight = condition.maxWeight;
+      const orderWeight = convertlib(weight)
+        .from(getWeightUnit(weightType))
+        .to(condition.weightUnit as WeightUnit);
+      logger.info(`Order weight: ${orderWeight} ${condition.weightUnit}`);
+      console.log(minWeight, maxWeight, orderWeight);
+      if (
+        minWeight !== undefined &&
+        maxWeight !== undefined &&
+        orderWeight >= minWeight &&
+        orderWeight <= maxWeight
+      ) {
+        return price;
+      } else if (
+        minWeight === undefined &&
+        maxWeight !== undefined &&
+        orderWeight <= maxWeight
+      ) {
+        return price;
+      } else if (
+        minWeight !== undefined &&
+        maxWeight === undefined &&
+        orderWeight >= minWeight
+      ) {
+        return price;
+      }
+    } else {
+      return price;
+    }
+  }
+  return undefined;
+};
 
 export const validateThirdpartyPrice = (
   priceList: IThirdPartyAccount[],
@@ -155,6 +218,74 @@ const findThirdpartyPriceByWeight = (
   }
 
   return foundPriceData;
+};
+
+export const computeThirdpartyRateWithWeight = (
+  shipmentData: IShipping,
+  priceTable: IThirdPartyAccount,
+  weight: number,
+  weightType: string,
+  zone: string
+): { rates: Rate[]; errors: string[] } => {
+  const rates: Rate[] = [];
+  if (priceTable.zoneMap && priceTable.price) {
+    const priceData = findThirdpartyPriceByWeight(
+      weight,
+      getWeightUnit(weightType),
+      priceTable.price
+    );
+    // Gnerate Rate
+    if (priceData) {
+      logger.info(
+        `Found ${priceData[zone]} for ${priceData.weight}${priceTable.price.weightUnit} and zone ${zone}`
+      );
+      let ratePrice = parseFloat(priceData[zone]);
+      // Apply fees of the thirdparty price first
+      let fee = computeFeeWithAmount(
+        shipmentData,
+        ratePrice,
+        priceTable.price.currency,
+        weight,
+        getWeightUnit(weightType),
+        priceTable.rates
+      );
+      let thirdpartyRate = ratePrice + fee;
+      if (
+        priceData[Object.keys(priceData)[0]].includes('-') ||
+        priceData[Object.keys(priceData)[0]].includes('>')
+      ) {
+        // compute rate with weight;
+        const rateWeight = Math.ceil(
+          convertlib(weight)
+            .from(getWeightUnit(weightType))
+            .to(priceTable.price.weightUnit as WeightUnit)
+        );
+        ratePrice = roundToTwoDecimal(rateWeight * ratePrice);
+        fee = computeFee(
+          shipmentData,
+          ratePrice,
+          priceTable.price.currency,
+          priceTable.rates
+        );
+        thirdpartyRate = ratePrice + fee;
+      }
+      // Apply account level fees and create Rate object
+      const rateData: Rate = {
+        carrier: priceTable.carrier,
+        serviceId: priceTable.service.id || priceTable.service.key,
+        service: priceTable.service.name,
+        account: priceTable.accountNum,
+        rate: thirdpartyRate,
+        currency: Currency.USD,
+        isTest: false,
+        thirdparty: true,
+        thirdpartyAcctId: priceTable._id,
+        clientCarrierId: ''
+      };
+      rates.push(rateData);
+    }
+  }
+  return { rates, errors: [] };
 };
 
 export const computeThirdpartyRate = (

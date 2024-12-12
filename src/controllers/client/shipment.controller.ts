@@ -82,7 +82,7 @@ export const searchShipmentsForUser = async (
     const searchQuery: Record<string, any> = {
       userRef: userId,
       status,
-      updatedAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
+      createdAt: { $gte: startDate + ' 00:00:00', $lte: endDate + ' 23:59:59' }
     };
     if (orderId) {
       searchQuery['orderId'] = { $regex: orderId, $options: 'i' };
@@ -100,7 +100,7 @@ export const searchShipmentsForUser = async (
       searchQuery['toAddress.zip'] = { $regex: zip, $options: 'i' };
     }
     const records = await ShipmentSchema.find(searchQuery).sort({
-      updatedAt: -1
+      createdAt: -1
     });
     res.json(records);
   } catch (error) {
