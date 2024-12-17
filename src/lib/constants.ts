@@ -49,6 +49,7 @@ export const CARRIERS = {
   UPS: 'UPS',
   FEDEX: 'FedEx',
   RUI_YUN: 'Rui Yun',
+  MAO_YUAN: 'Mao Yuan',
   USPS3: 'USPS3'
 };
 
@@ -459,6 +460,14 @@ export const CARRIER_REGIONS = {
 export const RUIYUN_HOSTS = {
   RUIYUN_TEST: 'http://aa94.rui-y.com:8401/lgtbws/eship/orderShip',
   RUIYUN_PROD: 'http://www.pm-l.com:8401/lgtbws/eship/orderShip'
+};
+
+//**********************************//
+//******** MAO YUAN Constants *******//
+//**********************************//
+export const MAOYUAN_HOSTS = {
+  MAOYUAN_TEST: 'https://maoyuan.zhiyunexp.com',
+  MAOYUAN_PROD: 'https://maoyuan.zhiyunexp.com'
 };
 
 //**********************************//

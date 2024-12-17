@@ -39,7 +39,6 @@ import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
 import { IManifestObj } from '../../types/shipping.types';
 import { Rate } from '../../types/carriers/carrier';
-import { addressValidation } from '../../lib/carriers/fedex/rest/address.helper';
 
 /**
  * Create Shipping Label API
