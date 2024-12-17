@@ -1,6 +1,10 @@
 import * as express from 'express';
 import AuthController from '../lib/auth/auth.handler';
 import {
+  batchCancelShippingRecords,
+  batchCancelSingleShippingRecord,
+  batchRevertSingleShippingRecord,
+  batchSearchShippingRecords,
   getShippingRecordsForClient,
   searchShippingRecordsForClient,
   updateShippingRecordStatus
@@ -39,6 +43,34 @@ class RecordRoute {
       this.authJwt.authenticateJWT,
       this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
       updateShippingRecordStatus
+    );
+
+    this.router.post(
+      this.path + '/batch/search',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      batchSearchShippingRecords
+    );
+
+    this.router.post(
+      this.path + '/batch/cancel',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      batchCancelShippingRecords
+    );
+
+    this.router.post(
+      this.path + '/batch/singleRevert',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      batchRevertSingleShippingRecord
+    );
+
+    this.router.post(
+      this.path + '/batch/singleCancel',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkRoles([USER_ROLES.ADMIN, USER_ROLES.ADMIN_SUPER]),
+      batchCancelSingleShippingRecord
     );
   }
 }

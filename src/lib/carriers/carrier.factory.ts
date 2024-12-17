@@ -4,6 +4,7 @@ import { CARRIERS } from '../constants';
 import USPS3API from './3usps/3usps.api';
 import DhlEcommerceAPI from './dhl_ecommerce/dhl_ecommerce.api';
 import FedexAPI from './fedex/fedex.api';
+import MaoYuanAPI from './maoyuan/mao_yuan.api';
 import RuiYunAPI from './rui_yun/rui_yun.api';
 import UpsAPI from './ups/ups.api';
 import UspsAPI from './usps/usps.api';
@@ -27,6 +28,8 @@ class CarrierFactory {
         return new RuiYunAPI(isTest, carrierAccount);
       case CARRIERS.USPS3:
         return new USPS3API(isTest, carrierAccount);
+      case CARRIERS.MAO_YUAN:
+        return new MaoYuanAPI(isTest, carrierAccount);
       default:
         return undefined;
     }

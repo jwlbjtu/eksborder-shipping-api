@@ -67,8 +67,8 @@ class RuiYunAPI implements ICarrierAPI {
     weightType: string,
     zone: string
   ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
-    logger.info('Start to verify price');
-    logger.info('Fetching rates from thirdparty price tables');
+    logger.info('Start to verify price Rui Yun');
+    logger.info('Fetching rates from thirdparty Rui Yun price tables');
     try {
       // Find the price table for the given channel
       const priceTableList = await ThirdpartyPriceSchema.find({

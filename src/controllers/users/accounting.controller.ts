@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import ReconciliationSchema from '../../models/reconciliation.model';
-import fs, { stat } from 'fs';
+import fs from 'fs';
 import util from 'util';
 import CsvParser from 'csv-parse';
 import { logger } from '../../lib/logger';
@@ -10,11 +10,7 @@ import AccountingItemSchema from '../../models/accountingItem.model';
 import HelperLib from '../../lib/helper.lib';
 import UserSchema from '../../models/user.model';
 import AccountSchema from '../../models/account.model';
-import {
-  base64Encode,
-  computeFeeWithAmount,
-  getWeightUnit
-} from '../../lib/utils/helpers';
+import { computeFeeWithAmount, getWeightUnit } from '../../lib/utils/helpers';
 import { Currency, ShipmentStatus, WeightUnit } from '../../lib/constants';
 import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { Rate } from '../../types/carriers/carrier';
@@ -75,7 +71,7 @@ export const fetchReconciliationRecords = async (
   res: Response
 ): Promise<void> => {
   try {
-    const records = await ReconciliationSchema.find();
+    const records = await ReconciliationSchema.find().sort({ date: -1 });
     res.json(records);
   } catch (error) {
     res.status(500).json(error);

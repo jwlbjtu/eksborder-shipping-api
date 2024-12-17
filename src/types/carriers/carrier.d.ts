@@ -25,6 +25,7 @@ export interface ICarrierAPI {
   getManifest?: (manifest: IManifest) => Promise<IManifest>;
   getTrackingInfo?: (tracking: string) => Promise<TrackingInfo[]>;
   validateAddress?: (address: IAddress, isTest: boolean) => Promise<boolean>;
+  cancelLabel?: (trackingNumber: string) => Promise<void>;
 }
 
 export interface Rate {
