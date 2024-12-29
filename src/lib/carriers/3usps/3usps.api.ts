@@ -5,7 +5,11 @@ import { IAccount } from '../../../types/user.types';
 import { CARRIERS, Currency, USPS3_HOSTS } from '../../constants';
 import { logger } from '../../logger';
 import CarrierSchema from '../../../models/carrier.model';
-import { buildUsps3PriceRequest, usps3PriceHandler } from './3usps.price';
+import {
+  buildUsps3PriceRequest,
+  buildUsps3PriceRequestWithWeight,
+  usps3PriceHandler
+} from './3usps.price';
 import { getUsps3Toekn } from './3usps.token';
 import { ApiFinalResult } from '../../../types/carriers/api';
 import { usps3ParcelHandler } from './3usps.parcel';
@@ -45,6 +49,44 @@ class USPS3API implements ICarrierAPI {
 
   public auth = async (): Promise<void> => {
     // Intended to leave blank
+  };
+
+  public verifyPrice = async (
+    shipmentData: IShipping,
+    weight: number,
+    weightType: string
+  ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
+    logger.info('Start to verify price USPS3');
+    try {
+      const token = await getUsps3Toekn(this.credentials, this.apiUrl);
+      const reqBody = buildUsps3PriceRequestWithWeight(
+        shipmentData,
+        weight,
+        weightType
+      );
+      const response = await usps3PriceHandler(reqBody, token, this.apiUrl);
+      if (response.isSuccess) {
+        logger.info('Creating rate from USPS3 pricv');
+        const result = response.result;
+        const rate: Rate = {
+          carrier: shipmentData.carrier!,
+          serviceId: shipmentData.service!.id!,
+          service: shipmentData.service!.name,
+          account: shipmentData.carrierAccount,
+          rate: parseFloat(result.totalAmt.split(' ')[0]),
+          currency: Currency.USD,
+          isTest: this.isTest,
+          clientCarrierId: this.clientCarrier._id.toString()
+        };
+        logger.info('Return rate');
+        return { rates: [rate], errors: [] };
+      } else {
+        return response.message;
+      }
+    } catch (error) {
+      logger.error(error);
+      return (error as Error).message;
+    }
   };
 
   public products = async (

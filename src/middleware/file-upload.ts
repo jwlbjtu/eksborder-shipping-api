@@ -35,7 +35,7 @@ export const fileUpload = multer({
 
 export const csvFileUpload = multer({
   limits: {
-    fileSize: 1000000 // 1MB
+    fileSize: 10 * 1024 * 1024 // 10MB
   },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {

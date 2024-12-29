@@ -3,10 +3,16 @@ import AuthHandler from '../lib/auth/auth.handler';
 import {
   generateApiToken,
   deleteApiToken,
-  apiLabelHandler
+  apiLabelHandler,
+  apiRateHandler,
+  apiCancelHandler
 } from '../controllers/users/api.controller';
 import { USER_ROLES } from '../lib/constants';
-import { apiLabelHandlerValidator } from './validators/api.validators';
+import {
+  apiCancelHandlerValidator,
+  apiLabelHandlerValidator,
+  apiRateHandlerValidator
+} from './validators/api.validators';
 
 class APIRoute {
   public path = '/api';
@@ -39,6 +45,20 @@ class APIRoute {
       this.path + '/label',
       apiLabelHandlerValidator,
       apiLabelHandler
+    );
+
+    // Shipping rate API
+    this.router.post(
+      this.path + '/rate',
+      apiRateHandlerValidator,
+      apiRateHandler
+    );
+
+    // Shipping cancel API
+    this.router.post(
+      this.path + '/cancel',
+      apiCancelHandlerValidator,
+      apiCancelHandler
     );
   }
 }

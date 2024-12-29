@@ -6,12 +6,17 @@ import AccountSchema from '../../models/account.model';
 import BillingSchema from '../../models/billing.model';
 import User from '../../models/user.model';
 import { IAccount, IUser } from '../../types/user.types';
-import { CreateShipmentData } from '../../types/client/shipment';
+import {
+  CreateShipmentData,
+  UserShippingRateRequest
+} from '../../types/client/shipment';
 import util from 'util';
 import {
   Currency,
   ShipmentStatus,
-  SHIPMENT_UPDATE_FIELDS
+  SHIPMENT_UPDATE_FIELDS,
+  WeightUnit,
+  DistanceUnit
 } from '../../lib/constants';
 import {
   checkCustomService,
@@ -21,7 +26,7 @@ import {
 import IdGenerator from '../../lib/utils/IdGenerator';
 import CarrierFactory from '../../lib/carriers/carrier.factory';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
-import { IBilling, IShipping } from '../../types/record.types';
+import { IBilling, IShipping, ShipmentData } from '../../types/record.types';
 import fs from 'fs';
 import CsvParser from 'csv-parse';
 import path from 'path';
@@ -34,7 +39,207 @@ import es from 'event-stream';
 import TransformShipmentToProduct from '../../lib/utils/product.transform';
 import { Rate } from '../../types/carriers/carrier';
 import { UserShippingRecordsSearchQuery } from '../users/record.controller';
-import { Types } from 'mongoose';
+
+export const getShippingRateForClient = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: '用户未找到' });
+      return;
+    }
+    const data = req.body as UserShippingRateRequest;
+    const { channel, toAddress, weight, length, width, height } = data;
+    const clientAccount = await AccountSchema.findOne({
+      accountId: channel,
+      isActive: true,
+      userRef: user._id
+    });
+    if (!clientAccount) {
+      res.status(404).json({ message: '无效渠道代码' });
+      return;
+    }
+    const carrier = clientAccount.carrier;
+    const service = clientAccount.service;
+    const facility = clientAccount.facility;
+    const sender = clientAccount.address;
+
+    const shipmentData: ShipmentData = {
+      orderId: '',
+      carrier,
+      service,
+      facility,
+      sender,
+      toAddress,
+      shipmentOptions: {
+        shipmentDate: new Date()
+      },
+      packageList: [
+        {
+          packageType: '02',
+          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
+          dimentions: {
+            length: length,
+            width: width,
+            height: height,
+            unitOfMeasure: DistanceUnit.IN
+          },
+          count: 1
+        }
+      ],
+      status: ShipmentStatus.PENDING,
+      manifested: false,
+      userRef: user._id
+    };
+
+    const api = CarrierFactory.getCarrierAPI(clientAccount, false, facility);
+    if (!api) {
+      res.status(500).json({ message: '获取API失败' });
+      return;
+    }
+    await api.init();
+    const priceResult = await api.products(shipmentData as IShipping, false);
+    if (typeof priceResult === 'string') {
+      res.status(400).json({ message: priceResult });
+      return;
+    } else if (priceResult.errors && priceResult.errors.length > 0) {
+      res.status(500).json({ message: priceResult.errors[0] });
+      return;
+    }
+
+    let rate: Rate;
+    if (priceResult && priceResult.rates) {
+      rate = priceResult.rates[0];
+    } else {
+      res.status(500).json({ message: 'API报价异常' });
+      return;
+    }
+    if (!rate.rate || !rate.currency) {
+      res.status(400).json({ message: '获取邮寄费失败' });
+      return;
+    }
+
+    let fee = 0;
+    fee = computeFee(
+      shipmentData as IShipping,
+      rate.rate!,
+      rate.currency,
+      clientAccount.rates
+    );
+    const totalRate = roundToTwoDecimal(rate.rate! + fee);
+    res.json({
+      rate: totalRate,
+      currency: rate.currency,
+      fee,
+      baseRate: rate.rate,
+      details: priceResult.data
+    });
+  } catch (error) {
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
+  }
+};
+
+export const getUserShippingRate = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = req.user as IUser;
+    const data = req.body as UserShippingRateRequest;
+    const { channel, toAddress, weight, length, width, height } = data;
+    const clientAccount = await AccountSchema.findOne({
+      accountId: channel,
+      isActive: true,
+      userRef: user._id
+    });
+    if (!clientAccount) {
+      res.status(404).json({ message: '无效渠道代码' });
+      return;
+    }
+    const carrier = clientAccount.carrier;
+    const service = clientAccount.service;
+    const facility = clientAccount.facility;
+    const sender = clientAccount.address;
+
+    const shipmentData: ShipmentData = {
+      orderId: '',
+      carrier,
+      service,
+      facility,
+      sender,
+      toAddress,
+      shipmentOptions: {
+        shipmentDate: new Date()
+      },
+      packageList: [
+        {
+          packageType: '02',
+          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
+          dimentions: {
+            length: length,
+            width: width,
+            height: height,
+            unitOfMeasure: DistanceUnit.IN
+          },
+          count: 1
+        }
+      ],
+      status: ShipmentStatus.PENDING,
+      manifested: false,
+      userRef: user._id
+    };
+
+    const api = CarrierFactory.getCarrierAPI(clientAccount, false, facility);
+    if (!api) {
+      res.status(500).json({ message: '获取API失败' });
+      return;
+    }
+    await api.init();
+    const priceResult = await api.products(shipmentData as IShipping, false);
+    if (typeof priceResult === 'string') {
+      res.status(400).json({ message: priceResult });
+      return;
+    } else if (priceResult.errors && priceResult.errors.length > 0) {
+      res.status(500).json({ message: priceResult.errors[0] });
+      return;
+    }
+
+    let rate: Rate;
+    if (priceResult && priceResult.rates) {
+      rate = priceResult.rates[0];
+    } else {
+      res.status(500).json({ message: 'API报价异常' });
+      return;
+    }
+    if (!rate.rate || !rate.currency) {
+      res.status(400).json({ message: '获取邮寄费失败' });
+      return;
+    }
+
+    let fee = 0;
+    fee = computeFee(
+      shipmentData as IShipping,
+      rate.rate!,
+      rate.currency,
+      clientAccount.rates
+    );
+    const totalRate = roundToTwoDecimal(rate.rate! + fee);
+    res.json({
+      rate: totalRate,
+      currency: rate.currency,
+      fee,
+      baseRate: rate.rate,
+      details: priceResult.data
+    });
+  } catch (error) {
+    logger.error((error as any).message);
+    res.status(500).json({ message: (error as any).message });
+  }
+};
 
 export const getShipmentsForUser = async (
   req: Request,

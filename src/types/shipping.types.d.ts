@@ -51,6 +51,13 @@ export interface ILabelResponse {
   ref?: string;
 }
 
+export interface IRateResponse {
+  timestamp: Date;
+  channelId: string;
+  totalAmt: string;
+  currency: string;
+}
+
 export interface IManifestRequest {
   carrier: string;
   provider?: string;

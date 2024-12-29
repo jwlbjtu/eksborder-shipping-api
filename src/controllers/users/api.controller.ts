@@ -20,9 +20,19 @@ import { isShipmentInternational } from '../../lib/carriers/carrier.helper';
 import { Rate } from '../../types/carriers/carrier';
 import ItemSchema from '../../models/item.model';
 import { computeFee, roundToTwoDecimal } from '../../lib/utils/helpers';
-import { Currency, ShipmentStatus } from '../../lib/constants';
-import { IBilling, Item } from '../../types/record.types';
-import { ILabelResponse } from '../../types/shipping.types';
+import {
+  Currency,
+  DistanceUnit,
+  ShipmentStatus,
+  WeightUnit
+} from '../../lib/constants';
+import {
+  IBilling,
+  IShipping,
+  Item,
+  ShipmentData
+} from '../../types/record.types';
+import { ILabelResponse, IRateResponse } from '../../types/shipping.types';
 import {
   chargeUserBalance,
   getUserBalance,
@@ -31,6 +41,11 @@ import {
 } from '../../lib/utils/user.balance.utils';
 import { Types } from 'mongoose';
 import util from 'util';
+import {
+  ApiShippingCancelRequest,
+  ApiShippingRateRequest,
+  UserShippingRateRequest
+} from '../../types/client/shipment';
 
 export const generateApiToken = async (
   req: Request,
@@ -350,5 +365,170 @@ export const apiLabelHandler = async (
           `${orderId ? orderId + ' - ' : ''}` + (error as Error).message
         )
       );
+  }
+};
+
+export const apiRateHandler = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Validate request body
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      res
+        .status(400)
+        .json(createApiFailedResponse('Validation failed', result.array()));
+      return;
+    }
+
+    const totalAmt = 0;
+    const body = req.body as ApiShippingRateRequest;
+    // Validate token
+    const token = body.token;
+    const user = await User.findOne({ apiToken: token, isActive: true });
+    if (!user) {
+      res.status(401).json(createApiFailedResponse('token 不存在'));
+      return;
+    }
+
+    const { channelId, shipTo, weight, length, width, height } = body;
+    const clientAccount = await AccountSchema.findOne({
+      accountId: channelId,
+      isActive: true,
+      userRef: user._id
+    });
+    if (!clientAccount) {
+      res.status(404).json(createApiFailedResponse('无效渠道代码'));
+      return;
+    }
+    const carrier = clientAccount.carrier;
+    const service = clientAccount.service;
+    const facility = clientAccount.facility;
+    const sender = clientAccount.address;
+
+    const shipmentData: ShipmentData = {
+      orderId: '',
+      carrier,
+      service,
+      facility,
+      sender,
+      toAddress: {
+        name: shipTo.name,
+        company: shipTo.companyName,
+        street1: shipTo.address1,
+        street2: shipTo.address2,
+        city: shipTo.city,
+        state: shipTo.state,
+        country: shipTo.country,
+        zip: shipTo.zipCode,
+        phone: shipTo.phone,
+        email: shipTo.email,
+        taxNumber: shipTo.taxNumber
+      },
+      shipmentOptions: {
+        shipmentDate: new Date()
+      },
+      packageList: [
+        {
+          packageType: '02',
+          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
+          dimentions: {
+            length: length,
+            width: width,
+            height: height,
+            unitOfMeasure: DistanceUnit.IN
+          },
+          count: 1
+        }
+      ],
+      status: ShipmentStatus.PENDING,
+      manifested: false,
+      userRef: user._id
+    };
+
+    const api = CarrierFactory.getCarrierAPI(clientAccount, false, facility);
+    if (!api) {
+      res.status(500).json(createApiFailedResponse('获取API失败'));
+      return;
+    }
+    await api.init();
+    const priceResult = await api.products(shipmentData as IShipping, false);
+    if (typeof priceResult === 'string') {
+      res.status(400).json({ message: priceResult });
+      return;
+    } else if (priceResult.errors && priceResult.errors.length > 0) {
+      res.status(500).json({ message: priceResult.errors[0] });
+      return;
+    }
+
+    let rate: Rate;
+    if (priceResult && priceResult.rates) {
+      rate = priceResult.rates[0];
+    } else {
+      res.status(500).json(createApiFailedResponse('API报价异常'));
+      return;
+    }
+    if (!rate.rate || !rate.currency) {
+      res.status(400).json(createApiFailedResponse('获取邮寄费失败'));
+      return;
+    }
+
+    let fee = 0;
+    fee = computeFee(
+      shipmentData as IShipping,
+      rate.rate!,
+      rate.currency,
+      clientAccount.rates
+    );
+
+    const totalRate = roundToTwoDecimal(rate.rate! + fee);
+
+    const rateResponse: IRateResponse = {
+      timestamp: new Date(),
+      channelId: channelId,
+      totalAmt: totalRate.toString(),
+      currency: rate.currency || Currency.USD
+    };
+
+    return LRes.resOk(res, rateResponse);
+  } catch (error) {
+    console.error(error);
+    logger.error((error as Error).message);
+    res.status(500).json(createApiFailedResponse((error as Error).message));
+  }
+};
+
+export const apiCancelHandler = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const body = req.body as ApiShippingCancelRequest;
+    // Validate token
+    const token = body.token;
+    const user = await User.findOne({ apiToken: token, isActive: true });
+    if (!user) {
+      res.status(401).json(createApiFailedResponse('token 不存在'));
+      return;
+    }
+    const trackingNumbers = body.trackingNumbers;
+    const shipments = await ShipmentSchema.find({
+      trackingId: { $in: trackingNumbers },
+      userRef: user._id
+    });
+    if (!shipments || shipments.length === 0) {
+      res.status(404).json(createApiFailedResponse('未找到邮寄记录'));
+      return;
+    }
+    shipments.map(async (shipment) => {
+      shipment.status = ShipmentStatus.DEL_PENDING;
+      await shipment.save();
+    });
+    return LRes.resOk(res, { message: '邮寄取消成功' });
+  } catch (error) {
+    console.error(error);
+    logger.error((error as Error).message);
+    res.status(500).json(createApiFailedResponse((error as Error).message));
   }
 };

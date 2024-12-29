@@ -82,7 +82,7 @@ class MaoYuanAPI implements ICarrierAPI {
 
   public products = async (
     shipmentData: IShipping
-  ): Promise<{ rates: Rate[]; errors: string[] } | string> => {
+  ): Promise<{ rates: Rate[]; errors: string[]; data?: any } | string> => {
     logger.info("Fetching rates from MaoYuan's rate API");
     const path = '/api/shipper/getRatesQuotes';
     const maoyuanRateReq = buildMaoYuanProductsReqBody(shipmentData);
@@ -105,6 +105,7 @@ class MaoYuanAPI implements ICarrierAPI {
         throw new Error(data.msg);
       }
       const rateData = data.data;
+      console.log(rateData);
       const rateObj: Rate = {
         carrier: shipmentData.service!.key,
         serviceId: shipmentData.service!.id!,
@@ -117,7 +118,7 @@ class MaoYuanAPI implements ICarrierAPI {
         clientCarrierId: this.clientCarrier.id.toString(),
         isTest: false
       };
-      return { rates: [rateObj], errors: [] };
+      return { rates: [rateObj], errors: [], data: rateData };
     } catch (error) {
       logger.error(error);
       throw new Error(error as string);

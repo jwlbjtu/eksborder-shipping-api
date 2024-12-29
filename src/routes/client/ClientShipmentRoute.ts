@@ -5,6 +5,8 @@ import {
   cancelShipmentForUser,
   createShipment,
   getShipmentsForUser,
+  getShippingRateForClient,
+  getUserShippingRate,
   importCsvData,
   preloadCsvFile,
   purchaseLabel,
@@ -80,6 +82,20 @@ class ClientShipmentRoute {
       this.authJwt.checkSingleRole(USER_ROLES.API_USER),
       csvImportValidator,
       importCsvData
+    );
+
+    this.router.post(
+      this.path + '/rate',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.API_USER),
+      getUserShippingRate
+    );
+
+    this.router.post(
+      this.path + '/rate/:userId',
+      this.authJwt.authenticateJWT,
+      this.authJwt.checkSingleRole(USER_ROLES.ADMIN_SUPER),
+      getShippingRateForClient
     );
   }
 }

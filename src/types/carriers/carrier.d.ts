@@ -10,7 +10,7 @@ export interface ICarrierAPI {
   products: (
     shipmentData: IShipping,
     isInternational: boolean
-  ) => Promise<{ rates: Rate[]; errors: string[] } | string>;
+  ) => Promise<{ rates: Rate[]; errors: string[]; data?: any } | string>;
   verifyPrice?: (
     shipmentData: IShipping,
     weight: number,

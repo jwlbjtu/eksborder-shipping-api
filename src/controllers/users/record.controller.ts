@@ -8,6 +8,7 @@ import BillingSchema from '../../models/billing.model';
 import { updateUserBalanceAndDeposit } from '../../lib/utils/user.balance.utils';
 import { removeLabelResponseForOrderId } from '../../lib/utils/api.utils';
 import { logger } from '../../lib/logger';
+import util from 'util';
 import { cancelByCarrierAPI } from '../../lib/carriers/carrier.cancel';
 import { IShipping } from '../../types/record.types';
 
@@ -95,6 +96,8 @@ export const searchShippingRecordsForClient = async (
     return LRes.resOk(res, records);
   } catch (error) {
     console.log(error);
+    logger.error((error as Error).message);
+    logger.error(util.inspect(error, false, null, true));
     return LRes.resErr(res, 500, error);
   }
 };
