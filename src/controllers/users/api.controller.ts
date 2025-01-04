@@ -392,7 +392,15 @@ export const apiRateHandler = async (
       return;
     }
 
-    const { channelId, shipTo, weight, length, width, height } = body;
+    // 0. Validate body packageList
+    logger.info('0. Validate body packageList');
+    const validateResult = validatePackageList(body.packageList);
+    if (!validateResult.status) {
+      res.status(400).json(createApiFailedResponse(validateResult.message));
+      return;
+    }
+
+    const { channelId, shipTo, packageList } = body;
     const clientAccount = await AccountSchema.findOne({
       accountId: channelId,
       isActive: true,
@@ -429,19 +437,19 @@ export const apiRateHandler = async (
       shipmentOptions: {
         shipmentDate: new Date()
       },
-      packageList: [
-        {
+      packageList: packageList.map((p) => {
+        return {
           packageType: '02',
-          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
-          dimentions: {
-            length: length,
-            width: width,
-            height: height,
+          weight: { value: p.weight, unitOfMeasure: WeightUnit.LB },
+          dimension: {
+            length: p.length,
+            width: p.width,
+            height: p.height,
             unitOfMeasure: DistanceUnit.IN
           },
-          count: 1
-        }
-      ],
+          count: p.count || 1
+        };
+      }),
       status: ShipmentStatus.PENDING,
       manifested: false,
       userRef: user._id

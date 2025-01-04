@@ -44,10 +44,10 @@ export const apiRateHandlerValidator = [
   check('shipTo.zipCode').notEmpty().withMessage('shipTo.zip 不能为空'),
   check('shipTo.country').notEmpty().withMessage('shipTo.country 不能为空'),
 
-  check('weight').notEmpty().withMessage('weight 不能为空'),
-  check('length').notEmpty().withMessage('length 不能为空'),
-  check('width').notEmpty().withMessage('width 不能为空'),
-  check('height').notEmpty().withMessage('height 不能为空')
+  check('packageList').notEmpty().withMessage('packageList 不能为空'),
+  check('packageList').isArray().withMessage('packageList 必須为数组'),
+  check('packageList.*.weight').notEmpty().withMessage('weight 不能为空'),
+  check('packageList.*.weight').isNumeric().withMessage('weight 必須为数字')
 ];
 
 export const apiCancelHandlerValidator = [

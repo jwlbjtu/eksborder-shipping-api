@@ -39,6 +39,7 @@ import es from 'event-stream';
 import TransformShipmentToProduct from '../../lib/utils/product.transform';
 import { Rate } from '../../types/carriers/carrier';
 import { UserShippingRecordsSearchQuery } from '../users/record.controller';
+import { validatePackageList } from '../../lib/utils/api.utils';
 
 export const getShippingRateForClient = async (
   req: Request,
@@ -52,7 +53,14 @@ export const getShippingRateForClient = async (
       return;
     }
     const data = req.body as UserShippingRateRequest;
-    const { channel, toAddress, weight, length, width, height } = data;
+    // 0. Validate body packageList
+    logger.info('0. Validate body packageList');
+    const validateResult = validatePackageList(data.packageList);
+    if (!validateResult.status) {
+      res.status(400).json({ message: validateResult.message });
+      return;
+    }
+    const { channel, toAddress, packageList } = data;
     const clientAccount = await AccountSchema.findOne({
       accountId: channel,
       isActive: true,
@@ -77,19 +85,20 @@ export const getShippingRateForClient = async (
       shipmentOptions: {
         shipmentDate: new Date()
       },
-      packageList: [
-        {
+      packageList: packageList.map((p) => {
+        console.log(p);
+        return {
           packageType: '02',
-          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
-          dimentions: {
-            length: length,
-            width: width,
-            height: height,
+          weight: { value: p.weight, unitOfMeasure: WeightUnit.LB },
+          dimension: {
+            length: p.length,
+            width: p.width,
+            height: p.height,
             unitOfMeasure: DistanceUnit.IN
           },
-          count: 1
-        }
-      ],
+          count: p.count || 1
+        };
+      }),
       status: ShipmentStatus.PENDING,
       manifested: false,
       userRef: user._id
@@ -150,7 +159,14 @@ export const getUserShippingRate = async (
   try {
     const user = req.user as IUser;
     const data = req.body as UserShippingRateRequest;
-    const { channel, toAddress, weight, length, width, height } = data;
+    // 0. Validate body packageList
+    logger.info('0. Validate body packageList');
+    const validateResult = validatePackageList(data.packageList);
+    if (!validateResult.status) {
+      res.status(400).json({ message: validateResult.message });
+      return;
+    }
+    const { channel, toAddress, packageList } = data;
     const clientAccount = await AccountSchema.findOne({
       accountId: channel,
       isActive: true,
@@ -175,19 +191,20 @@ export const getUserShippingRate = async (
       shipmentOptions: {
         shipmentDate: new Date()
       },
-      packageList: [
-        {
+      packageList: packageList.map((p) => {
+        console.log(p);
+        return {
           packageType: '02',
-          weight: { value: weight, unitOfMeasure: WeightUnit.LB },
-          dimentions: {
-            length: length,
-            width: width,
-            height: height,
+          weight: { value: p.weight, unitOfMeasure: WeightUnit.LB },
+          dimension: {
+            length: p.length,
+            width: p.width,
+            height: p.height,
             unitOfMeasure: DistanceUnit.IN
           },
-          count: 1
-        }
-      ],
+          count: p.count || 1
+        };
+      }),
       status: ShipmentStatus.PENDING,
       manifested: false,
       userRef: user._id

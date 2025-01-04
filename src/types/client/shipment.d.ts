@@ -1,6 +1,7 @@
 import { extend } from 'lodash';
 import { CustomDeclaration } from '../record.types';
 import { IAddress } from '../shipping.types';
+import { ApiPackage } from '../carriers/api';
 
 export interface CreateShipmentData {
   sender: IAddress;
@@ -11,20 +12,14 @@ export interface CreateShipmentData {
 export interface UserShippingRateRequest {
   channel: string;
   toAddress: IAddress;
-  weight: number; // LB
-  length: number; // IN
-  width: number; // IN
-  height: number; // IN
+  packageList: ApiPackage[];
 }
 
 export interface ApiShippingRateRequest {
   token: string;
   channelId: string;
   shipTo: ApiAddress;
-  weight: number; // LB
-  length: number; // IN
-  width: number; // IN
-  height: number; // IN
+  packageList: ApiPackage[];
 }
 
 export interface ApiShippingCancelRequest {
