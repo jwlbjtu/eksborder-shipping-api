@@ -143,6 +143,10 @@ export const callRuiYunLabelEndpoint = async (
       orderResult = orderResult[0];
     }
 
+    const ruiYunPackageList = Array.isArray(orderResult.packageList)
+      ? orderResult.packageList
+      : [orderResult.packageList];
+
     const labelList: LabelData[] = ruiYunPackageList.map((item) => {
       return {
         carrier: '-',
