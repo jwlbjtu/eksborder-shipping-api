@@ -30,6 +30,8 @@ class CarrierFactory {
         return new USPS3API(isTest, carrierAccount);
       case CARRIERS.MAO_YUAN:
         return new MaoYuanAPI(isTest, carrierAccount);
+      case CARRIERS.DPD:
+      //DPD-TODO: DPD is not implemented yet
       default:
         return undefined;
     }
