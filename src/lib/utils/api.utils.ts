@@ -5,7 +5,7 @@ import {
   ApiPackage
 } from '../../types/carriers/api';
 import { RuiYunLabelRequest } from '../../types/carriers/rui_yun';
-import { IService, ShipmentData } from '../../types/record.types';
+import { IService, LabelData, ShipmentData } from '../../types/record.types';
 import { IUser } from '../../types/user.types';
 import { ruiYunOrderShipHandler } from '../carriers/rui_yun/rui_yun.label';
 import { DistanceUnit, ShipmentStatus, WeightUnit } from '../constants';
@@ -142,6 +142,24 @@ export const callRuiYunLabelEndpoint = async (
     if (Array.isArray(orderResult)) {
       orderResult = orderResult[0];
     }
+
+    const ruiYunPackageList = Array.isArray(orderResult.packageList)
+      ? orderResult.packageList
+      : [orderResult.packageList];
+
+    const labelList: LabelData[] = ruiYunPackageList.map((item) => {
+      return {
+        carrier: '-',
+        service: '-',
+        createdOn: new Date(),
+        data: '-',
+        format: '-',
+        encodeType: '-',
+        isTest: false,
+        tracking: item.trackingNumCha
+      };
+    });
+
     return {
       invoiceUrl: orderResult.invoiceUrl,
       labelUrlList: Array.isArray(orderResult.labeUrlList)
@@ -151,7 +169,7 @@ export const callRuiYunLabelEndpoint = async (
       trackingNum: orderResult.trackingNumCha,
       turnChanddelId: orderResult.turnChannelId,
       turnServiceType: orderResult.turnServiceType,
-      labels: [],
+      labels: labelList,
       forms: [],
       shippingRate: []
     };
