@@ -161,7 +161,7 @@ export const validateDimensions = (
       carrier
     );
   }
-  if (dimension.length <= 0) {
+  if (dimension.length && dimension.length <= 0) {
     throw LRes.fieldErr(
       'length',
       '/packageDetail/dimention/length',
@@ -170,7 +170,7 @@ export const validateDimensions = (
       carrier
     );
   }
-  if (dimension.width <= 0) {
+  if (dimension.width && dimension.width <= 0) {
     throw LRes.fieldErr(
       'width',
       '/packageDetail/dimention/width',
@@ -179,7 +179,7 @@ export const validateDimensions = (
       carrier
     );
   }
-  if (dimension.height <= 0) {
+  if (dimension.height && dimension.height <= 0) {
     throw LRes.fieldErr(
       'height',
       '/packageDetail/dimention/height',

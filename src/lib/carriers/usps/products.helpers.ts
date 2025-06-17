@@ -50,7 +50,7 @@ const createDomesticRequest = (
   userId: string
 ): UspsDomasticProductRequest => {
   const packageInfo = shipment.packageInfo!;
-  const dimentions = packageInfo.dimentions!;
+  const dimensions = packageInfo.dimensions!;
   const packageObj: UspsPackage = {
     '@_ID': uniqid(),
     Service: USPS_CLASSID_TO_SERVICE[shipment.service!.id!].serviceId,
@@ -69,18 +69,18 @@ const createDomesticRequest = (
     Container: {},
     Size: {},
     Width: roundToTwoDecimal(
-      convertlib(dimentions.width)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.width)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Length: roundToTwoDecimal(
-      convertlib(dimentions.length)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.length)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Height: roundToTwoDecimal(
-      convertlib(dimentions.height)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.height)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Girth: {},
@@ -106,7 +106,7 @@ export const createInternationalRequest = (
   userId: string
 ): UspsInternationalProductRequest => {
   const packageInfo = shipment.packageInfo!;
-  const dimentions = packageInfo.dimentions!;
+  const dimensions = packageInfo.dimensions!;
   const customItems = shipment.customItems!;
 
   const packageObj: UspsInternationalPackage = {
@@ -131,18 +131,18 @@ export const createInternationalRequest = (
     Container: {},
     Size: {},
     Width: roundToTwoDecimal(
-      convertlib(dimentions.width)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.width)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Length: roundToTwoDecimal(
-      convertlib(dimentions.length)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.length)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Height: roundToTwoDecimal(
-      convertlib(dimentions.height)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.height)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Girth: {},

@@ -76,7 +76,7 @@ const ShippingSchema: Schema<IShipping> = new Schema<IShipping>(
           weight: {
             type: { value: { type: Number }, unitOfMeasure: { type: String } }
           },
-          dimentions: {
+          dimensions: {
             type: {
               length: { type: Number, required: true },
               width: { type: Number, required: true },
@@ -215,7 +215,7 @@ ShippingSchema.pre<IShipping>('save', async function save(next) {
     if (packageList && packageList.length > 0) {
       const newPackages = packageList.map((ele) => {
         const eleWeight = ele.weight;
-        const eleDimentions = ele.dimentions;
+        const eleDimensions = ele.dimensions;
         const newEleInfo: PackageInfo = {
           packageType: ele.packageType,
           weight: {
@@ -225,16 +225,16 @@ ShippingSchema.pre<IShipping>('save', async function save(next) {
             unitOfMeasure: WeightUnit.LB
           }
         };
-        if (eleDimentions) {
-          newEleInfo.dimentions = {
-            length: convert(eleDimentions.length)
-              .from(eleDimentions.unitOfMeasure)
+        if (eleDimensions) {
+          newEleInfo.dimensions = {
+            length: convert(eleDimensions.length)
+              .from(eleDimensions.unitOfMeasure)
               .to(DistanceUnit.IN),
-            width: convert(eleDimentions.width)
-              .from(eleDimentions.unitOfMeasure)
+            width: convert(eleDimensions.width)
+              .from(eleDimensions.unitOfMeasure)
               .to(DistanceUnit.IN),
-            height: convert(eleDimentions.height)
-              .from(eleDimentions.unitOfMeasure)
+            height: convert(eleDimensions.height)
+              .from(eleDimensions.unitOfMeasure)
               .to(DistanceUnit.IN),
             unitOfMeasure: DistanceUnit.IN
           };

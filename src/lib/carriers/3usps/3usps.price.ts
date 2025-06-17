@@ -96,12 +96,12 @@ export const buildUsps3PriceRequest = (
         value: pkg.weight.value,
         unit: pkg.weight.unitOfMeasure.toUpperCase()
       },
-      dimensions: pkg.dimentions
+      dimensions: pkg.dimensions
         ? {
-            length: pkg.dimentions.length,
-            width: pkg.dimentions.width,
-            height: pkg.dimentions.height,
-            unit: pkg.dimentions.unitOfMeasure.toUpperCase()
+            length: pkg.dimensions.length!,
+            width: pkg.dimensions.width!,
+            height: pkg.dimensions.height!,
+            unit: pkg.dimensions.unitOfMeasure.toUpperCase()
           }
         : undefined,
       count: pkg.count || 1

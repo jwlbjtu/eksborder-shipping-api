@@ -77,7 +77,7 @@ const buildUspsIntlPriorityMailLabelReqBody = (
   const recipient = shipment.toAddress;
   const recipientNames = recipient.name!.split(' ');
   const packageInfo = shipment.packageInfo!;
-  const dimentions = packageInfo.dimentions!;
+  const dimensions = packageInfo.dimensions!;
 
   const [packagePound, packageOunce] = getPoundAndOunces(
     packageInfo.weight.value,
@@ -151,18 +151,18 @@ const buildUspsIntlPriorityMailLabelReqBody = (
     LabelDate: dayjs().format('MM/DD/YYYY'),
     HoldForManifest: 'N',
     Length: roundToTwoDecimal(
-      convertlib(dimentions.length)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.length)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Width: roundToTwoDecimal(
-      convertlib(dimentions.width)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.width)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Height: roundToTwoDecimal(
-      convertlib(dimentions.height)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.height)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Girth: {},
@@ -194,7 +194,7 @@ const buildUspsIntlPMExpressLabelReqBody = (
   const recipient = shipment.toAddress;
   const recipientNames = recipient.name!.split(' ');
   const packageInfo = shipment.packageInfo!;
-  const dimentions = packageInfo.dimentions!;
+  const dimensions = packageInfo.dimensions!;
 
   const [packagePound, packageOunce] = getPoundAndOunces(
     packageInfo.weight.value,
@@ -267,18 +267,18 @@ const buildUspsIntlPMExpressLabelReqBody = (
     LabelDate: dayjs().format('MM/DD/YYYY'),
     HoldForManifest: 'N',
     Length: roundToTwoDecimal(
-      convertlib(dimentions.length)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.length)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Width: roundToTwoDecimal(
-      convertlib(dimentions.width)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.width)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Height: roundToTwoDecimal(
-      convertlib(dimentions.height)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.height)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Girth: {},
@@ -309,7 +309,7 @@ const buildUspsDomesticLabelReqBody = (
   const sender = shipment.sender!;
   const recipient = shipment.toAddress;
   const packageInfo = shipment.packageInfo!;
-  const dimentions = packageInfo.dimentions!;
+  const dimensions = packageInfo.dimensions!;
 
   const imageParameters: ImageParameters = {
     ImageParameter: '4x6LABELP',
@@ -350,18 +350,18 @@ const buildUspsDomesticLabelReqBody = (
     ServiceType: rate.serviceId,
     Container: 'RECTANGULAR',
     Width: roundToTwoDecimal(
-      convertlib(dimentions.width)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.width)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Length: roundToTwoDecimal(
-      convertlib(dimentions.length)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.length)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Height: roundToTwoDecimal(
-      convertlib(dimentions.height)
-        .from(dimentions.unitOfMeasure)
+      convertlib(dimensions.height)
+        .from(dimensions.unitOfMeasure)
         .to(DistanceUnit.IN)
     ),
     Machinable: {},

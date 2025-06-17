@@ -155,7 +155,7 @@ export const createShippingLabel = async (
               .to(WeightUnit.LB),
             unitOfMeasure: WeightUnit.LB
           },
-          dimentions: {
+          dimensions: {
             length: convert(dimension?.length)
               .from(dimension?.unitOfMeasure.toLowerCase() as DistanceUnit)
               .to(DistanceUnit.IN),
@@ -185,7 +185,7 @@ export const createShippingLabel = async (
                 .to(WeightUnit.LB),
               unitOfMeasure: WeightUnit.LB
             },
-            dimentions: {
+            dimensions: {
               length: convert(ele.dimension?.length)
                 .from(
                   ele.dimension?.unitOfMeasure.toLowerCase() as DistanceUnit

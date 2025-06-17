@@ -15,6 +15,7 @@ import { IAddress, ILabelResponse } from '../../types/shipping.types';
 import { Cache } from '../cache';
 import AsyncLock from 'async-lock';
 import ShipmentSchema from '../../models/shipping.model';
+import util from 'util';
 
 const lock = new AsyncLock();
 
@@ -99,7 +100,7 @@ export const createShipmentData = async (
       return {
         packageType: data.packageType,
         weight: { value: p.weight, unitOfMeasure: WeightUnit.LB },
-        dimension: {
+        dimensions: {
           length: p.length,
           width: p.width,
           height: p.height,
@@ -132,6 +133,8 @@ export const callRuiYunLabelEndpoint = async (
 ): Promise<ApiFinalResult> => {
   logger.info('Calling RuiYun label endpoint');
   logger.info(apiUrl);
+  logger.info('Request Body:');
+  logger.info(util.inspect(reqBody, false, null, true));
   const response = await ruiYunOrderShipHandler(reqBody, apiUrl);
   const resultFlag = response.return.result;
   if (resultFlag) {

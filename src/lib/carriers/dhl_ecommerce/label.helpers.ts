@@ -33,11 +33,11 @@ export const buildDhlEcommerceLabelReqBody = (
         shipmentData.packageInfo!.weight.unitOfMeasure.toUpperCase()
     },
     dimension: {
-      length: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.length),
-      width: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.width),
-      height: roundToTwoDecimal(shipmentData.packageInfo!.dimentions!.height),
+      length: roundToTwoDecimal(shipmentData.packageInfo!.dimensions!.length),
+      width: roundToTwoDecimal(shipmentData.packageInfo!.dimensions!.width),
+      height: roundToTwoDecimal(shipmentData.packageInfo!.dimensions!.height),
       unitOfMeasure:
-        shipmentData.packageInfo!.dimentions!.unitOfMeasure.toUpperCase()
+        shipmentData.packageInfo!.dimensions!.unitOfMeasure.toUpperCase()
     },
     billingReference1: 'ParcelsPro',
     billingReference2: `User-${shipmentData.userRef}`

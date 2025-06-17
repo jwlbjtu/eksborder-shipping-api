@@ -83,7 +83,7 @@ export const buildMaoYuanProductsReqBody = (
           const maoYuanWeight = roundToTwoDecimal(
             convertlib(weight).from(unitOfMeasure).to(WeightUnit.LB)
           );
-          const dimension = p.dimentions;
+          const dimension = p.dimensions;
           const l = dimension?.length || 0;
           const w = dimension?.width || 0;
           const h = dimension?.height || 0;

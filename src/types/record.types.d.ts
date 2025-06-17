@@ -291,7 +291,7 @@ export interface ItemUpdateData extends Item {
 
 export interface PackageInfo {
   packageType: string;
-  dimentions?: IDimension;
+  dimensions?: IDimension;
   weight: IWeight;
   count?: number;
 }

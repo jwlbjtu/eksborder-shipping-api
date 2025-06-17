@@ -38,11 +38,11 @@ export const buildUpsPackages = (shipment: IShipping): UPSPackage[] => {
       },
       Dimensions: {
         UnitOfMeasurement: {
-          Code: packageInfo.dimentions!.unitOfMeasure.toUpperCase()
+          Code: packageInfo.dimensions!.unitOfMeasure.toUpperCase()
         },
-        Length: roundToTwoDecimal(packageInfo.dimentions!.length).toString(),
-        Width: roundToTwoDecimal(packageInfo.dimentions!.width).toString(),
-        Height: roundToTwoDecimal(packageInfo.dimentions!.height).toString()
+        Length: roundToTwoDecimal(packageInfo.dimensions!.length).toString(),
+        Width: roundToTwoDecimal(packageInfo.dimensions!.width).toString(),
+        Height: roundToTwoDecimal(packageInfo.dimensions!.height).toString()
       },
       PackageWeight: {
         UnitOfMeasurement: {
@@ -63,11 +63,11 @@ export const buildUpsPackages = (shipment: IShipping): UPSPackage[] => {
         },
         Dimensions: {
           UnitOfMeasurement: {
-            Code: packageData.dimentions!.unitOfMeasure.toUpperCase()
+            Code: packageData.dimensions!.unitOfMeasure.toUpperCase()
           },
-          Length: roundToTwoDecimal(packageData.dimentions!.length).toString(),
-          Width: roundToTwoDecimal(packageData.dimentions!.width).toString(),
-          Height: roundToTwoDecimal(packageData.dimentions!.height).toString()
+          Length: roundToTwoDecimal(packageData.dimensions!.length).toString(),
+          Width: roundToTwoDecimal(packageData.dimensions!.width).toString(),
+          Height: roundToTwoDecimal(packageData.dimensions!.height).toString()
         },
         PackageWeight: {
           UnitOfMeasurement: {
@@ -100,11 +100,11 @@ export const buildUPSLabelPackages = (
       },
       Dimensions: {
         UnitOfMeasurement: {
-          Code: packageInfo.dimentions!.unitOfMeasure.toUpperCase()
+          Code: packageInfo.dimensions!.unitOfMeasure.toUpperCase()
         },
-        Length: roundToTwoDecimal(packageInfo.dimentions!.length).toString(),
-        Width: roundToTwoDecimal(packageInfo.dimentions!.width).toString(),
-        Height: roundToTwoDecimal(packageInfo.dimentions!.height).toString()
+        Length: roundToTwoDecimal(packageInfo.dimensions!.length).toString(),
+        Width: roundToTwoDecimal(packageInfo.dimensions!.width).toString(),
+        Height: roundToTwoDecimal(packageInfo.dimensions!.height).toString()
       },
       PackageWeight: {
         UnitOfMeasurement: {
@@ -128,11 +128,11 @@ export const buildUPSLabelPackages = (
         },
         Dimensions: {
           UnitOfMeasurement: {
-            Code: packageData.dimentions!.unitOfMeasure.toUpperCase()
+            Code: packageData.dimensions!.unitOfMeasure.toUpperCase()
           },
-          Length: roundToTwoDecimal(packageData.dimentions!.length).toString(),
-          Width: roundToTwoDecimal(packageData.dimentions!.width).toString(),
-          Height: roundToTwoDecimal(packageData.dimentions!.height).toString()
+          Length: roundToTwoDecimal(packageData.dimensions!.length).toString(),
+          Width: roundToTwoDecimal(packageData.dimensions!.width).toString(),
+          Height: roundToTwoDecimal(packageData.dimensions!.height).toString()
         },
         PackageWeight: {
           UnitOfMeasurement: {

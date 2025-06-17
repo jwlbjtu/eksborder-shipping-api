@@ -90,10 +90,10 @@ export const generateFedexProductPackageItems = (
         Value: roundToTwoDecimal(ele.weight.value)
       },
       Dimensions: {
-        Length: parseInt(ele.dimentions!.length.toFixed(0)),
-        Width: parseInt(ele.dimentions!.width.toFixed(0)),
-        Height: parseInt(ele.dimentions!.height.toFixed(0)),
-        Units: ele.dimentions!.unitOfMeasure.toUpperCase()
+        Length: parseInt(ele.dimensions!.length.toFixed(0)),
+        Width: parseInt(ele.dimensions!.width.toFixed(0)),
+        Height: parseInt(ele.dimensions!.height.toFixed(0)),
+        Units: ele.dimensions!.unitOfMeasure.toUpperCase()
       }
     };
     return item;

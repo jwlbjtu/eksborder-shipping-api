@@ -68,9 +68,37 @@ export const buildRuiYunLabelReqBody = (
           const ruiYunWeight = roundToTwoDecimal(
             convertlib(weight).from(unitOfMeasure).to(WeightUnit.KG)
           );
+          let ruiYunLength,
+            ruiYunWidth,
+            ruiYunHeight = 3; // default height to 3cm if not provided
+          if (
+            ele.dimensions &&
+            ele.dimensions.length &&
+            ele.dimensions.width &&
+            ele.dimensions.height
+          ) {
+            ruiYunLength = roundToTwoDecimal(
+              convertlib(ele.dimensions.length)
+                .from(ele.dimensions.unitOfMeasure)
+                .to('cm')
+            );
+            ruiYunWidth = roundToTwoDecimal(
+              convertlib(ele.dimensions.width)
+                .from(ele.dimensions.unitOfMeasure)
+                .to('cm')
+            );
+            ruiYunHeight = roundToTwoDecimal(
+              convertlib(ele.dimensions.height)
+                .from(ele.dimensions.unitOfMeasure)
+                .to('cm')
+            );
+          }
           return {
             weight: ruiYunWeight,
-            count: ele.count ? ele.count : 1
+            count: ele.count ? ele.count : 1,
+            length: ruiYunLength,
+            width: ruiYunWidth,
+            height: ruiYunHeight
           } as ApiPackage;
         }),
         invoice: {
@@ -127,7 +155,7 @@ export const ruiYunOrderShipHandler = async (
   const Parser = fastParser.j2xParser;
   const xmlRequest = new Parser(options).parse(body);
   const xmlRequestString = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://service.eship.logisticstb/"><soapenv:Header/>${xmlRequest}</soapenv:Envelope>`;
-  console.log(xmlRequestString);
+  logger.info(xmlRequestString);
 
   try {
     const response = await axios.post(url, xmlRequestString, {

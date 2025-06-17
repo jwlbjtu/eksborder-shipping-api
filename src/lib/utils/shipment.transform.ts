@@ -160,7 +160,7 @@ class TransformDataToShipment extends stream.Transform {
       result.packageList = [
         {
           packageType: data[map.packageType],
-          dimentions: {
+          dimensions: {
             length: data[map.length] ? parseFloat(data[map.length]) : 0,
             width: data[map.width] ? parseFloat(data[map.width]) : 0,
             height: data[map.height] ? parseFloat(data[map.height]) : 0,

@@ -135,7 +135,7 @@ export const validateShipment = (
     return '包裹重量信息有误';
   }
   // - packageInfo dimension
-  const dimension = shipmentData.packageInfo.dimentions;
+  const dimension = shipmentData.packageInfo.dimensions;
   if (
     !dimension ||
     dimension.length <= 0 ||

@@ -192,9 +192,9 @@ export interface IWeight {
 }
 
 export interface IDimension {
-  length: number;
-  width: number;
-  height: number;
+  length?: number;
+  width?: number;
+  height?: number;
   unitOfMeasure: DistanceUnit;
 }
 

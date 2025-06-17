@@ -140,10 +140,10 @@ export const buildFedexLabelReqBody = (
         Value: roundToTwoDecimal(packageInfo.weight.value)
       },
       Dimensions: {
-        Length: parseInt(packageInfo.dimentions!.length.toFixed(0)),
-        Width: parseInt(packageInfo.dimentions!.width.toFixed(0)),
-        Height: parseInt(packageInfo.dimentions!.height.toFixed(0)),
-        Units: packageInfo.dimentions!.unitOfMeasure.toUpperCase()
+        Length: parseInt(packageInfo.dimensions!.length!.toFixed(0)),
+        Width: parseInt(packageInfo.dimensions!.width!.toFixed(0)),
+        Height: parseInt(packageInfo.dimensions!.height!.toFixed(0)),
+        Units: packageInfo.dimensions!.unitOfMeasure.toUpperCase()
       }
     }
   ];
