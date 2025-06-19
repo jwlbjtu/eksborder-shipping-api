@@ -14,7 +14,8 @@ import convertlib from 'convert-units';
 
 export const buildDpdOrderRequestBody = (
   shipmentData: IShipping,
-  rate: Rate
+  rate: Rate,
+  isTest: boolean
 ): DPDOrderRequestBody => {
   const totalWeight = shipmentData.packageList.reduce(
     (total, p) => total + p.weight.value,
@@ -60,7 +61,7 @@ export const buildDpdOrderRequestBody = (
     DeclareValue: shipmentData.invoice?.invoiceDetailList![0].currencyValue
       ? shipmentData.invoice?.invoiceDetailList[0].currencyValue
       : 0,
-    ServiceCode: rate.serviceId,
+    ServiceCode: isTest ? 'ADC' : rate.serviceId,
     DutyType: 'DDU',
     Content: shipmentData.description || '',
     HawbItems: shipmentData.invoice

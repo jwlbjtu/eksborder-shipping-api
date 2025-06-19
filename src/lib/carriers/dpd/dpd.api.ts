@@ -129,7 +129,8 @@ class DpdAPI implements ICarrierAPI {
     const orderPath = '/api/services/app/hawb/apiCreateHawb';
     const orderRequestBody: DPDOrderRequestBody = buildDpdOrderRequestBody(
       shipmentData,
-      rate
+      rate,
+      this.isTest
     );
     const response = await callDPDOrderEndpoint(
       `${this.apiUrl}${orderPath}`,
