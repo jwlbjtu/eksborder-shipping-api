@@ -122,7 +122,7 @@ export const createApiFailedResponse = (
 ): Partial<ApiLableResponse> => {
   return {
     result: false,
-    message,
+    message: [message, ...errors.map((e) => e.msg)].join(', '),
     errors
   };
 };
