@@ -317,12 +317,18 @@ export const computeThirdpartyRate = (
       const toZip = shipmentData.toAddress.zip;
       logger.info(`fromZip=${fromZip}, toZip=${toZip}, origin=${originZip}`);
       if (fromZip && originZip) {
-        const fromZip3 = fromZip.substring(0, 3);
+        let fromZip3 = fromZip;
+        if (priceTable.service.key !== 'AU Express') {
+          fromZip3 = fromZip3.substring(0, 3);
+        }
         if (fromZip3 !== originZip) {
           throw new Error('渠道不支持寄出地址');
         }
       }
-      const toZip3 = toZip.substring(0, 3);
+      let toZip3 = toZip;
+      if (priceTable.service.key !== 'AU Express') {
+        toZip3 = toZip3.substring(0, 3);
+      }
       logger.info(`Search zone map for ${toZip3}`);
       zoneMap = priceTable.zoneMap.find((ele) =>
         ele.maps.split(',').includes(toZip3)

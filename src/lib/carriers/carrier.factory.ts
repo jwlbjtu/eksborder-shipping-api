@@ -8,6 +8,7 @@ import MaoYuanAPI from './maoyuan/mao_yuan.api';
 import RuiYunAPI from './rui_yun/rui_yun.api';
 import UpsAPI from './ups/ups.api';
 import UspsAPI from './usps/usps.api';
+import DpdAPI from './dpd/dpd.api';
 
 class CarrierFactory {
   static getCarrierAPI(
@@ -30,6 +31,8 @@ class CarrierFactory {
         return new USPS3API(isTest, carrierAccount);
       case CARRIERS.MAO_YUAN:
         return new MaoYuanAPI(isTest, carrierAccount);
+      case CARRIERS.DPD:
+        return new DpdAPI(isTest, carrierAccount);
       default:
         return undefined;
     }

@@ -50,7 +50,8 @@ export const CARRIERS = {
   FEDEX: 'FedEx',
   RUI_YUN: 'Rui Yun',
   MAO_YUAN: 'Mao Yuan',
-  USPS3: 'USPS3'
+  USPS3: 'USPS3',
+  DPD: 'DPD'
 };
 
 export const SUPPORTED_CARRIERS = [
@@ -475,4 +476,12 @@ export const MAOYUAN_HOSTS = {
 //**********************************//
 export const USPS3_HOSTS = {
   USPS3_PROD: 'https://api.apparcel.com'
+};
+
+//**********************************//
+//******** DPD Constants *******//
+//**********************************//
+export const DPD_HOSTS = {
+  DPD_TEST: 'https://test.hub-ez.com',
+  DPD_PROD: 'https://www.hub-ez.com'
 };
