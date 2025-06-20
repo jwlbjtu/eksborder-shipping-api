@@ -126,7 +126,10 @@ export const updateShippingRecordStatus = async (
     if (ShipmentStatus.DELETED === body.status) {
       logger.info(`Start to cancel label with trakcing: ${record.trackingId}`);
       let flag = true;
-      if (record.carrier === CARRIERS.MAO_YUAN) {
+      if (
+        record.carrier === CARRIERS.MAO_YUAN ||
+        record.carrier === CARRIERS.DPD
+      ) {
         // Call MoaYuan API to cancel label
         flag = await cancelByCarrierAPI(record);
       }

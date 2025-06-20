@@ -11,6 +11,7 @@ import { Currency, WeightUnit } from '../../constants';
 import { logger } from '../../logger';
 import { roundToTwoDecimal } from '../../utils/helpers';
 import convertlib from 'convert-units';
+import util from 'util';
 
 export const buildDpdOrderRequestBody = (
   shipmentData: IShipping,
@@ -52,6 +53,8 @@ export const buildDpdOrderRequestBody = (
       ? `${shipmentData.toAddress.street1}, ${shipmentData.toAddress.street2}`
       : shipmentData.toAddress.street1,
     ReceiverTel: shipmentData.toAddress.phone || '',
+    ReceiverCity: shipmentData.toAddress.city || '',
+    ReceiverProvince: shipmentData.toAddress.state || '',
     ReceiverCountry: shipmentData.toAddress.country,
     ReceiverZip: shipmentData.toAddress.zip,
     Weight: totalWeightInKg,
@@ -89,7 +92,7 @@ export const callDPDOrderEndpoint = async (
   token: string
 ): Promise<DPDOrderResponse> => {
   logger.info(`Calling DPD order endpoint at ${path}`);
-  logger.info('Request Body:', JSON.stringify(requestBody, null, 2));
+  logger.info(util.inspect(requestBody, false, null, true));
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`
@@ -98,6 +101,8 @@ export const callDPDOrderEndpoint = async (
     const response = await axios.post(path, requestBody, {
       headers
     });
+    logger.info('DPD Order API Response:');
+    logger.info(util.inspect(response.data, false, null, true));
     return response.data as DPDOrderResponse;
   } catch (error) {
     logger.error('Error calling DPD order endpoint:', error);

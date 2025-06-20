@@ -146,7 +146,7 @@ class DpdAPI implements ICarrierAPI {
       const hawNumber = response.result.hawbNumber;
       const childHawbNumber = response.result.childHawbNumber;
       let trackingNums = [hawNumber];
-      if (!childHawbNumber) {
+      if (childHawbNumber) {
         trackingNums = [hawNumber, ...childHawbNumber.split(',')];
       }
       // 2. Retrieve label URL from response
@@ -192,6 +192,7 @@ class DpdAPI implements ICarrierAPI {
             turnChanddelId: rate.carrier,
             turnServiceType: rate.service
           };
+          logger.info(util.inspect(apiResult, false, null, true));
           return apiResult;
         } else {
           logger.error(`Label generation failed: ${labelResult.resultMsg}`);
