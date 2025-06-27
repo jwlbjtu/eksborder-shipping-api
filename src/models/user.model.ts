@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { UserRoleList, USER_ROLES } from '../lib/constants';
 import Account from '../models/account.model';

@@ -67,6 +67,7 @@ export const buildDpdOrderRequestBody = (
     ServiceCode: isTest ? 'ADC' : rate.serviceId,
     DutyType: 'DDU',
     Content: shipmentData.description || '',
+    Pieces: shipmentData.packageList.length,
     HawbItems: shipmentData.invoice
       ? shipmentData.invoice.invoiceDetailList!.map((p) => {
           return {
