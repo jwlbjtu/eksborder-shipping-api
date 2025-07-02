@@ -8,8 +8,10 @@ import { ICarrier, IShipping } from '../../../types/record.types';
 import { logger } from '../../logger';
 import {
   computeThirdpartyRate,
+  computeThirdpartyRateForPackageWeight,
   computeThirdpartyRateWithWeight,
   validateThirdpartyPrice,
+  validateThirdpartyPriceForPackageWeight,
   validateThirdpartyPriceWithWeight
 } from '../thirdparty.helpers';
 import { buildRuiYunLabelReqBody } from './rui_yun.label';
@@ -119,22 +121,82 @@ class RuiYunAPI implements ICarrierAPI {
       if (!priceTableList || priceTableList.length === 0) {
         return '渠道异常';
       }
-      // console.log(priceTableList);
-      // Validate shipment with price table conditions
-      const priceTable = validateThirdpartyPrice(priceTableList, shipmentData);
-      if (!priceTable) {
-        return '货物重量超出渠道范围';
+      let result;
+      const packageList = shipmentData.packageList;
+      if (packageList && packageList.length > 0) {
+        // 一票多件
+        let rate: Rate | undefined;
+        const errors: string[] = [];
+        for (let i = 0; i < packageList.length; i += 1) {
+          const packageItem = packageList[i];
+          const weight = packageItem.weight;
+          const priceTable = validateThirdpartyPriceForPackageWeight(
+            priceTableList,
+            weight
+          );
+          if (!priceTable) {
+            return '货物重量超出渠道范围';
+          }
+          logger.info(
+            `Using price table ${priceTable.name}, ${priceTable.service.key}-${priceTable.service.id}-${priceTable.service.name}`
+          );
+          // Calculate rates based on price table
+          const packageResult = computeThirdpartyRateForPackageWeight(
+            priceTable,
+            shipmentData,
+            weight,
+            this.isTest,
+            this.clientCarrier
+          );
+          if ('string' === typeof packageResult) {
+            return packageResult;
+          }
+          if (packageResult.errors && packageResult.errors.length > 0) {
+            errors.push(...packageResult.errors);
+          }
+          if (!rate) {
+            // Initialize rate with the first package's rate
+            rate = packageResult.rates[0];
+          } else {
+            if (rate.rate === undefined) {
+              rate.rate = 0;
+            }
+            rate.rate += packageResult.rates[0].rate
+              ? packageResult.rates[0].rate
+              : 0;
+          }
+        }
+        if (!rate) {
+          return '未找到包裹信息';
+        }
+        result = {
+          rates: [rate],
+          errors: errors.length > 0 ? errors : []
+        };
+      } else if (packageList && packageList.length === 1) {
+        // 单票单件
+        // Validate shipment with price table conditions
+        const priceTable = validateThirdpartyPrice(
+          priceTableList,
+          shipmentData
+        );
+        if (!priceTable) {
+          return '货物重量超出渠道范围';
+        }
+        logger.info(
+          `Using price table ${priceTable.name}, ${priceTable.service.key}-${priceTable.service.id}-${priceTable.service.name}`
+        );
+        // Calculate rates based on price table
+        result = computeThirdpartyRate(
+          priceTable,
+          shipmentData,
+          this.isTest,
+          this.clientCarrier
+        );
+      } else {
+        return '未找到包裹信息';
       }
-      logger.info(
-        `Using price table ${priceTable.name}, ${priceTable.service.key}-${priceTable.service.id}-${priceTable.service.name}`
-      );
-      // Calculate rates based on price table
-      const result = computeThirdpartyRate(
-        priceTable,
-        shipmentData,
-        this.isTest,
-        this.clientCarrier
-      );
+
       return result;
     } catch (error) {
       logger.error(error);

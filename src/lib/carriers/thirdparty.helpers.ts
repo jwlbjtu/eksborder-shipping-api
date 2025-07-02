@@ -19,6 +19,7 @@ import {
 import ThirdPartySchema from '../../models/thirdparty.model';
 import { IAccount } from '../../types/user.types';
 import { get } from 'lodash';
+import { IWeight } from '../../types/shipping.types';
 
 export const validateThirdpartyPriceWithWeight = (
   priceList: IThirdPartyAccount[],
@@ -94,6 +95,50 @@ export const validateThirdpartyPrice = (
       const totalWeight = computeTotalShipmentWeight(shipping);
       const orderWeight = convertlib(totalWeight.value)
         .from(totalWeight.unitOfMeasure)
+        .to(condition.weightUnit as WeightUnit);
+      logger.info(`Order weight: ${orderWeight} ${condition.weightUnit}`);
+      if (
+        minWeight !== undefined &&
+        maxWeight !== undefined &&
+        orderWeight >= minWeight &&
+        orderWeight <= maxWeight
+      ) {
+        return price;
+      } else if (
+        minWeight === undefined &&
+        maxWeight !== undefined &&
+        orderWeight <= maxWeight
+      ) {
+        return price;
+      } else if (
+        minWeight !== undefined &&
+        maxWeight === undefined &&
+        orderWeight >= minWeight
+      ) {
+        return price;
+      }
+    } else {
+      return price;
+    }
+  }
+  return undefined;
+};
+
+export const validateThirdpartyPriceForPackageWeight = (
+  priceList: IThirdPartyAccount[],
+  weight: IWeight
+): IThirdPartyAccount | undefined => {
+  logger.info(
+    `Validating Thirdparty Price Tables with weight: ${weight.value}, weightType: ${weight.unitOfMeasure} ...`
+  );
+  for (let i = 0; i < priceList.length; i += 1) {
+    const price = priceList[i];
+    const condition = price.condition;
+    if (condition && condition.weightUnit) {
+      const minWeight = condition.minWeight;
+      const maxWeight = condition.maxWeight;
+      const orderWeight = convertlib(weight.value)
+        .from(weight.unitOfMeasure)
         .to(condition.weightUnit as WeightUnit);
       logger.info(`Order weight: ${orderWeight} ${condition.weightUnit}`);
       if (
@@ -386,6 +431,132 @@ export const computeThirdpartyRate = (
         const rateWeight = Math.ceil(
           convertlib(weight)
             .from(weightUnit)
+            .to(priceTable.price.weightUnit as WeightUnit)
+        );
+        ratePrice = roundToTwoDecimal(rateWeight * ratePrice);
+        fee = computeFee(
+          shipmentData,
+          ratePrice,
+          priceTable.price.currency,
+          priceTable.rates
+        );
+        thirdpartyRate = ratePrice + fee;
+      }
+      // Apply account level fees and create Rate object
+      const rateData: Rate = {
+        carrier: priceTable.carrier,
+        serviceId: priceTable.service.id || priceTable.service.key,
+        service: priceTable.service.name,
+        account: priceTable.accountNum,
+        rate: thirdpartyRate,
+        currency: Currency.USD,
+        isTest,
+        thirdparty: true,
+        thirdpartyAcctId: priceTable._id,
+        clientCarrierId: clientCarrier.id.toString()
+      };
+      rates.push(rateData);
+    }
+  }
+  return { rates, errors: [] };
+};
+
+export const computeThirdpartyRateForPackageWeight = (
+  priceTable: IThirdPartyAccount,
+  shipmentData: IShipping,
+  weight: IWeight,
+  isTest: boolean,
+  clientCarrier: IAccount
+): { rates: Rate[]; errors: string[] } | string => {
+  const rates: Rate[] = [];
+  if (priceTable.zoneMap && priceTable.price) {
+    const priceData = findThirdpartyPriceByWeight(
+      weight.value,
+      weight.unitOfMeasure,
+      priceTable.price
+    );
+    // Find zone for the weight
+    const zoneMode = priceTable.zoneMode;
+    const originZip = priceTable.zipCode;
+    const originCountry = priceTable.countryCode;
+    const originState = undefined;
+    let zoneMap: ThirdPartyZoneMap | undefined;
+    logger.info('Validate Rui Yun thirdaparty sender');
+    if (zoneMode === 'zip') {
+      logger.info('Validate Rui Yun thirdaparty sender by ZIP mode');
+      const fromZip = shipmentData.sender?.zip;
+      const toZip = shipmentData.toAddress.zip;
+      logger.info(`fromZip=${fromZip}, toZip=${toZip}, origin=${originZip}`);
+      if (fromZip && originZip) {
+        let fromZip3 = fromZip;
+        if (priceTable.service.key !== 'AU Express') {
+          fromZip3 = fromZip3.substring(0, 3);
+        }
+        if (fromZip3 !== originZip) {
+          throw new Error('渠道不支持寄出地址');
+        }
+      }
+      let toZip3 = toZip;
+      if (priceTable.service.key !== 'AU Express') {
+        toZip3 = toZip3.substring(0, 3);
+      }
+      logger.info(`Search zone map for ${toZip3}`);
+      zoneMap = priceTable.zoneMap.find((ele) =>
+        ele.maps.split(',').includes(toZip3)
+      );
+      logger.info(`Found zone map ${zoneMap?.zone}, ${zoneMap?.maps}`);
+    } else if (zoneMode === 'state') {
+      logger.info('Validate Rui Yun thirdaparty sender by STATE mode');
+      const fromState = shipmentData.sender?.state;
+      const toState = shipmentData.toAddress.state!;
+      if (fromState && originState) {
+        if (fromState !== originState) {
+          throw new Error('渠道不支持寄出地址');
+        }
+      }
+      zoneMap = priceTable.zoneMap.find((ele) =>
+        ele.maps.split(',').includes(toState)
+      );
+    } else if (zoneMode === 'country') {
+      logger.info('Validate Rui Yun thirdaparty sender by COUNTRY mode');
+      const fromCountry = shipmentData.sender?.country;
+      const toCountry = shipmentData.toAddress.toCountry;
+      if (fromCountry && originCountry) {
+        if (fromCountry !== originCountry) {
+          throw new Error('渠道不支持寄出地址');
+        }
+      }
+      zoneMap = priceTable.zoneMap.find((ele) =>
+        ele.maps.split(',').includes(toCountry)
+      );
+    }
+    if (!zoneMap) {
+      throw new Error('渠道不支持寄出地址');
+    }
+    // Gnerate Rate
+    if (priceData && zoneMap) {
+      logger.info(
+        `Found ${priceData[zoneMap.zone]} for ${priceData.weight}${
+          priceTable.price.weightUnit
+        } and zone ${zoneMap.zone}`
+      );
+      let ratePrice = parseFloat(priceData[zoneMap.zone]);
+      // Apply fees of the thirdparty price first
+      let fee = computeFee(
+        shipmentData,
+        ratePrice,
+        priceTable.price.currency,
+        priceTable.rates
+      );
+      let thirdpartyRate = ratePrice + fee;
+      if (
+        priceData[Object.keys(priceData)[0]].includes('-') ||
+        priceData[Object.keys(priceData)[0]].includes('>')
+      ) {
+        // compute rate with weight;
+        const rateWeight = Math.ceil(
+          convertlib(weight.value)
+            .from(weight.unitOfMeasure)
             .to(priceTable.price.weightUnit as WeightUnit)
         );
         ratePrice = roundToTwoDecimal(rateWeight * ratePrice);
